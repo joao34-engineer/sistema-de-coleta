@@ -1,0 +1,4 @@
+interface:
+  display_name: "MJT Supabase"
+  short_description: "Segurança e operação Supabase da MJT"
+  default_prompt: "Use $mjt-supabase para implementar uma alteração segura no Supabase da MJT."

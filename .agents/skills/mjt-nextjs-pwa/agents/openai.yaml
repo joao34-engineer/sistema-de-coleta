@@ -1,0 +1,4 @@
+interface:
+  display_name: "MJT Next.js PWA"
+  short_description: "Padrões Next.js e PWA da MJT"
+  default_prompt: "Use $mjt-nextjs-pwa para implementar uma tela ou capacidade PWA da MJT."

@@ -1,0 +1,45 @@
+# Documentacao do Sistema de Coleta MJT
+
+## Status e convencoes
+
+Esta documentacao e a fonte de planejamento para o projeto independente `sistema-coleta`. O sistema sera implementado por fases; concluir uma fase inclui seus criterios de aceite, testes e atualizacao documental.
+
+- "V1" e o primeiro uso real em campo, nao uma demonstracao.
+- Uma guia finalizada e um registro documental: nao se apaga nem se sobrescreve.
+- "Cliente" pode ser pessoa juridica ou pessoa fisica.
+- A guia de coleta nao substitui documento fiscal.
+
+## Entrada obrigatoria
+
+Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e somente os documentos da tarefa atual. Isso evita carregar contexto irrelevante e mantem as decisoes consistentes.
+
+## Mapa tematico
+
+| Assunto | Documento |
+| --- | --- |
+| Produto, usuarios e escopo | [product/vision-and-scope.md](product/vision-and-scope.md) |
+| Fluxos de campo e experiencia mobile | [product/mobile-workflows.md](product/mobile-workflows.md) |
+| Arquitetura geral | [architecture/solution-design.md](architecture/solution-design.md) |
+| FSD e organizacao de codigo | [architecture/fsd.md](architecture/fsd.md) |
+| Dados e regras imutaveis | [architecture/data-and-rules.md](architecture/data-and-rules.md) |
+| Next.js, App Router e PWA | [nextjs-pwa.md](nextjs-pwa.md) |
+| TypeScript e contratos | [typescript.md](typescript.md) |
+| Supabase, migrations, RLS e Storage | [supabase.md](supabase.md) |
+| Seguranca, privacidade e evidencias | [security.md](security.md) |
+| Clean code e fronteiras | [coding-standards.md](coding-standards.md) |
+| Testes e validacao | [testing.md](testing.md) |
+| Decisoes de arquitetura | [decisions/](decisions/) |
+
+Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS/Storage e `$mjt-nextjs-pwa` para App Router/PWA. Leia o `SKILL.md` somente quando o gatilho da tarefa se aplicar.
+
+## Indice de execucao
+
+| Ordem | Documento | Resultado |
+| --- | --- | --- |
+| 0 | [Fundacao](execution/phase-0-foundation.md) | Repositorio, ambientes, identidade e base tecnica |
+| 1 | [Coleta principal](execution/phase-1-collection-core.md) | Cadastro, itens, assinatura e numero oficial |
+| 2 | [Documento e compartilhamento](execution/phase-2-documents-sharing.md) | PDF, QR, consulta e envio |
+| 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |
+| 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Offline, seguranca, backup e entrada em producao |
+
+Nenhum documento de execucao deve ultrapassar 500 linhas. Novas decisoes devem ser registradas em `decisions/` ou no documento tematico correspondente, nao diluidas em prompts ou codigo.
