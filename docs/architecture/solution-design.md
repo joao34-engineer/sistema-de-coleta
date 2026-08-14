@@ -59,11 +59,10 @@ Funcoes utilitarias, validacoes e formatacao nao ficam dentro de handlers HTTP o
 
 | Ambiente | Finalidade | Regras |
 | --- | --- | --- |
-| Local | Desenvolvimento individual | Projeto Supabase local ou banco de desenvolvimento isolado |
-| Staging | Validacao antes de liberar | Dados sinteticos; sem documentos reais |
-| Producao | Operacao MJT | Projeto Supabase, dominio e credenciais proprios |
+| Remoto unico controlado do MVP | Desenvolvimento integrado, publicacao e testes de familia | Um projeto Supabase remoto proprio e um deploy Vercel proprio; sem Supabase local, sem staging remoto, sem segredos em previews e somente dados sinteticos ate a Fase 4 |
+| Operacao real | Uso de coletas reais da MJT | O mesmo ambiente remoto somente apos backup/restauracao comprovados, procedimento de incidente e liberacao da Fase 4 |
 
-O deploy sera independente do monorepo raiz. O dominio recomendado e um subdominio dedicado, por exemplo `coleta.seudominio.com.br`; a definicao final depende do dominio institucional disponivel.
+O deploy sera independente do monorepo raiz. O projeto Supabase remoto e o deploy Vercel formam a producao tecnica do MVP. Migrations sao aditivas, versionadas, revisadas e aplicadas manualmente nesse projeto; ele nunca e resetado. O dominio recomendado e um subdominio dedicado, por exemplo `coleta.seudominio.com.br`; a definicao final depende do dominio institucional disponivel.
 
 ## PWA e offline
 

@@ -1,0 +1,2 @@
+-- A organização, papel, settings e buckets da fundação são criados pela migration.
+-- Usuários e memberships são provisionados exclusivamente por bootstrap-admin.ts.

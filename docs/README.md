@@ -4,6 +4,8 @@
 
 Esta documentacao e a fonte de planejamento para o projeto independente `sistema-coleta`. O sistema sera implementado por fases; concluir uma fase inclui seus criterios de aceite, testes e atualizacao documental.
 
+O codigo da fundacao da Fase 0 ja existe e esta conectado ao Supabase remoto unico do MVP. O status de uma fase deve ser confirmado pelos gates tecnicos e operacionais, nao por documentos antigos que afirmem que o scaffold ainda nao foi criado.
+
 - "V1" e o primeiro uso real em campo, nao uma demonstracao.
 - Uma guia finalizada e um registro documental: nao se apaga nem se sobrescreve.
 - "Cliente" pode ser pessoa juridica ou pessoa fisica.
@@ -37,6 +39,7 @@ Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS
 | Ordem | Documento | Resultado |
 | --- | --- | --- |
 | 0 | [Fundacao](execution/phase-0-foundation.md) | Repositorio, ambientes, identidade e base tecnica |
+| 0.5 | [Especificacao funcional e UX](execution/phase-0.5-functional-ux-specification.md) | Requisitos de tela, fluxos e handoff para Figma |
 | 1 | [Coleta principal](execution/phase-1-collection-core.md) | Cadastro, itens, assinatura e numero oficial |
 | 2 | [Documento e compartilhamento](execution/phase-2-documents-sharing.md) | PDF, QR, consulta e envio |
 | 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |

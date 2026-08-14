@@ -1,28 +1,70 @@
 # Sistema de Coleta MJT
 
-Aplicacao independente para registrar coletas, emitir guias digitais assinadas e acompanhar o ciclo operacional ate a entrega.
+Aplicação independente para registrar coletas, emitir guias digitais assinadas e acompanhar o ciclo operacional até a entrega.
 
-## Estado
+## Estado atual
 
-Planejamento aprovado; implementacao ainda nao iniciada.
+A fundação da Fase 0 está implementada e conectada a um único projeto Supabase remoto. O fluxo atual inclui login por e-mail e senha, dashboard, configurações institucionais, Storage privado para o logo, auditoria e PWA instalável por manifest.
 
-## Isolamento
+Coletas, clientes, itens, assinaturas, documentos, QR e funcionamento offline ainda não estão habilitados. O ambiente remoto é uma produção técnica controlada do MVP e deve usar somente dados sintéticos até a liberação da Fase 4.
 
-Esta pasta possui repositorio Git proprio e deve permanecer ignorada pelo repositorio-raiz. Ela tera projeto Supabase, credenciais, deploy, dominio e historico de Git independentes.
+## Ambiente aprovado
 
-## Direcao tecnica decidida
+- Windows para desenvolvimento.
+- Next.js App Router, React, TypeScript estrito e Tailwind CSS.
+- Supabase remoto único para Auth, PostgreSQL, Storage privado e RLS.
+- Vercel somente com URL e publishable key do Supabase remoto.
+- Supabase local/Docker adiado; não executar `supabase start`, `supabase db reset` ou `supabase db reset --linked` neste fluxo.
+- Um único administrador provisionado manualmente no painel Supabase.
 
-- Next.js com TypeScript e App Router, como PWA mobile-first.
-- Supabase: PostgreSQL, Auth e Storage privado.
-- Camada de aplicacao no servidor Next.js para comandos criticos.
-- PDF imutavel, QR Code de verificacao e auditoria por evento.
+## Desenvolvimento
 
-Nao utilizar acesso administrativo do Supabase no navegador, nem emitir PDF ou numero oficial diretamente pelo cliente.
+Na pasta `sistema-coleta`:
 
-## Como ler a documentacao
+```powershell
+npm.cmd ci
+npm.cmd run dev
+```
 
-Comece por [AGENTS.md](AGENTS.md), depois [docs/README.md](docs/README.md). Os documentos de execucao em `docs/execution/` sao deliberadamente pequenos (menos de 500 linhas cada) e devem ser executados na ordem indicada.
+O arquivo `.env.example` documenta as variáveis necessárias. Nunca versionar `.env.local`, chaves secretas ou senhas.
 
-## O que ainda nao existe
+Validações:
 
-Nao ha codigo, banco, projeto Supabase ou integracoes configuradas. Os documentos descrevem a referencia para a futura implementacao.
+```powershell
+npm.cmd run architecture
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run test
+npm.cmd run build
+npm.cmd run test:e2e
+```
+
+O `typecheck` executa `next typegen` antes do compilador. Os tipos de desenvolvimento gerados em `.next/dev` são ignorados pelo TypeScript devido a uma incompatibilidade conhecida da versão atual do Next; os tipos oficiais de `.next/types` continuam sendo verificados. Nunca editar arquivos gerados dentro de `.next`.
+
+## Banco remoto
+
+Migrations ficam em `supabase/migrations/` e são aditivas. Antes de aplicar uma mudança:
+
+1. Revisar o SQL e o impacto.
+2. Conferir o projeto remoto vinculado.
+3. Executar `supabase db push --dry-run` quando a CLI estiver autenticada.
+4. Aplicar somente a migration revisada.
+5. Validar RLS, Storage, Auth e advisors.
+
+O projeto remoto não deve receber reset, drop, limpeza de histórico ou dados reais nesta fase.
+
+## Bootstrap do administrador
+
+O usuário remoto é criado manualmente no painel Supabase. Depois, o script idempotente cria o vínculo administrativo:
+
+```powershell
+npm.cmd run bootstrap:admin
+```
+
+No modo remoto, a senha nunca é lida ou alterada pelo script. `SUPABASE_SECRET_KEY` deve existir apenas no terminal local durante o bootstrap e nunca na Vercel.
+
+## Documentação e governança
+
+Comece por [AGENTS.md](AGENTS.md) e [docs/README.md](docs/README.md). Os documentos de execução ficam abaixo de 500 linhas e devem ser seguidos na ordem indicada.
+
+Não utilizar client administrativo do Supabase no navegador, não confiar somente na interface para autorização e não transformar o manifest da Fase 0 em service worker/offline. Offline e sincronização ficam para a Fase 4.

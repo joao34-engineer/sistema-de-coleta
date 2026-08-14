@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Preparar o sistema para uso real em campo, incluindo operacao com internet instavel, recuperacao e seguranca.
+Autorizar o uso real em campo, incluindo operacao com internet instavel, recuperacao e seguranca. Ate esta fase, a producao remota do MVP permanece em validacao controlada.
 
 ## Passos
 
@@ -15,7 +15,7 @@ Preparar o sistema para uso real em campo, incluindo operacao com internet insta
 7. Configurar backup de banco e de arquivos; executar restauracao em ambiente isolado.
 8. Realizar testes de campo em Android, iPhone e computador, com conexao lenta/interrompida.
 9. Treinar usuarios e publicar procedimento curto de coleta, incidente e suporte.
-10. Liberar producao gradualmente, acompanhando primeiras guias e indicadores.
+10. Autorizar a operacao real gradualmente, acompanhando primeiras guias e indicadores.
 
 ## Casos de teste de campo
 

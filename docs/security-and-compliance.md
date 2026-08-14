@@ -8,7 +8,11 @@
 - Auditoria de fatos relevantes sem edicao pelo usuario comum.
 - Nao registrar CPF, telefone, assinatura, tokens ou URLs assinadas em logs de aplicacao.
 
-## Papeis iniciais
+## Perfil inicial do MVP
+
+Na Fase 0 existira somente um administrador, provisionado manualmente. Convites, outros papeis e gestao de usuarios nao fazem parte do MVP inicial; a tabela abaixo e a matriz para quando a expansao for aprovada.
+
+## Matriz futura de papeis
 
 | Papel | Acesso |
 | --- | --- |
@@ -36,7 +40,7 @@ Para uma guia comercial, este conjunto fortalece a prova operacional. Se um cont
 - RLS habilitado em toda tabela exposta.
 - Politicas distintas para leitura, insercao, atualizacao e exclusao de objetos no Storage.
 - Links temporarios para download de PDF, fotos e assinatura.
-- MFA obrigatorio para administradores quando disponibilizado.
+- MFA fica adiado no MVP de administrador unico. Ele sera requisito antes de ampliar usuarios ou autorizar a operacao real com dados de coleta.
 - Segredos somente em variaveis de ambiente do servidor/deploy.
 - Cabecalhos de seguranca, protecao CSRF onde aplicavel, rate limit em login e verificacao QR.
 - Monitoramento de erros, logs estruturados e alertas de falhas documentais.
