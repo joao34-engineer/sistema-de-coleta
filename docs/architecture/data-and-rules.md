@@ -17,7 +17,7 @@
 | `documents` | Snapshot, PDF, hash, versao e data de emissao |
 | `collection_events` | Timeline append-only de fatos relevantes |
 | `share_deliveries` | Tentativas de e-mail/compartilhamento e resultado |
-| `service_orders` | Fase posterior: ordem de servico vinculada a coleta |
+| `service_orders` | Fase posterior: ordem de servico da oficina propria da MJT vinculada a coleta, com orcamento e custo do reparo |
 | `invoice_references` | Numero, serie e data de NF-e informados pela equipe |
 
 ## Regras do codigo oficial
@@ -34,10 +34,12 @@
 ```text
 rascunho -> pendente_sincronizacao -> coletada -> em_oficina
 em_oficina -> em_orcamento -> aguardando_aprovacao
-aguardando_aprovacao -> aprovada -> em_servico -> pronta
-pronta -> faturada -> entregue
+aguardando_aprovacao -> aprovada -> em_reparo -> pronto
+pronto -> faturada -> entregue
+faturada -> entrega_parcial -> entregue (quando existirem itens prontos e itens pendentes)
 em_orcamento ou aguardando_aprovacao -> nao_aprovada
 coletada, em_oficina ou estados posteriores -> cancelada (com motivo)
+cancelada -> reaberta -> retorno ao estado operacional anterior (com motivo e auditoria)
 ```
 
 Somente usuarios autorizados podem executar uma transicao. Todo evento guarda ator, horario, estado anterior, estado novo e motivo quando exigido.
@@ -46,13 +48,23 @@ Somente usuarios autorizados podem executar uma transicao. Todo evento guarda at
 
 Para finalizar e emitir uma guia, sao obrigatorios:
 
-- cliente identificado;
+- cliente identificado com nome/razao, CPF/CNPJ e telefone;
 - endereco/local da coleta;
 - ao menos um item com descricao e quantidade positiva;
-- responsavel pela entrega;
+- responsavel no local da coleta identificado;
 - coletor autenticado;
-- aceite e assinatura do responsavel;
+- aceite e assinatura do signatario; por padrao, o signatario e o responsavel no local da coleta, mas podem ser pessoas diferentes quando necessario;
 - data/hora da coleta.
+
+O endereco cadastral do cliente pode permanecer vazio; o endereco ou local especifico da coleta e obrigatorio na guia.
+
+O custo do reparo pertence a etapa de oficina/orcamento, deve ser registrado em moeda BRL e permanecer no acesso interno autorizado. O valor nao e publicado na verificacao minima por QR.
+
+No MVP, a oficina e a unidade propria da MJT. A entrada dos itens e um evento interno posterior a coleta; nao ha fluxo de transferencia para uma oficina de terceiro nem conta separada de usuario da oficina.
+
+A entrada na oficina exige conferencia item a item, quantidade observada, condicao observada e registro de divergencia quando necessario. O evento deve guardar a assinatura da administradora responsavel com nome e CNPJ.
+
+A entrega ao cliente cria um evento e uma versao documental com somente os itens que estiverem prontos e forem efetivamente entregues. O cliente confere os itens e assina com nome e CNPJ. Entregas parciais sao permitidas; a coleta so assume o estado final `entregue` quando nao restarem itens pendentes.
 
 O servidor cria um snapshot completo, calcula hash de integridade e associa assinatura e PDF a essa versao. Dados mostrados no documento devem vir do snapshot, nao de consultas mutaveis de cliente ou itens.
 
@@ -62,4 +74,5 @@ O servidor cria um snapshot completo, calcula hash de integridade e associa assi
 - Coletas finalizadas nao sao apagadas.
 - Mudanca que altere o conteudo da guia exige uma revisao documentada; a guia original continua preservada.
 - Cancelamento exige motivo, usuario e data; o QR passa a indicar cancelada.
+- A administradora pode reabrir uma coleta cancelada quando o cancelamento tiver sido indevido ou precisar ser desfeito. A reabertura registra ator, data, motivo e estado anterior; o mesmo codigo oficial permanece vinculado a coleta e nenhum numero e reutilizado. Se ja existir guia emitida, a reabertura gera nova versao documental e preserva a versao que registrava o cancelamento.
 - Prazos de retencao e anonimização serao definidos com a administracao e orientacao contabil/juridica, sem apagar evidencias exigidas para defesa de direitos ou obrigacoes legais.

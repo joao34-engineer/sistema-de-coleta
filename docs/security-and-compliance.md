@@ -31,7 +31,7 @@ Para uma guia comercial, este conjunto fortalece a prova operacional. Se um cont
 
 ## QR e links de consulta
 
-- QR publico: apenas validade, codigo, data, estado e dados mascarados.
+- QR publico: inicialmente apenas validade, codigo, data, estado e identificacao minima da MJT; dados mascarados so entram se houver necessidade comprovada.
 - Documento completo: somente usuario autenticado ou link privado de alta entropia, revogavel e com prazo quando aplicavel.
 - Nunca usar codigo sequencial sozinho como autorizacao para abrir uma guia.
 
