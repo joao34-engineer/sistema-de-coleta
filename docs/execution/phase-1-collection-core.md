@@ -4,6 +4,12 @@
 
 Permitir que a administradora/coletora da MJT crie, finalize e consulte uma coleta completa com garantia de integridade.
 
+## Estado da Fase 1A
+
+O nucleo tecnico foi implementado localmente: migration aditiva, RLS, Storage privado, contratos HTTP, comandos transacionais, infraestrutura de documento e testes de contrato. A migration ainda nao foi aplicada ao Supabase remoto porque o projeto nao esta vinculado nesta maquina; a aplicacao deve ser feita manualmente apos revisao e `supabase db push --dry-run` em ambiente controlado.
+
+A Fase 1 continua em andamento. Telas baseadas no Figma, template visual do PDF e pagina publica de verificacao/QR permanecem fora da 1A e bloqueiam a conclusao integral da fase.
+
 ## Passos
 
 1. Implementar clientes, contatos, enderecos e veiculos com validacao de CPF/CNPJ e telefone.

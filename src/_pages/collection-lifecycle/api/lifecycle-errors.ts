@@ -1,0 +1,24 @@
+import "server-only";
+
+import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
+
+export type LifecycleApiError = Readonly<{ status: number; code: string; message: string }>;
+
+type SupabaseError = Readonly<{ code?: unknown; message?: unknown }>;
+
+function isSupabaseError(value: unknown): value is SupabaseError {
+  return typeof value === "object" && value !== null;
+}
+
+export function toLifecycleApiError(error: unknown): LifecycleApiError {
+  if (error instanceof AuthenticationRequiredError) return { status: 401, code: "authentication_required", message: "Autenticação obrigatória." };
+  if (error instanceof AdministratorAccessDeniedError) return { status: 403, code: "administrator_access_denied", message: "Você não tem permissão para esta operação." };
+  if (isSupabaseError(error) && typeof error.code === "string") {
+    if (error.code === "P0001" && error.message === "idempotency_conflict") return { status: 409, code: "idempotency_conflict", message: "A chave de idempotencia foi reutilizada com outra requisicao." };
+    if (error.code === "P0001") return { status: 422, code: "business_rule_violation", message: "A coleta não atende aos requisitos desta operação." };
+    if (error.code === "40001") return { status: 409, code: "stale_version", message: "A coleta foi atualizada por outra operação." };
+    if (error.code === "23505") return { status: 409, code: "conflict", message: "A operação conflita com um registro existente." };
+    if (error.code === "42501") return { status: 403, code: "administrator_access_denied", message: "Você não tem permissão para esta operação." };
+  }
+  return { status: 500, code: "unexpected_error", message: "Não foi possível concluir a operação." };
+}
