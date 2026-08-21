@@ -44,7 +44,7 @@ export function CollectionDocumentsPage({ collectionId, documents }: Props) {
       {documents.length === 0 ? (
         <Card className="p-6 text-center">
           <p className="text-sm font-semibold text-[var(--color-text)]">
-            Nenhum documento disponível
+            Nenhum documento disponível para esta coleta.
           </p>
           <p className="mt-1 text-xs text-[var(--color-muted)]">
             Os recibos e guias serão gerados assim que a coleta for finalizada.
@@ -62,7 +62,7 @@ export function CollectionDocumentsPage({ collectionId, documents }: Props) {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h2 className="text-base font-bold text-[var(--color-text)]">
-                        Guia Emitida · Versão {document.version}
+                        Versão {document.version}
                       </h2>
                       <p className="text-xs text-[var(--color-muted)]">
                         Emitida em {formatDate(document.issuedAt)}
