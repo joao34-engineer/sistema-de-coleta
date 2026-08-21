@@ -26,7 +26,8 @@ export function MobileBottomNav() {
         const isActive =
           item.href === "/configuracoes"
             ? pathname === "/configuracoes"
-            : pathname.startsWith("/coletas");
+            : (pathname ?? "").startsWith("/coletas");
+
 
         return (
           <Link

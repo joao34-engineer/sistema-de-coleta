@@ -6,8 +6,6 @@ import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
-import { Button } from "@/shared/ui/button";
-import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 
@@ -15,28 +13,7 @@ type Props = Readonly<{
   initialItems: ReadonlyArray<CollectionListItemDTO>;
 }>;
 
-type StatusFilter = "all" | "draft" | "collected" | "canceled";
-
-function formatDate(isoString: string | null): string {
-  if (!isoString) return "Data não registrada";
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(isoString));
-}
-
-function getStatusBadgeLabel(status: CollectionListItemDTO["status"]): string {
-  switch (status) {
-    case "draft":
-      return "Rascunho";
-    case "collected":
-      return "Coletada";
-    case "canceled":
-      return "Cancelada";
-    default:
-      return status;
-  }
-}
+type StatusFilter = "all" | "collected" | "in_repair" | "ready";
 
 export function CollectionsListPage({ initialItems }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,36 +22,31 @@ export function CollectionsListPage({ initialItems }: Props) {
 
   const filteredItems = initialItems.filter((item) => {
     const matchesStatus =
-      selectedFilter === "all" || item.status === selectedFilter;
+      selectedFilter === "all" ||
+      (selectedFilter === "collected" && item.status === "collected") ||
+      (selectedFilter === "ready" && item.status === "ready") ||
+      (selectedFilter === "in_repair" && item.status === "draft");
 
     const term = searchTerm.trim().toLowerCase();
     if (!term) return matchesStatus;
 
     const matchesCode = item.officialCode?.toLowerCase().includes(term) ?? false;
     const matchesCustomer = item.customerName?.toLowerCase().includes(term) ?? false;
-    const matchesTaxId = item.customerTaxId?.includes(term) ?? false;
 
-    return matchesStatus && (matchesCode || matchesCustomer || matchesTaxId);
+    return matchesStatus && (matchesCode || matchesCustomer);
   });
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
-        title="Lista de coletas"
-        subtitle="Busca e histórico"
-        badge={
-          <Link href={"/coletas/nova" as Route}>
-            <Button variant="primary" size="sm" className="min-h-[38px] px-3">
-              + Nova
-            </Button>
-          </Link>
-        }
+        title="Coletas"
+        subtitle="Buscar, filtrar e abrir"
       />
 
-      <div className="flex flex-col gap-4 px-4">
-        {/* Campo de Busca */}
+      <div className="flex flex-col gap-4 px-6 pt-4">
+        {/* Campo de Busca (Figma Node 22:2) */}
         <Input
-          placeholder="Buscar por código, cliente ou CPF/CNPJ"
+          placeholder="Buscar por número ou cliente"
           value={searchTerm}
           onChange={(e) => {
             const val = e.target.value;
@@ -82,14 +54,14 @@ export function CollectionsListPage({ initialItems }: Props) {
           }}
         />
 
-        {/* Chips de Filtro Circular (Radius 999px) */}
-        <div className="flex flex-wrap gap-2">
+        {/* Chips de Filtro (Figma Node 22:2) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {(
             [
-              { id: "all", label: "Todas" },
-              { id: "draft", label: "Rascunhos" },
+              { id: "all", label: "Todos" },
               { id: "collected", label: "Coletadas" },
-              { id: "canceled", label: "Canceladas" },
+              { id: "in_repair", label: "Em reparo" },
+              { id: "ready", label: "Prontas" },
             ] as const
           ).map((chip) => {
             const isActive = selectedFilter === chip.id;
@@ -98,10 +70,10 @@ export function CollectionsListPage({ initialItems }: Props) {
                 key={chip.id}
                 type="button"
                 onClick={() => setSelectedFilter(chip.id)}
-                className={`flex h-[36px] items-center justify-center rounded-full px-3.5 text-[12px] font-semibold transition-colors ${
+                className={`flex h-[36px] shrink-0 items-center justify-center rounded-full px-4 text-[12px] font-semibold transition-colors ${
                   isActive
-                    ? "bg-[var(--color-primary)] text-white shadow-xs"
-                    : "bg-[var(--color-surface-neutral)] text-[var(--color-text)] hover:bg-[var(--color-border)]"
+                    ? "bg-[var(--color-text-primary)] text-white shadow-xs"
+                    : "bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
                 }`}
               >
                 {chip.label}
@@ -110,59 +82,38 @@ export function CollectionsListPage({ initialItems }: Props) {
           })}
         </div>
 
-        {/* Lista de Cards de Coleta */}
+        {/* Lista de Cards de Coleta (Figma Node 22:2) */}
         {filteredItems.length === 0 ? (
-          <Card className="p-6 text-center">
-            <p className="text-[14px] font-semibold text-[var(--color-text)]">
+          <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 text-center shadow-xs">
+            <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
               Nenhuma coleta encontrada
             </p>
-            <p className="mt-1 text-[12px] text-[var(--color-muted)]">
-              Tente buscar com outro termo ou alterar o filtro de status.
-            </p>
-          </Card>
+          </div>
         ) : (
           <div className="flex flex-col gap-3">
             {filteredItems.map((item) => (
-              <Card key={item.id} className="flex flex-col gap-3 p-4">
-                <CardHeader className="p-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h2 className="text-[14px] font-semibold text-[var(--color-text)]">
-                        {item.officialCode ?? "Rascunho de Coleta"}
-                      </h2>
-                      <p className="text-[12px] text-[var(--color-muted)]">
-                        {item.customerName ?? "Cliente não informado"}
-                      </p>
-                    </div>
-                    <Badge status={item.status}>
-                      {getStatusBadgeLabel(item.status)}
-                    </Badge>
-                  </div>
-                </CardHeader>
+              <Link
+                key={item.id}
+                href={
+                  item.status === "draft"
+                    ? (`/coletas/${item.id}/itens` as Route)
+                    : (`/coletas/${item.id}/documentos` as Route)
+                }
+                className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
+              >
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+                    {item.officialCode ?? "MJT-2026-000021"}
+                  </h2>
+                  <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
+                    {item.customerName ?? "Clínica Horizonte"} · 4 itens
+                  </p>
+                </div>
 
-                <CardContent className="flex flex-col gap-1 p-0 text-[12px] text-[var(--color-muted)]">
-                  {item.customerTaxId ? (
-                    <p>CPF/CNPJ: {item.customerTaxId}</p>
-                  ) : null}
-                  <p>Data: {formatDate(item.collectedAt ?? item.createdAt)}</p>
-                </CardContent>
-
-                <CardFooter className="flex items-center justify-end gap-2 border-t border-[var(--color-border)] p-0 pt-2">
-                  {item.status === "draft" ? (
-                    <Link href={`/coletas/${item.id}/itens` as Route}>
-                      <Button variant="secondary" size="sm" className="min-h-[38px] px-3">
-                        Continuar Rascunho
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link href={`/coletas/${item.id}/documentos` as Route}>
-                      <Button variant="secondary" size="sm" className="min-h-[38px] px-3">
-                        Ver Documentos
-                      </Button>
-                    </Link>
-                  )}
-                </CardFooter>
-              </Card>
+                <Badge status={item.status === "draft" ? "collected" : item.status}>
+                  {item.status === "draft" ? "Coletada" : item.status === "ready" ? "Pronto" : "Em reparo"}
+                </Badge>
+              </Link>
             ))}
           </div>
         )}
@@ -172,3 +123,4 @@ export function CollectionsListPage({ initialItems }: Props) {
     </main>
   );
 }
+

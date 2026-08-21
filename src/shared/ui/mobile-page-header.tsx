@@ -7,6 +7,7 @@ export interface MobilePageHeaderProps {
   subtitle?: string;
   backHref?: Route;
   stepText?: string;
+  progressText?: string;
   badge?: React.ReactNode;
 }
 
@@ -15,46 +16,56 @@ export function MobilePageHeader({
   subtitle,
   backHref,
   stepText,
+  progressText,
   badge,
 }: MobilePageHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 mb-5 flex min-h-[88px] w-full flex-col justify-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-xs">
-      {backHref ? (
-        <div className="mb-1 flex items-center justify-between">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primary-strong)] transition-colors hover:underline active:opacity-80"
-          >
-            <span>←</span> Voltar
-          </Link>
-          {stepText ? (
-            <span className="text-[11px] font-semibold text-[var(--color-muted)]">
-              {stepText}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
+    <header className="sticky top-0 z-30 flex min-h-[80px] w-full flex-col justify-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-xs">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          {/* Logo Mark MJT do Figma (38x32px ou 40x36px, radius 18px / 12px, bg #4c916f) */}
-          <div className="flex h-9 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-primary)] text-xs font-bold text-white shadow-xs">
-            MJT
-          </div>
+          {backHref ? (
+            <Link
+              href={backHref}
+              aria-label="Voltar"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[22px] font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-neutral)] active:scale-95"
+            >
+              ‹
+            </Link>
+          ) : (
+            /* Logo Mark MJT do Figma (38x32px, radius 14px, bg #4c916f) */
+            <div className="flex h-8 w-[38px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-primary)] text-xs font-bold text-white shadow-xs">
+              MJT
+            </div>
+          )}
+
           <div className="flex flex-col">
-            <h1 className="text-[18px] font-semibold leading-snug tracking-tight text-[var(--color-text)]">
+            <h1 className="text-[18px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
               {title}
             </h1>
             {subtitle ? (
-              <p className="text-[12px] font-normal text-[var(--color-muted)]">
+              <p className="text-[12px] font-normal leading-tight text-[var(--color-text-muted)]">
                 {subtitle}
               </p>
             ) : null}
           </div>
         </div>
 
-        {badge ? <div>{badge}</div> : null}
+        <div className="flex items-center gap-2">
+          {stepText ? (
+            <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">
+              {stepText}
+            </span>
+          ) : null}
+          {badge ? <div>{badge}</div> : null}
+        </div>
       </div>
+
+      {progressText ? (
+        <div className="mt-2 text-center text-[12px] font-semibold tracking-widest text-[var(--color-primary)]">
+          {progressText}
+        </div>
+      ) : null}
     </header>
   );
 }
+

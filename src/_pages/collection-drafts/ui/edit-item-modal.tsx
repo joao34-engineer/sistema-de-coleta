@@ -6,7 +6,7 @@ import { Input } from "@/shared/ui/input";
 import type { DraftItemDTO } from "../model/draft";
 
 interface EditItemModalProps {
-  readonly item: DraftItemDTO;
+  readonly item?: DraftItemDTO | undefined;
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onSave: (updated: {
@@ -25,14 +25,15 @@ const CONDITIONS: readonly { id: string; label: string }[] = [
 ];
 
 export function EditItemModal({ item, isOpen, onClose, onSave }: EditItemModalProps) {
-  const [description, setDescription] = useState(item.description);
-  const [quantity, setQuantity] = useState(item.quantity);
-  const [condition, setCondition] = useState<string | null>(item.condition ?? null);
-  const [notes, setNotes] = useState(item.notes ?? "");
+  const [description, setDescription] = useState(item?.description ?? "");
+  const [quantity, setQuantity] = useState(item?.quantity ?? 1);
+  const [condition, setCondition] = useState<string | null>(item?.condition ?? "Usado");
+  const [notes, setNotes] = useState(item?.notes ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
