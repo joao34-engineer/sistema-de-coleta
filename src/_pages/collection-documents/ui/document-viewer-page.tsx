@@ -1,0 +1,63 @@
+import Link from "next/link";
+import type { Route } from "next";
+import { Button } from "@/shared/ui/button";
+import { Card, CardHeader, CardContent } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+
+type Props = Readonly<{
+  collectionId: string;
+  documentId: string;
+}>;
+
+export function DocumentViewerPage({ collectionId, documentId }: Props) {
+  const pdfDownloadUrl = `/api/documents/${documentId}/download?artifact=pdf`;
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6 flex flex-col">
+      {/* Top Header Mobile */}
+      <header className="mb-4 flex items-center justify-between">
+        <div>
+          <Link
+            href={`/coletas/${collectionId}/documentos` as Route}
+            className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+          >
+            ← Voltar aos documentos
+          </Link>
+          <h1 className="mt-1 text-xl font-bold text-[var(--color-text)]">
+            Visualizador de PDF
+          </h1>
+        </div>
+        <a href={pdfDownloadUrl} download target="_blank" rel="noopener noreferrer">
+          <Button variant="primary" size="sm">
+            📥 Baixar
+          </Button>
+        </a>
+      </header>
+
+      {/* Card Principal de Exibição */}
+      <Card className="flex flex-1 flex-col overflow-hidden p-0">
+        <CardHeader className="border-b border-[var(--color-border)] p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
+                Recibo Imutável
+              </span>
+              <p className="text-xs text-[var(--color-muted)]">
+                ID do Documento: {documentId}
+              </p>
+            </div>
+            <Badge status="ready">Integridade Preservada</Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex flex-1 flex-col p-0 min-h-[500px]">
+          <iframe
+            src={pdfDownloadUrl}
+            title="Visualizador de PDF da Coleta MJT"
+            className="h-full w-full border-0 min-h-[500px]"
+          />
+        </CardContent>
+      </Card>
+    </main>
+  );
+}

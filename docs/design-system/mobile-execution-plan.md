@@ -41,17 +41,17 @@ Este documento é a **fonte única de rastreabilidade de execução** para o des
 
 ---
 
-### 🟡 FASE 3: Telas Mobile do Fluxo de Coleta (`Page: 10 — Mobile / Coleta`) (EM ANDAMENTO)
+### 🟢 FASE 3: Telas Mobile do Fluxo de Coleta (`Page: 10 — Mobile / Coleta`) (CONCLUÍDO)
 - [x] **`M02 · Nova coleta`**: Formulário de dados do cliente, busca por CPF/CNPJ ou novo cadastro e endereço da coleta implementado em [`new-collection-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-drafts/ui/new-collection-page.tsx).
 - [x] **`M03 · Itens`**: Lista e adição de itens com nota de condição, observações e autosave implementado em [`draft-items-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-drafts/ui/draft-items-page.tsx).
 - [x] **`M04 · Revisão`**: Tela de revisão dos dados do rascunho implementada em [`draft-review-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-drafts/ui/draft-review-page.tsx) e rota [`app/(protected)/coletas/[id]/revisao/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/revisao/page.tsx).
 - [x] **`M05 · Assinatura`**: Integração do `SignaturePad` com confirmação transacional em [`draft-signature-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-drafts/ui/draft-signature-page.tsx) e rota [`app/(protected)/coletas/[id]/assinatura/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/assinatura/page.tsx).
-- [ ] **`M06 · Lista de coletas`**: Histórico mobile com busca por código `MJT-AAAA-NNNNNN`.
+- [x] **`M06 · Lista de coletas`**: Histórico mobile com busca por código `MJT-AAAA-NNNNNN` implementado em [`collections-list-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-lifecycle/ui/collections-list-page.tsx) e rota [`app/(protected)/coletas/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/page.tsx).
 - [x] **`M07 · Responsável e signatário`**: Cadastro e confirmação de responsável em [`responsible-signatory-card.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-drafts/ui/responsible-signatory-card.tsx).
 - [x] **`M08 · Editar item`**: Modal de modificação de item individual em [`edit-item-modal.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-drafts/ui/edit-item-modal.tsx).
-- [ ] **`M09 · Documentos`**: Histórico de recibos e QR Code.
-- [ ] **`M10 · Documento`**: Visualizador mobile do PDF imutável.
-- [ ] **`M11 · Configurações`**: Ajustes de perfil do coletor.
+- [x] **`M09 · Documentos`**: Histórico de recibos, QR Code e compartilhamento WhatsApp em [`collection-documents-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-documents/ui/collection-documents-page.tsx).
+- [x] **`M10 · Documento`**: Visualizador mobile do PDF imutável em [`document-viewer-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-documents/ui/document-viewer-page.tsx) e rota [`app/(protected)/coletas/[id]/documentos/[docId]/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/documentos/%5BdocId%5D/page.tsx).
+- [x] **`M11 · Configurações`**: Perfil do coletor e indicador PWA em [`collector-profile-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/company-settings/ui/collector-profile-page.tsx) e rota [`app/(protected)/configuracoes/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/configuracoes/page.tsx).
 
 ---
 
