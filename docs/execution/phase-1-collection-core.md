@@ -6,7 +6,36 @@ Permitir que a administradora/coletora da MJT crie, finalize e consulte uma cole
 
 ## Estado da Fase 1A
 
-O nucleo tecnico foi implementado localmente: migration aditiva, RLS, Storage privado, contratos HTTP, comandos transacionais, infraestrutura de documento e testes de contrato. A migration ainda nao foi aplicada ao Supabase remoto porque o projeto nao esta vinculado nesta maquina; a aplicacao deve ser feita manualmente apos revisao e `supabase db push --dry-run` em ambiente controlado.
+O nucleo tecnico foi implementado localmente e aplicado ao MVP em 20/08/2026, sem dados de negocio: a migration core `20260815090000_phase_1a_collection_core.sql` foi aplicada apos `supabase db push --dry-run`, seguida da migration aditiva de hardening de ACL `20260820225129_phase_1a_security_acl_hardening.sql`. As tabelas novas permanecem vazias nesta execucao. Nenhum outro projeto Supabase foi tocado.
+
+O hardening remoto confirmou que as RPCs de aplicacao so podem ser executadas por
+`authenticated`, a verificacao publica permanece disponivel para `anon` e
+`authenticated`, e as rotinas de cleanup ficam restritas a `service_role`.
+Os advisors ainda exibem avisos esperados para funcoes `SECURITY DEFINER` que
+precisam ser chamadas pela aplicacao, os avisos informativos das tabelas
+RPC-only sem policy e a protecao de senha vazada do Auth, que e uma configuracao
+independente da Fase 1A.
+
+### Gates reais do Supabase — ADIADOS
+
+Os testes abaixo exigem um projeto Supabase isolado, identidades sinteticas e
+Storage privado separado. Esse ambiente nao esta disponivel nesta execucao;
+portanto, nenhum deles foi executado e a ausencia de evidencia remota nao deve
+ser interpretada como aprovacao:
+
+- **ADIADO — RLS entre organizacoes:** leitura, alteracao, referencia, upload e
+  download cruzados entre duas organizacoes, incluindo acesso anonimo.
+- **ADIADO — concorrencia PostgreSQL:** autosave, mutacoes de itens, uploads e
+  duas finalizacoes simultaneas sob `FOR UPDATE` e `row_version`.
+- **ADIADO — Storage privado:** ilegibilidade de objetos pendentes, acesso
+  somente apos confirmacao e negacao de downloads por identidade/organizacao.
+- **ADIADO — cleanup real:** expiracao/cancelamento de intents, remocao do
+  objeto privado e confirmacao idempotente sem apagar intent confirmado.
+
+Os testes locais de contrato e mocks verificam apenas a presenca dos contratos
+necessarios. Eles nao substituem esses gates remotos. A migration foi aplicada
+por decisao explicita do humano, mas os quatro gates reais permanecem adiados e
+nao constituem aprovacao de concorrencia, RLS ou Storage em execucao real.
 
 A Fase 1 continua em andamento. Telas baseadas no Figma, template visual do PDF e pagina publica de verificacao/QR permanecem fora da 1A e bloqueiam a conclusao integral da fase.
 

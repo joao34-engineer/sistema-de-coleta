@@ -28,6 +28,7 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | TypeScript e contratos | [typescript.md](typescript.md) |
 | Supabase, migrations, RLS e Storage | [supabase.md](supabase.md) |
 | Seguranca, privacidade e evidencias | [security.md](security.md) |
+| Contratos HTTP da Fase 1A | [http-api.md](http-api.md) |
 | Clean code e fronteiras | [coding-standards.md](coding-standards.md) |
 | Testes e validacao | [testing.md](testing.md) |
 | Decisoes de arquitetura | [decisions/](decisions/) |

@@ -13,6 +13,12 @@ const bootstrapEnvironmentSchema = publicEnvironmentSchema.extend({
   BOOTSTRAP_CONFIRM_PROJECT_REF: z.string().min(1).optional(),
 });
 
+const serviceEnvironmentSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  SUPABASE_SECRET_KEY: z.string().min(1),
+  SUPABASE_CONFIRM_PROJECT_REF: z.string().min(1),
+});
+
 type PublicEnvironment = Readonly<{
   appUrl: string | undefined;
   supabaseUrl: string;
@@ -25,6 +31,12 @@ export type BootstrapEnvironment = Readonly<{
   adminEmail: string;
   adminPassword: string | undefined;
   confirmProjectRef: string | undefined;
+}>;
+
+export type ServiceEnvironment = Readonly<{
+  supabaseUrl: string;
+  supabaseSecretKey: string;
+  confirmProjectRef: string;
 }>;
 
 export function getPublicEnvironment(): PublicEnvironment {
@@ -73,5 +85,20 @@ export function getBootstrapEnvironment(): BootstrapEnvironment {
     adminEmail: parsed.data.BOOTSTRAP_ADMIN_EMAIL,
     adminPassword: parsed.data.BOOTSTRAP_ADMIN_PASSWORD || undefined,
     confirmProjectRef: parsed.data.BOOTSTRAP_CONFIRM_PROJECT_REF,
+  };
+}
+
+export function getServiceEnvironment(): ServiceEnvironment {
+  const parsed = serviceEnvironmentSchema.safeParse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env["NEXT_PUBLIC_SUPABASE_URL"],
+    SUPABASE_SECRET_KEY: process.env["SUPABASE_SECRET_KEY"],
+    SUPABASE_CONFIRM_PROJECT_REF: process.env["SUPABASE_CONFIRM_PROJECT_REF"],
+  });
+
+  if (!parsed.success) throw new Error("Variáveis de serviço Supabase ausentes ou inválidas.");
+  return {
+    supabaseUrl: parsed.data.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseSecretKey: parsed.data.SUPABASE_SECRET_KEY,
+    confirmProjectRef: parsed.data.SUPABASE_CONFIRM_PROJECT_REF,
   };
 }

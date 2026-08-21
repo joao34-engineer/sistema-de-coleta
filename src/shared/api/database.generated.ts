@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -141,6 +141,7 @@ export type Database = {
           created_at: string
           district: string | null
           legal_name: string | null
+          logo_asset_id?: string | null
           logo_path: string | null
           organization_id: number
           phone: string | null
@@ -162,6 +163,7 @@ export type Database = {
           created_at?: string
           district?: string | null
           legal_name?: string | null
+          logo_asset_id?: string | null
           logo_path?: string | null
           organization_id: number
           phone?: string | null
@@ -183,6 +185,7 @@ export type Database = {
           created_at?: string
           district?: string | null
           legal_name?: string | null
+          logo_asset_id?: string | null
           logo_path?: string | null
           organization_id?: number
           phone?: string | null

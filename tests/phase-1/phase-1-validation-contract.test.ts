@@ -43,16 +43,18 @@ describe("Fase 1A validation contract", () => {
     expect(customerSearchSchema.safeParse({ limit: 51 }).success).toBe(false);
   });
 
-  it("accepts CPF or CNPJ from the signatory and requires a non-negative version", () => {
+  it("accepts CPF or CNPJ from the signatory and requires a positive version", () => {
     const input = {
       signerName: "Responsavel sintetico",
       acceptanceText: "Aceito os termos desta coleta sintetica.",
-      expectedVersion: 0,
+      expectedVersion: 1,
     };
 
     expect(signatureInputSchema.safeParse({ ...input, signerTaxId: "529.982.247-25" }).success).toBe(true);
     expect(signatureInputSchema.safeParse({ ...input, signerTaxId: "04.252.011/0001-10" }).success).toBe(true);
+    expect(signatureInputSchema.safeParse({ ...input, expectedVersion: 0, signerTaxId: "529.982.247-25" }).success).toBe(false);
     expect(criticalCommandSchema.safeParse({ expectedVersion: -1 }).success).toBe(false);
+    expect(criticalCommandSchema.safeParse({ expectedVersion: 0 }).success).toBe(false);
   });
 
   it("rejects a spoofed MIME type and hashes a valid evidence image", async () => {
@@ -63,7 +65,7 @@ describe("Fase 1A validation contract", () => {
     await expect(validateEvidenceFile(valid)).resolves.toMatchObject({
       valid: true,
       extension: "png",
-      sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      sha256: "4c4b6a3be1314ab86138bef4314dde022e600960d8689a2c8f8631802d20dab6",
     });
   });
 

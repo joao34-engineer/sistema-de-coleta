@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { saveCollectionSignature, signatureInputSchema, toLifecycleApiError, validatePngSignature } from "@/_pages/collection-lifecycle/index.server";
 import { apiErrorResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
+import { getRequestId } from "@/shared/lib/server-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,8 @@ export async function PUT(request: Request, context: RouteContext<"/api/collecti
   const file = formData.get("signature");
   if (!parsed.success || !validatePngSignature(file)) return validationErrorResponse();
   try {
-    return noStoreJson(await saveCollectionSignature(id, parsed.data, file));
+    return noStoreJson(await saveCollectionSignature(id, parsed.data, file, getRequestId(request)));
   } catch (error: unknown) {
-    return apiErrorResponse(toLifecycleApiError(error));
+    return apiErrorResponse(toLifecycleApiError(error), getRequestId(request), "save_collection_signature");
   }
 }

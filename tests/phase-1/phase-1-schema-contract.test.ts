@@ -18,6 +18,31 @@ function migrationSql(): string {
   return readFileSync(phaseOneMigrationPath, "utf8").toLowerCase();
 }
 
+type StoragePolicy = Readonly<{ name: string; operation: string; statement: string }>;
+
+function storageObjectPolicies(sql: string): StoragePolicy[] {
+  return [...sql.matchAll(/create\s+policy\b[\s\S]*?;/gi)].flatMap((match) => {
+    const statement = match[0];
+    if (!/\bon\s+storage\.objects\b/i.test(statement)) return [];
+
+    const name = statement.match(/create\s+policy\s+([a-z0-9_]+)/i)?.[1];
+    const operation = statement.match(/\bfor\s+(all|select|insert|update|delete)\b/i)?.[1]?.toLowerCase();
+    if (!name || !operation) return [];
+    return [{ name, operation, statement }];
+  });
+}
+
+function policyRoles(statement: string): string[] {
+  const roles = statement.match(/\bto\s+([a-z0-9_,\s]+?)(?=\s+(?:using|with\s+check)|\s*;)/i)?.[1];
+  return roles ? roles.split(",").map((role) => role.trim()).filter(Boolean) : [];
+}
+
+function bucketIds(statement: string): string[] {
+  return [...statement.matchAll(/\bbucket_id\s*=\s*'([^']+)'/gi)]
+    .map((match) => match[1])
+    .filter((bucket): bucket is string => typeof bucket === "string");
+}
+
 describe.skipIf(!phaseOneMigrationPath)("Fase 1A migration contract", () => {
   it("creates every operational entity as an additive, organization-scoped model", () => {
     const sql = migrationSql();
@@ -56,8 +81,35 @@ describe.skipIf(!phaseOneMigrationPath)("Fase 1A migration contract", () => {
       expect(sql).not.toMatch(new RegExp(`create policy[^;]+on public\\.${table}[^;]+for delete`, "i"));
     }
 
-    expect(sql).toMatch(/create policy[\s\S]*?on storage\.objects[\s\S]*?(evidence|signature)/);
-    expect(sql).not.toMatch(/create policy[^;]+on storage\.objects[^;]+for delete/i);
+    const deleteCapablePolicies = storageObjectPolicies(sql).filter(
+      ({ operation }) => operation === "delete" || operation === "all",
+    );
+    const expectedDeletePolicies = [
+      { name: "collection_evidences_delete_unconfirmed_intent", bucket: "collection-evidences" },
+      { name: "collection_signatures_delete_unconfirmed_intent", bucket: "collection-signatures" },
+    ];
+
+    expect(deleteCapablePolicies.map(({ name }) => name).sort()).toEqual(
+      expectedDeletePolicies.map(({ name }) => name).sort(),
+    );
+
+    for (const expectedPolicy of expectedDeletePolicies) {
+      const policy = deleteCapablePolicies.find(({ name }) => name === expectedPolicy.name);
+      expect(policy).toBeDefined();
+      if (!policy) continue;
+
+      expect(policy.operation).toBe("delete");
+      expect(policyRoles(policy.statement)).toEqual(["authenticated"]);
+      expect(bucketIds(policy.statement)).toEqual([expectedPolicy.bucket]);
+      expect(policy.statement).toContain("private.current_user_can_delete_upload_intent_path");
+      expect(policy.statement).toMatch(/\busing\s*\(/i);
+      expect(policy.statement).not.toMatch(/\b(?:public|anon)\b/i);
+      expect(policy.statement).not.toMatch(/collection-documents/i);
+    }
+
+    expect(sql).toMatch(
+      /create(?:\s+or\s+replace)?\s+function\s+private\.current_user_can_delete_upload_intent_path[\s\S]*?intent_record\.status\s+in\s*\(\s*'pending'\s*,\s*'canceled'\s*,\s*'expired'\s*\)/i,
+    );
   });
 
   it("hardens the transactional commands and official sequence", () => {

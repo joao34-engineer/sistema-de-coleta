@@ -8,7 +8,9 @@ import {
   requireAuthenticatedAdministrator,
 } from "@/shared/auth/require-admin";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
-import { validateLogoFile } from "@/shared/lib/file-validation";
+import { validateEvidenceFile, validateLogoFile, type LogoMimeType } from "@/shared/lib/file-validation";
+import { createOrReuseLogoAsset } from "./brand-assets.server";
+import { toIssuerSettingsRpcInput } from "../model/issuer-settings";
 import { companySettingsSchema } from "../model/schema";
 
 const readText = (formData: FormData, field: string): string => {
@@ -18,6 +20,20 @@ const readText = (formData: FormData, field: string): string => {
 
 function forbiddenState(message: string): CompanySettingsActionState {
   return { status: "error", code: "forbidden", message };
+}
+
+const companySettingsColumns = "legal_name,tax_id,phone,street,street_number,address_complement,district,city,state_code,postal_code,receipt_legal_text,signer_name,signer_title,logo_asset_id";
+
+async function publishIssuerProfileIfReady(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  input: Parameters<typeof toIssuerSettingsRpcInput>[0],
+  logoAssetId: string | null,
+): Promise<"published" | "incomplete" | "failed"> {
+  const issuerInput = toIssuerSettingsRpcInput(input, logoAssetId);
+  if (!issuerInput) return "incomplete";
+
+  const { error } = await supabase.rpc("save_company_issuer_settings", issuerInput);
+  return error ? "failed" : "published";
 }
 
 export async function updateCompanySettingsAction(_previousState: CompanySettingsActionState, formData: FormData): Promise<CompanySettingsActionState> {
@@ -85,9 +101,25 @@ export async function updateCompanySettingsAction(_previousState: CompanySetting
     return { status: "error", code: "unexpected_error", message: "Não foi possível salvar as configurações." };
   }
 
+  const { data: currentSettings, error: currentSettingsError } = await supabase
+    .from("organization_settings")
+    .select("logo_asset_id")
+    .eq("organization_id", administrator.organizationId)
+    .maybeSingle();
+  if (currentSettingsError || !currentSettings) {
+    return { status: "error", code: "unexpected_error", message: "Configurações salvas, mas não foi possível validar o perfil de emissão." };
+  }
+
+  const profileStatus = await publishIssuerProfileIfReady(supabase, parsed.data, currentSettings.logo_asset_id ?? null);
+  if (profileStatus === "failed") {
+    return { status: "error", code: "unexpected_error", message: "Configurações salvas, mas não foi possível atualizar o perfil de emissão." };
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/configuracoes/empresa");
-  return { status: "success", code: "success", message: "Configurações salvas." };
+  return profileStatus === "published"
+    ? { status: "success", code: "success", message: "Configurações e perfil de emissão salvos." }
+    : { status: "success", code: "success", message: "Configurações salvas. Complete os campos obrigatórios e envie o logo para habilitar a emissão." };
 }
 
 export async function uploadCompanyLogoAction(_previousState: CompanySettingsActionState, formData: FormData): Promise<CompanySettingsActionState> {
@@ -101,33 +133,56 @@ export async function uploadCompanyLogoAction(_previousState: CompanySettingsAct
     throw error;
   }
 
-  const validation = validateLogoFile(formData.get("logo"));
+  const logoValue = formData.get("logo");
+  const validation = validateLogoFile(logoValue);
   if (!validation.valid) return { status: "error", code: "upload_error", message: validation.message };
 
-  const file = formData.get("logo");
+  const file = logoValue;
   if (!(file instanceof File)) return { status: "error", code: "upload_error", message: "Arquivo inválido." };
 
+  const evidenceValidation = await validateEvidenceFile(file);
+  if (!evidenceValidation.valid) return { status: "error", code: "upload_error", message: evidenceValidation.message };
+
   const supabase = await createServerSupabaseClient();
-  const path = `${administrator.organizationId}/company-logo/${crypto.randomUUID()}.${validation.extension}`;
-  const { error: uploadError } = await supabase.storage.from("organization-assets").upload(path, file, {
-    contentType: file.type,
-    upsert: false,
+  const asset = await createOrReuseLogoAsset({
+    organizationId: administrator.organizationId,
+    actorUserId: administrator.userId,
+    file,
+    contentType: file.type as LogoMimeType,
+    extension: validation.extension,
+    sha256: evidenceValidation.sha256,
   });
+  if (!asset.ok) return { status: "error", code: "upload_error", message: "Não foi possível confirmar o logo institucional." };
 
-  if (uploadError) return { status: "error", code: "upload_error", message: "Não foi possível enviar o logo." };
-
-  const { data: updatedSettings, error: updateError } = await supabase
+  const { data: settings, error: settingsError } = await supabase
     .from("organization_settings")
-    .update({ logo_path: path, updated_by: administrator.userId })
+    .select(companySettingsColumns)
     .eq("organization_id", administrator.organizationId)
-    .select("organization_id")
     .maybeSingle();
-
-  if (updateError || !updatedSettings) {
-    return { status: "error", code: "upload_error", message: "Logo enviado, mas não foi possível vincular o arquivo." };
+  if (settingsError || !settings) {
+    return { status: "error", code: "upload_error", message: "Logo confirmado, mas não foi possível validar o perfil de emissão." };
   }
+
+  const profileStatus = await publishIssuerProfileIfReady(supabase, {
+    legalName: settings.legal_name,
+    taxId: settings.tax_id,
+    phone: settings.phone,
+    street: settings.street,
+    streetNumber: settings.street_number,
+    complement: settings.address_complement,
+    district: settings.district,
+    city: settings.city,
+    stateCode: settings.state_code,
+    postalCode: settings.postal_code,
+    receiptLegalText: settings.receipt_legal_text,
+    signerName: settings.signer_name,
+    signerTitle: settings.signer_title,
+  }, asset.assetId);
+  if (profileStatus === "failed") return { status: "error", code: "upload_error", message: "Logo confirmado, mas não foi possível atualizar o perfil de emissão." };
 
   revalidatePath("/dashboard");
   revalidatePath("/configuracoes/empresa");
-  return { status: "success", code: "success", message: "Logo enviado." };
+  return profileStatus === "published"
+    ? { status: "success", code: "success", message: asset.reused ? "Logo reutilizado e perfil de emissão atualizado." : "Logo enviado e perfil de emissão atualizado." }
+    : { status: "success", code: "success", message: asset.reused ? "Logo institucional já confirmado." : "Logo institucional confirmado. Complete os demais campos para habilitar a emissão." };
 }

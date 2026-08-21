@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mapCompanySettingsRow } from "@/shared/db/company-settings";
 import type { OrganizationSettingsRow } from "@/shared/api/database.types";
+import { toIssuerSettingsRpcInput } from "@/_pages/company-settings/model/issuer-settings";
 
 const row: OrganizationSettingsRow = {
   organization_id: 1,
@@ -48,6 +49,26 @@ describe("company settings mapper", () => {
       logoPath: null,
       setupStatus: "pending",
       updatedAt: "2026-08-14T00:00:00.000Z",
+    });
+  });
+});
+
+describe("issuer profile settings", () => {
+  it("does not publish an issuer profile while a required institutional field is absent", () => {
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "04252011000110", phone: "11999999999", street: "Rua MJT", streetNumber: "10", complement: null,
+      district: null, city: "São Paulo", stateCode: "SP", postalCode: "01001000", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toBeNull();
+  });
+
+  it("maps only complete settings to the authenticated issuer RPC contract", () => {
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "04252011000110", phone: "11999999999", street: "Rua MJT", streetNumber: "10", complement: null,
+      district: "Centro", city: "São Paulo", stateCode: "SP", postalCode: "01001000", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toEqual({
+      p_legal_name: "MJT Serviços Ltda.", p_tax_id: "04252011000110", p_phone: "11999999999", p_street: "Rua MJT", p_street_number: "10", p_district: "Centro",
+      p_city: "São Paulo", p_state_code: "SP", p_postal_code: "01001000", p_receipt_legal_text: "Texto do recibo", p_signer_name: "João Marcelo", p_signer_title: "Administrador",
+      p_logo_asset_id: "66666666-6666-4666-8666-666666666666",
     });
   });
 });
