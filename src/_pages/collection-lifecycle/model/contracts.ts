@@ -5,7 +5,22 @@ import { collectionCursorSchema } from "./pagination";
 const cursorSchema = collectionCursorSchema;
 
 const uuidSchema = z.uuid();
-const collectionStatusSchema = z.enum(["draft", "collected", "canceled"]);
+export const collectionStatusSchema = z.enum([
+  "draft",
+  "collected",
+  "canceled",
+  "in_workshop",
+  "in_budget",
+  "awaiting_approval",
+  "approved",
+  "in_service",
+  "ready",
+  "invoiced",
+  "partial_delivery",
+  "delivered",
+  "rejected",
+  "reopened",
+]);
 const evidenceMimeTypeSchema = z.enum(["image/png", "image/jpeg", "image/webp"]);
 
 function normalizeCollectionEvidence(value: unknown): unknown {

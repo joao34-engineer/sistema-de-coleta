@@ -6,9 +6,9 @@ Este documento é a **fonte única de rastreabilidade de execução** para o des
 
 ## 📌 Status Geral do Projeto
 
-- **Sessão de Origem**: `86199939-3149-4ff1-bb8f-d4be3110da92`
+- **Sessão de Origem**: `1d9f67e7-1d63-472e-be82-d982838fd0b1`
 - **Repositório**: `https://github.com/joao34-engineer/sistema-de-coleta.git`
-- **Validação de Compilação**: 🟢 `npm run typecheck` (0 erros) | 🟢 `npm run lint` (0 erros) | 🟢 61 testes passando
+- **Validação de Compilação**: 🟢 `npm run typecheck` (0 erros) | 🟢 `npm run lint` (0 avisos / 0 erros) | 🟢 86 testes passando
 - **Governança**: Zero `any` (cumprimento estrito de `AGENTS.md`), sem arquivos duplicados ou placeholders.
 
 ---
@@ -34,7 +34,7 @@ Este documento é a **fonte única de rastreabilidade de execução** para o des
 ### 🟢 FASE 2: Componentes Base do Design System (`src/shared/ui/`) (CONCLUÍDO)
 - [x] **`button.tsx`**: Variantes `primary` (`#4c916f`), `secondary`, `ghost`, `danger`, estado `isLoading` e touch target mínimo de 44px.
 - [x] **`input.tsx`**: Campos de entrada com rótulos, helper text e validação de erro.
-- [x] **`badge.tsx`**: Status chips do Figma (`collected`, `draft`, `canceled`, `in_service`, `ready`).
+- [x] **`badge.tsx`**: Status chips do Figma (`collected`, `draft`, `canceled`, `in_service`, `ready`, `in_workshop`, `in_budget`, `awaiting_approval`, `approved`, `invoiced`, `partial_delivery`, `delivered`, `rejected`, `reopened`).
 - [x] **`card.tsx`**: Estruturas de superfícies (`Card`, `CardHeader`, `CardContent`, `CardFooter`) estilizadas.
 - [x] **`signature-pad.tsx`**: Canvas HTML5 responsivo com suporte touch para captura de assinatura do aceite.
 - [x] **Validação**: `npm run typecheck` e `npm run lint` **0 erros**.
@@ -55,17 +55,17 @@ Este documento é a **fonte única de rastreabilidade de execução** para o des
 
 ---
 
-### ⚪ FASE 4: Telas Mobile da Operação (`Page: 11 — Mobile / Operação`) (PENDENTE)
-- [ ] **`M12 · Login`**: Tela de login mobile (`Page: 09 / M12`).
-- [ ] **`O01 · Detalhe operacional`**: Visão operacional da coleta e timeline.
-- [ ] **`O02 · Entrada na oficina`**: Registro de entrada na oficina MJT.
-- [ ] **`O03 · Orçamento`**: Formulário de orçamento técnico.
-- [ ] **`M13 · Aprovação`**: Tela de aprovação do cliente/gestor.
-- [ ] **`M14 · Serviço`**: Acompanhamento da manutenção.
-- [ ] **`M15 · Faturamento`**: Registro manual/fiscal de NF-e.
-- [ ] **`O04 · Entrega ao cliente`**: Registro de entrega do equipamento.
-- [ ] **`O05 · Cancelar ou reabrir`**: Fluxo auditável de cancelamento/reabertura.
-- [ ] **`M16 · Ciclo do item`**: Timeline do ciclo de vida do item.
+### 🟢 FASE 4: Telas Mobile da Operação / Oficina (`Page: 11 — Mobile / Operação`) (CONCLUÍDO)
+- [x] **`M12 · Login`**: Redesign polido da tela de login mobile (`src/_pages/login/ui/login-page.tsx` e `login-form.tsx`).
+- [x] **`O01 · Detalhe operacional`**: Visão detalhada da coleta operacional e timeline ([`operational-detail-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/operational-detail-page.tsx) e rota [`app/(protected)/coletas/[id]/operacao/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/operacao/page.tsx)).
+- [x] **`O02 · Entrada na oficina`**: Checklist de recebimento item por item na oficina MJT com assinatura ([`workshop-entry-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/workshop-entry-page.tsx) e rota [`app/(protected)/coletas/[id]/oficina/entrada/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/oficina/entrada/page.tsx)).
+- [x] **`O03 · Orçamento`**: Formulário de orçamento técnico em BRL ([`budget-form-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/budget-form-page.tsx) e rota [`app/(protected)/coletas/[id]/orcamento/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/orcamento/page.tsx)).
+- [x] **`M13 · Aprovação`**: Interface de decisão do cliente/gestor com justificativa obrigatória para rejeição ([`budget-approval-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/budget-approval-page.tsx) e rota [`app/(protected)/coletas/[id]/aprovacao/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/aprovacao/page.tsx)).
+- [x] **`M14 · Serviço`**: Acompanhamento dos reparos na oficina ([`service-progress-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/service-progress-page.tsx) e rota [`app/(protected)/coletas/[id]/servico/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/servico/page.tsx)).
+- [x] **`M15 · Faturamento`**: Registro fiscal de referência manual de NF-e ([`billing-reference-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/billing-reference-page.tsx) e rota [`app/(protected)/coletas/[id]/faturamento/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/faturamento/page.tsx)).
+- [x] **`O04 · Entrega ao cliente`**: Registro de entrega com suporte a entregas parciais e assinatura ([`customer-delivery-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/customer-delivery-page.tsx) e rota [`app/(protected)/coletas/[id]/entrega/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/entrega/page.tsx)).
+- [x] **`O05 · Cancelar ou reabrir`**: Modal auditado de cancelamento e reabertura ([`cancel-reopen-modal.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/cancel-reopen-modal.tsx)).
+- [x] **`M16 · Ciclo do item`**: Timeline do ciclo de vida individual do equipamento ([`item-lifecycle-page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/src/_pages/collection-operations/ui/item-lifecycle-page.tsx) e rota [`app/(protected)/coletas/[id]/itens/[itemId]/ciclo/page.tsx`](file:///c:/Users/joao%20marcelo/Documents/afiliado-shopee/sistema-coleta/app/%28protected%29/coletas/%5Bid%5D/itens/%5BitemId%5D/ciclo/page.tsx)).
 
 ---
 

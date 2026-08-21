@@ -16,8 +16,8 @@ describe("CollectionDocumentsPage", () => {
     }]} />);
 
     expect(screen.getByRole("heading", { name: "Versão 2" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Baixar PDF" })).toHaveAttribute("href", expect.stringContaining("artifact=pdf"));
-    expect(screen.queryByRole("link", { name: "Baixar QR" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Baixar PDF/i })).toHaveAttribute("href", expect.stringContaining("artifact=pdf"));
+    expect(screen.queryByRole("link", { name: /Baixar QR/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Criar link seguro" })).toBeInTheDocument();
   });
 
@@ -26,4 +26,3 @@ describe("CollectionDocumentsPage", () => {
     expect(screen.getByText("Nenhum documento disponível para esta coleta.")).toBeInTheDocument();
   });
 });
-
