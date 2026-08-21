@@ -1,15 +1,120 @@
 import Link from "next/link";
+import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import { signOutAction } from "@/shared/auth/index.server";
+import { Button } from "@/shared/ui/button";
+import { Card, CardHeader, CardFooter } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
 
 type Props = Readonly<{ administrator: AuthenticatedAdministrator; settings: CompanySettingsDTO }>;
 
 export function DashboardPage({ administrator, settings }: Props) {
   const greeting = administrator.fullName || administrator.email;
-  return <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8"><header className="mb-8 flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-wide text-primary">{administrator.organizationName}</p><h1 className="mt-1 text-3xl font-semibold">Olá, {greeting}</h1><p className="mt-2 text-sm text-muted">Fundação do Sistema de Coleta MJT</p></div><form action={signOutAction}><button type="submit" className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold">Sair</button></form></header><div className="grid gap-5 md:grid-cols-2"><section className="rounded-medium border border-border bg-surface p-6 shadow-surface"><h2 className="text-lg font-semibold">Configuração institucional</h2><p className="mt-2 text-sm text-muted">{settings.setupStatus === "complete" ? "Os dados essenciais estão completos." : "Configuração institucional pendente."}</p><Link href="/configuracoes/empresa" className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">Abrir configurações</Link></section><section className="rounded-medium border border-border bg-surface p-6 shadow-surface"><h2 className="text-lg font-semibold">Coletas</h2><p className="mt-2 text-sm text-muted">A coleta ainda não está disponível na Fase 0. Clientes, itens, fotos e recibos serão habilitados nas próximas fases.</p></section></div></main>;
+  const isSetupComplete = settings.setupStatus === "complete";
+
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-lg px-4 py-6">
+      {/* Mobile Top Header (MJT Header) */}
+      <header className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
+            {administrator.organizationName}
+          </span>
+          <h1 className="mt-0.5 text-2xl font-bold text-[var(--color-text)]">
+            Olá, {greeting}
+          </h1>
+        </div>
+        <form action={signOutAction}>
+          <Button variant="secondary" size="sm" type="submit">
+            Sair
+          </Button>
+        </form>
+      </header>
+
+      <div className="flex flex-col gap-5">
+        {/* Ação Principal Mobile: Nova Coleta */}
+        <Card className="bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-surface-green)]">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <Badge status="collected">Sistema Ativo</Badge>
+              <span className="text-xs text-[var(--color-muted)]">Coletor Mobile</span>
+            </div>
+            <h2 className="mt-2 text-xl font-bold text-[var(--color-text)]">
+              Iniciar Nova Coleta
+            </h2>
+            <p className="text-xs text-[var(--color-muted)]">
+              Registre a retirada de equipamentos com autosave e assinatura na tela.
+            </p>
+          </CardHeader>
+          <CardFooter className="pt-2">
+            <Link href={"/coletas/nova" as Route} className="w-full">
+              <Button variant="primary" className="w-full text-sm">
+                + Nova Coleta
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        {/* Status de Configuração Institucional */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                Perfil Emissor MJT
+              </h3>
+              <Badge status={isSetupComplete ? "ready" : "draft"}>
+                {isSetupComplete ? "Pronto para emissão" : "Configuração pendente"}
+              </Badge>
+            </div>
+            <p className="text-xs text-[var(--color-muted)]">
+              {isSetupComplete
+                ? "Dados jurídicos e logo institucional confirmados para guias."
+                : "Complete o endereço e logo para habilitar a emissão de recibos."}
+            </p>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/configuracoes/empresa" className="w-full">
+              <Button variant="secondary" size="sm" className="w-full">
+                Configurações da Empresa
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        {/* Acessos Rápidos Mobile */}
+        <div className="grid grid-cols-2 gap-3">
+          <Link href={"/coletas" as Route}>
+            <Card className="flex flex-col items-center justify-center py-5 text-center transition-colors hover:border-[var(--color-primary)]">
+              <span className="text-2xl">📋</span>
+              <span className="mt-2 text-xs font-semibold text-[var(--color-text)]">
+                Lista de Coletas
+              </span>
+            </Card>
+          </Link>
+          <Link href={"/coletas/rascunhos" as Route}>
+            <Card className="flex flex-col items-center justify-center py-5 text-center transition-colors hover:border-[var(--color-primary)]">
+              <span className="text-2xl">⏳</span>
+              <span className="mt-2 text-xs font-semibold text-[var(--color-text)]">
+                Rascunhos Em Aberto
+              </span>
+            </Card>
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
 }
 
 export function AccessDeniedPage() {
-  return <main className="flex min-h-screen items-center justify-center px-4"><section className="max-w-md rounded-medium border border-border bg-surface p-7 text-center shadow-surface"><h1 className="text-2xl font-semibold">Acesso não autorizado</h1><p className="mt-3 text-sm text-muted">Esta conta não possui um vínculo administrativo ativo com a MJT.</p></section></main>;
+  return (
+    <main className="flex min-h-screen items-center justify-center px-4">
+      <Card className="max-w-md p-6 text-center">
+        <h1 className="text-xl font-bold text-[var(--color-text)]">Acesso não autorizado</h1>
+        <p className="mt-2 text-xs text-[var(--color-muted)]">
+          Esta conta não possui um vínculo administrativo ativo com a MJT.
+        </p>
+      </Card>
+    </main>
+  );
 }

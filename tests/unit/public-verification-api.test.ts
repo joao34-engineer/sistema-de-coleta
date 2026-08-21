@@ -1,36 +1,38 @@
 import { describe, expect, it, vi } from "vitest";
 
 const verificationToken = "a".repeat(64);
-const testState = vi.hoisted(() => ({
-  verification: {
-    authentic: true,
-    officialCode: "MJT-2026-000123",
-    issuedAt: "2026-08-20T15:30:00.000Z",
-    status: "collected" as const,
-    organization: { name: "MJT Oficina" },
-    documentVersion: 1,
-  },
-  rateFailure: false,
-}));
-
-class TestRateLimitExceededError extends Error {
-  readonly retryAfterSeconds: number;
-
-  constructor(retryAfterSeconds: number) {
-    super("document_rate_limit_exceeded");
-    this.retryAfterSeconds = retryAfterSeconds;
+const testState = vi.hoisted(() => {
+  class TestRateLimitExceededError extends Error {
+    readonly retryAfterSeconds: number;
+    constructor(retryAfterSeconds: number) {
+      super("document_rate_limit_exceeded");
+      this.retryAfterSeconds = retryAfterSeconds;
+    }
   }
-}
+
+  return {
+    verification: {
+      authentic: true,
+      officialCode: "MJT-2026-000123",
+      issuedAt: "2026-08-20T15:30:00.000Z",
+      status: "collected" as const,
+      organization: { name: "MJT Oficina" },
+      documentVersion: 1,
+    },
+    rateFailure: false,
+    TestRateLimitExceededError,
+  };
+});
 
 vi.mock("@/_pages/collection-documents/index.server", () => ({
   verifyCollectionDocument: async () => testState.verification,
 }));
 
 vi.mock("@/_pages/collection-documents/api/delivery/index.server", () => ({
-  DocumentRateLimitExceededError: TestRateLimitExceededError,
+  DocumentRateLimitExceededError: testState.TestRateLimitExceededError,
   DocumentRateLimitUnavailableError: class TestRateLimitUnavailableError extends Error {},
   enforcePublicVerificationRateLimit: async () => {
-    if (testState.rateFailure) throw new TestRateLimitExceededError(42);
+    if (testState.rateFailure) throw new testState.TestRateLimitExceededError(42);
   },
 }));
 

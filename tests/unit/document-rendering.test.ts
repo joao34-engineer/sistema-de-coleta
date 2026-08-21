@@ -87,7 +87,7 @@ describe("collection document rendering", () => {
     const second = await renderCollectionDocument(input);
     expect(first.snapshotHash).toBe(second.snapshotHash);
     expect(Array.from(first.pdfBytes)).toEqual(Array.from(second.pdfBytes));
-    expect(first.pdfBytes.slice(0, 8)).toEqual(new TextEncoder().encode("%PDF-1.4"));
+    expect(new TextDecoder().decode(first.pdfBytes.slice(0, 8))).toBe("%PDF-1.4");
     expect(first.pdfSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(first.verificationUrl).toContain("/verificar/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
     expect(first.qrPayload).not.toContain(snapshot.customer.legal_name);
