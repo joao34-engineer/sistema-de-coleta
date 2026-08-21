@@ -10,9 +10,9 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} className="flex flex-col gap-4" noValidate>
       <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="mb-1.5 block text-[12px] font-semibold text-[var(--color-muted)]">
           E-mail Corporativo
         </label>
         <input
@@ -21,20 +21,20 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           required
-          placeholder="coletor@mjt.com.br"
-          className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-surface px-3.5 text-sm transition-colors focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+          placeholder="voce@mjt.com.br"
+          className="h-[48px] w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[14px] text-[var(--color-text)] placeholder-[var(--color-border-subdued)] transition-all focus:border-[var(--color-primary)] focus:outline-none"
           aria-invalid={Boolean(state.fieldErrors?.email)}
           aria-describedby={state.fieldErrors?.email ? "email-error" : undefined}
         />
         {state.fieldErrors?.email ? (
-          <p id="email-error" className="mt-1 text-xs text-red-600 font-medium">
+          <p id="email-error" className="mt-1 text-[11px] font-medium text-[var(--color-danger)]">
             {state.fieldErrors.email}
           </p>
         ) : null}
       </div>
 
       <div>
-        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="mb-1.5 block text-[12px] font-semibold text-[var(--color-muted)]">
           Senha
         </label>
         <div className="relative">
@@ -45,40 +45,40 @@ export function LoginForm() {
             autoComplete="current-password"
             required
             placeholder="••••••••"
-            className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-surface pl-3.5 pr-12 text-sm transition-colors focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+            className="h-[48px] w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] pl-3.5 pr-12 text-[14px] text-[var(--color-text)] placeholder-[var(--color-border-subdued)] transition-all focus:border-[var(--color-primary)] focus:outline-none"
             aria-invalid={Boolean(state.fieldErrors?.password)}
             aria-describedby={state.fieldErrors?.password ? "password-error" : undefined}
           />
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[8px] px-2 py-1 text-[11px] font-semibold text-[var(--color-muted)] hover:bg-[var(--color-surface-neutral)]"
             aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
           >
             {showPassword ? "Ocultar" : "Exibir"}
           </button>
         </div>
         {state.fieldErrors?.password ? (
-          <p id="password-error" className="mt-1 text-xs text-red-600 font-medium">
+          <p id="password-error" className="mt-1 text-[11px] font-medium text-[var(--color-danger)]">
             {state.fieldErrors.password}
           </p>
         ) : null}
       </div>
 
       <div className="flex items-center justify-between pt-1">
-        <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+        <label className="flex items-center gap-2 text-[12px] text-[var(--color-muted)] cursor-pointer">
           <input
             type="checkbox"
             name="remember"
             defaultChecked
-            className="h-4 w-4 rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
           />
           Manter conectado neste dispositivo
         </label>
       </div>
 
       {state.message ? (
-        <div role="alert" className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium">
+        <div role="alert" className="rounded-[12px] bg-[#fdf2f1] border border-[#fca5a5] p-3 text-[12px] text-[#ba5b52] font-medium">
           {state.message}
         </div>
       ) : null}
@@ -87,7 +87,7 @@ export function LoginForm() {
         type="submit"
         variant="primary"
         isLoading={pending}
-        className="h-11 w-full rounded-xl font-semibold text-sm shadow-sm"
+        className="mt-2"
       >
         {pending ? "Autenticando..." : "Entrar no Sistema"}
       </Button>

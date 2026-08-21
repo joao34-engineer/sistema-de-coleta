@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 
 export interface BillingReferenceProps {
   collectionId: string;
@@ -61,123 +65,109 @@ export function BillingReferencePage({
 
   if (success) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center space-y-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-2xl font-bold border border-sky-200">
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] px-4 py-12 text-center flex flex-col items-center justify-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef8f2] text-[#31674c] text-2xl font-bold border border-[#4c916f]">
           🧾
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Referência Fiscal Registrada!</h1>
-        <p className="text-xs text-[var(--color-muted)]">
+        <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-text)]">
+          Referência Fiscal Registrada!
+        </h2>
+        <p className="mt-1 text-[13px] text-[var(--color-muted)]">
           NF-e nº {number} Série {series} vinculada à coleta {officialCode ?? collectionId}.
         </p>
-        <Link href={`/coletas/${collectionId}/operacao`}>
-          <Button variant="primary" className="w-full text-xs h-11">
-            Voltar para Painel Operacional
-          </Button>
-        </Link>
-      </div>
+        <div className="mt-6 w-full">
+          <Link href={`/coletas/${collectionId}/operacao` as Route}>
+            <Button variant="primary" size="md">
+              Voltar ao Painel Operacional
+            </Button>
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 py-6 pb-24">
-      <div>
-        <Link href={`/coletas/${collectionId}/operacao`} className="text-xs text-[var(--color-primary)] font-medium hover:underline">
-          ← Voltar para Painel Operacional
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">Faturamento & Referência NF-e</h1>
-        <p className="text-xs text-[var(--color-muted)]">
-          Registro da Nota Fiscal emitida para a coleta {officialCode ?? collectionId}
-        </p>
-      </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Faturamento"
+        subtitle="Referência fiscal"
+        backHref={`/coletas/${collectionId}/operacao` as Route}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
         <input type="hidden" name="expectedVersion" value={expectedVersion} />
+
+        <div>
+          <h2 className="text-[22px] font-semibold text-[var(--color-text)]">
+            Emitir NF-e ou vincular.
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Guia {officialCode ?? collectionId}
+          </p>
+        </div>
+
+        {/* Card de Faturamento do Figma M15 */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Dados da Nota Fiscal (NF-e)</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Dados da Nota Fiscal (NF-e)
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label htmlFor="nfeNumber" className="mb-1 block text-xs font-medium text-gray-700">
-                  Número da NF-e
-                </label>
-                <input
-                  id="nfeNumber"
-                  type="text"
-                  required
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value)}
-                  placeholder="Ex: 0001049"
-                  className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-                />
-              </div>
-              <div>
-                <label htmlFor="nfeSeries" className="mb-1 block text-xs font-medium text-gray-700">
-                  Série
-                </label>
-                <input
-                  id="nfeSeries"
-                  type="text"
-                  required
-                  value={series}
-                  onChange={(e) => setSeries(e.target.value)}
-                  placeholder="1"
-                  className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-                />
-              </div>
+              <Input
+                label="Número da NF-e *"
+                placeholder="Ex: 0001049"
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                required
+              />
+              <Input
+                label="Série *"
+                placeholder="1"
+                value={series}
+                onChange={(e) => setSeries(e.target.value)}
+                required
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label htmlFor="issuedAt" className="mb-1 block text-xs font-medium text-gray-700">
-                  Data de Emissão
-                </label>
-                <input
-                  id="issuedAt"
-                  type="date"
-                  required
-                  value={issuedAt}
-                  onChange={(e) => setIssuedAt(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-                />
-              </div>
-              <div>
-                <label htmlFor="totalBrl" className="mb-1 block text-xs font-medium text-gray-700">
-                  Valor Total NF-e (R$)
-                </label>
-                <input
-                  id="totalBrl"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  value={totalBrl || ""}
-                  onChange={(e) => setTotalBrl(Number(e.target.value))}
-                  placeholder="0.00"
-                  className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs font-bold text-gray-900"
-                />
-              </div>
+              <Input
+                label="Data de Emissão *"
+                type="date"
+                value={issuedAt}
+                onChange={(e) => setIssuedAt(e.target.value)}
+                required
+              />
+              <Input
+                label="Valor Total (R$) *"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                value={totalBrl || ""}
+                onChange={(e) => setTotalBrl(Number(e.target.value))}
+                required
+              />
             </div>
 
             <div>
-              <label htmlFor="notes" className="mb-1 block text-xs font-medium text-gray-700">
-                Observações Fiscais / Retenções (Opcional)
+              <label className="mb-1.5 block text-[12px] font-semibold text-[var(--color-muted)]">
+                Observações Fiscais
               </label>
               <textarea
-                id="notes"
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observações adicionais para auditoria financeira..."
-                className="w-full rounded-xl border border-[var(--color-border)] p-2.5 text-xs"
+                placeholder="Observações de retenção..."
+                className="w-full rounded-[12px] border border-[var(--color-border)] p-3 text-[14px] text-[var(--color-text)] placeholder-[var(--color-border-subdued)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </div>
           </CardContent>
         </Card>
 
         {errorMsg && (
-          <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium">
+          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3 text-[12px] font-semibold text-[#ba5b52]">
             {errorMsg}
           </div>
         )}
@@ -186,11 +176,13 @@ export function BillingReferencePage({
           type="submit"
           variant="primary"
           isLoading={isSubmitting}
-          className="w-full text-xs h-11 rounded-xl font-semibold"
+          size="md"
         >
-          Salvar Referência Faturamento NF-e
+          Salvar referência fiscal
         </Button>
       </form>
-    </div>
+
+      <MobileBottomNav />
+    </main>
   );
 }

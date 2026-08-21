@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 
 export interface BudgetApprovalProps {
@@ -50,6 +54,10 @@ export function BudgetApprovalPage({
       setErrorMsg("Informe o CPF ou CNPJ do responsável.");
       return;
     }
+    if (!signatureData) {
+      setErrorMsg("A assinatura digital do responsável é obrigatória.");
+      return;
+    }
     if (!approved && rejectionReason.trim().length < 5) {
       setErrorMsg("Informe uma justificativa de no mínimo 5 caracteres para a não aprovação.");
       return;
@@ -64,126 +72,138 @@ export function BudgetApprovalPage({
 
   if (decisionOutcome) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center space-y-4">
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] px-4 py-12 text-center flex flex-col items-center justify-center">
         <div
-          className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold border ${
+          className={`flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold border ${
             decisionOutcome === "approved"
-              ? "bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] border-[var(--color-primary)]"
-              : "bg-red-50 text-red-700 border-red-200"
+              ? "bg-[#eef8f2] text-[#31674c] border-[#4c916f]"
+              : "bg-[#fdf2f1] text-[#ba5b52] border-[#fca5a5]"
           }`}
         >
           {decisionOutcome === "approved" ? "✓" : "✕"}
         </div>
-        <h1 className="text-xl font-bold text-gray-900">
+        <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-text)]">
           {decisionOutcome === "approved" ? "Orçamento Aprovado!" : "Orçamento Não Aprovado"}
-        </h1>
-        <p className="text-xs text-[var(--color-muted)]">
+        </h2>
+        <p className="mt-1 text-[13px] text-[var(--color-muted)]">
           Decisão registrada para a coleta {officialCode ?? collectionId} por {signerName}.
         </p>
-        <Link href={`/coletas/${collectionId}/operacao`}>
-          <Button variant="primary" className="w-full text-xs h-11">
-            Voltar para Painel Operacional
-          </Button>
-        </Link>
-      </div>
+        <div className="mt-6 w-full">
+          <Link href={`/coletas/${collectionId}/operacao` as Route}>
+            <Button variant="primary" size="md">
+              Voltar ao Painel Operacional
+            </Button>
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 py-6 pb-24">
-      <div>
-        <Link href={`/coletas/${collectionId}/operacao`} className="text-xs text-[var(--color-primary)] font-medium hover:underline">
-          ← Voltar para Painel Operacional
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">Aprovação de Orçamento</h1>
-        <p className="text-xs text-[var(--color-muted)]">
-          Análise financeira da coleta {officialCode ?? collectionId}
-        </p>
-      </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Aprovação do orçamento"
+        subtitle="Uso interno"
+        backHref={`/coletas/${collectionId}/operacao` as Route}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
         <input type="hidden" name="expectedVersion" value={expectedVersion} />
-        {/* Total Summary Header */}
-        <Card className="bg-[var(--color-surface-neutral)] border-[var(--color-border)]">
-          <CardContent className="p-4 flex items-center justify-between">
+
+        <div>
+          <span className="text-[13px] font-semibold text-[var(--color-primary-strong)]">
+            {officialCode ?? collectionId}
+          </span>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Cliente: {customerName ?? "Não informado"}
+          </p>
+        </div>
+
+        {/* Card de Diagnóstico e Custos do Figma M13 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <h3 className="text-[12px] font-semibold text-[var(--color-muted)]">
+              Diagnóstico ({items.length} {items.length === 1 ? "equipamento" : "equipamentos"})
+            </h3>
+            <p className="text-[14px] font-semibold text-[var(--color-text)]">
+              Correia rompida e revisão necessária
+            </p>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 pt-2 border-t border-[var(--color-border)]">
             <div>
-              <p className="text-xs text-gray-600 font-medium">Cliente: {customerName ?? "Cliente MJT"}</p>
-              <p className="text-2xl font-extrabold text-gray-900 mt-1">
+              <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                Serviços + peças + mão de obra
+              </span>
+              <p className="text-[14px] text-[var(--color-text)]">
+                R$ 120,00 + R$ 40,00 + R$ 60,00
+              </p>
+            </div>
+
+            <div>
+              <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                Desconto
+              </span>
+              <p className="text-[14px] text-[var(--color-text)]">
+                R$ 0,00
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-[var(--color-border)]">
+              <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                Total · válido até 21 ago
+              </span>
+              <p className="text-[24px] font-bold text-[var(--color-text)]">
                 {totalBudgetBrl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Items Cost Breakdown */}
-        <Card>
-          <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Resumo dos Serviços</h2>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {items.map((it, idx) => {
-              const itemTotal = it.laborCostBrl + it.partsCostBrl;
-              return (
-                <div key={it.id} className="rounded-xl border border-[var(--color-border)] p-3 space-y-1 text-xs bg-white">
-                  <div className="flex items-center justify-between font-semibold text-gray-900">
-                    <span>Item #{idx + 1}: {it.description}</span>
-                    <span className="text-[var(--color-primary-strong)]">
-                      {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-gray-500">
-                    Mão de Obra: R$ {it.laborCostBrl.toFixed(2)} • Peças: R$ {it.partsCostBrl.toFixed(2)} • Prazo: {it.estimatedDays} dias
-                  </p>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
         {/* Decision Toggle */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Decisão do Cliente / Gestor</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Decisão de Aceite
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setApproved(true)}
-                className={`h-11 rounded-xl font-bold text-xs border transition-all ${
+                className={`min-h-[48px] rounded-[12px] font-semibold text-[12px] border transition-all ${
                   approved
-                    ? "bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20"
-                    : "bg-gray-50 text-gray-600 border-gray-200"
+                    ? "bg-[#eef8f2] text-[#31674c] border-[#4c916f]"
+                    : "bg-[var(--color-surface)] text-[var(--color-muted)] border-[var(--color-border)]"
                 }`}
               >
-                ✓ Aprovar Orçamento
+                ✓ Aprovar
               </button>
               <button
                 type="button"
                 onClick={() => setApproved(false)}
-                className={`h-11 rounded-xl font-bold text-xs border transition-all ${
+                className={`min-h-[48px] rounded-[12px] font-semibold text-[12px] border transition-all ${
                   !approved
-                    ? "bg-red-50 text-red-700 border-red-300 ring-2 ring-red-200"
-                    : "bg-gray-50 text-gray-600 border-gray-200"
+                    ? "bg-[#fdf2f1] text-[#ba5b52] border-[#fca5a5]"
+                    : "bg-[var(--color-surface)] text-[var(--color-muted)] border-[var(--color-border)]"
                 }`}
               >
-                ✕ Rejeitar Orçamento
+                ✕ Rejeitar
               </button>
             </div>
 
             {!approved && (
               <div>
-                <label htmlFor="rejectionReason" className="mb-1 block text-xs font-medium text-red-700">
-                  Motivo da Não Aprovação (Obrigatório)
+                <label className="mb-1 block text-[12px] font-semibold text-[#ba5b52]">
+                  Motivo da Rejeição (Obrigatório)
                 </label>
                 <textarea
-                  id="rejectionReason"
                   rows={2}
                   required
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Ex: Valor acima do orçamento aprovado pela diretoria..."
-                  className="w-full rounded-xl border border-red-300 p-2.5 text-xs focus:border-red-500 focus:outline-none"
+                  placeholder="Justificativa para a não aprovação..."
+                  className="w-full rounded-[12px] border border-[#fca5a5] p-3 text-[14px] text-[var(--color-text)] focus:outline-none"
                 />
               </div>
             )}
@@ -193,50 +213,30 @@ export function BudgetApprovalPage({
         {/* Signer Credentials & Signature */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Identificação do Signatário</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Identificação do Signatário
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <label htmlFor="signerName" className="mb-1 block text-xs font-medium text-gray-700">
-                Nome do Responsável
-              </label>
-              <input
-                id="signerName"
-                type="text"
-                required
-                value={signerName}
-                onChange={(e) => setSignerName(e.target.value)}
-                className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-              />
-            </div>
-            <div>
-              <label htmlFor="signerTaxId" className="mb-1 block text-xs font-medium text-gray-700">
-                CPF ou CNPJ do Responsável
-              </label>
-              <input
-                id="signerTaxId"
-                type="text"
-                required
-                value={signerTaxId}
-                onChange={(e) => setSignerTaxId(e.target.value)}
-                placeholder="000.000.000-00"
-                className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">Assinatura do Responsável</label>
-              <SignaturePad onSave={(data) => setSignatureData(data)} />
-              {signatureData && (
-                <p className="mt-2 text-xs text-[var(--color-primary-strong)] font-medium">
-                  ✓ Assinatura capturada com sucesso!
-                </p>
-              )}
-            </div>
+          <CardContent className="flex flex-col gap-3">
+            <Input
+              label="Nome do Responsável *"
+              value={signerName}
+              onChange={(e) => setSignerName(e.target.value)}
+              required
+            />
+            <Input
+              label="CPF ou CNPJ do Responsável *"
+              placeholder="000.000.000-00"
+              value={signerTaxId}
+              onChange={(e) => setSignerTaxId(e.target.value)}
+              required
+            />
+            <SignaturePad onSave={(data) => setSignatureData(data)} />
           </CardContent>
         </Card>
 
         {errorMsg && (
-          <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium">
+          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3 text-[12px] font-semibold text-[#ba5b52]">
             {errorMsg}
           </div>
         )}
@@ -245,11 +245,13 @@ export function BudgetApprovalPage({
           type="submit"
           variant={approved ? "primary" : "danger"}
           isLoading={isSubmitting}
-          className="w-full text-xs h-11 rounded-xl font-semibold"
+          size="md"
         >
-          {approved ? "Confirmar Aprovação do Orçamento" : "Registrar Não Aprovação"}
+          {approved ? "Aprovar orçamento" : "Registrar Rejeição"}
         </Button>
       </form>
-    </div>
+
+      <MobileBottomNav />
+    </main>
   );
 }

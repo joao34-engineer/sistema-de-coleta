@@ -36,46 +36,46 @@ export function CancelReopenModal({ collectionId, currentStatus, expectedVersion
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md bg-white shadow-2xl rounded-2xl">
-        <CardHeader className="flex flex-row items-center justify-between border-b p-4">
-          <h2 className="text-base font-bold text-gray-900">
-            {action === "cancel" ? "⚠️ Cancelar Coleta Auditada" : "🔄 Reabrir Coleta Cancelada"}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <Card className="w-full max-w-md bg-[var(--color-surface)] shadow-2xl rounded-[20px] border border-[var(--color-border)] p-2">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--color-border)] p-4">
+          <h2 className="text-[18px] font-semibold text-[var(--color-text)]">
+            Cancelar ou alterar status
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold text-lg">
+          <button onClick={onClose} className="text-[var(--color-muted)] hover:text-[var(--color-text)] font-semibold text-[18px]">
             ✕
           </button>
         </CardHeader>
         <CardContent className="p-4 space-y-4">
-          <p className="text-xs text-gray-600">
+          <p className="text-[12px] text-[var(--color-muted)]">
             {action === "cancel"
-              ? "O cancelamento registrará um evento imutável na timeline de auditoria. O código oficial da coleta não será reutilizado."
-              : "A reabertura restaurará a coleta para seu estado operacional anterior, gerando novo registro de auditoria."}
+              ? "O cancelamento registrará um evento imutável na timeline de auditoria da coleta."
+              : "A reabertura restaurará a coleta para seu estado operacional anterior com evento auditado."}
           </p>
 
-          <div className="flex rounded-xl bg-gray-100 p-1 text-xs font-semibold">
+          <div className="flex rounded-[12px] bg-[var(--color-surface-neutral)] p-1 text-[12px] font-semibold">
             <button
               type="button"
               onClick={() => setAction("cancel")}
-              className={`w-1/2 py-1.5 rounded-lg transition-all ${action === "cancel" ? "bg-white text-red-700 shadow-sm" : "text-gray-600"}`}
+              className={`w-1/2 py-2 rounded-[10px] transition-all ${action === "cancel" ? "bg-[var(--color-surface)] text-[#ba5b52] shadow-xs" : "text-[var(--color-muted)]"}`}
             >
               Cancelar Coleta
             </button>
             <button
               type="button"
               onClick={() => setAction("reopen")}
-              className={`w-1/2 py-1.5 rounded-lg transition-all ${action === "reopen" ? "bg-white text-[var(--color-primary-strong)] shadow-sm" : "text-gray-600"}`}
+              className={`w-1/2 py-2 rounded-[10px] transition-all ${action === "reopen" ? "bg-[var(--color-surface)] text-[var(--color-primary-strong)] shadow-xs" : "text-[var(--color-muted)]"}`}
             >
               Reabrir Coleta
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input type="hidden" name="collectionId" value={collectionId} />
             <input type="hidden" name="expectedVersion" value={expectedVersion} />
 
             <div>
-              <label htmlFor="reason" className="mb-1 block text-xs font-semibold text-gray-700">
+              <label htmlFor="reason" className="mb-1.5 block text-[12px] font-semibold text-[var(--color-muted)]">
                 Motivo / Justificativa Mandatória *
               </label>
               <textarea
@@ -87,29 +87,30 @@ export function CancelReopenModal({ collectionId, currentStatus, expectedVersion
                 placeholder={
                   action === "cancel"
                     ? "Ex: Cliente desistiu da manutenção devido a custos..."
-                    : "Ex: Cancelamento efetuado por engano no terminal mobile..."
+                    : "Ex: Cancelamento efetuado por engano..."
                 }
-                className="w-full rounded-xl border border-gray-300 p-3 text-xs focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full rounded-[12px] border border-[var(--color-border)] p-3 text-[14px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </div>
 
             {errorMsg && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-2.5 text-xs text-red-700 font-medium">
+              <div className="rounded-[12px] bg-[#fdf2f1] border border-[#fca5a5] p-3 text-[12px] text-[#ba5b52] font-semibold">
                 {errorMsg}
               </div>
             )}
 
             <div className="flex gap-2 pt-2">
-              <Button type="button" variant="ghost" onClick={onClose} className="w-1/2 text-xs h-10">
-                Voltar / Fechar
+              <Button type="button" variant="ghost" onClick={onClose} size="md" className="w-1/2">
+                Voltar
               </Button>
               <Button
                 type="submit"
                 variant={action === "cancel" ? "danger" : "primary"}
                 isLoading={isSubmitting}
-                className="w-1/2 text-xs h-10 font-semibold"
+                size="md"
+                className="w-1/2"
               >
-                {action === "cancel" ? "Confirmar Cancelamento" : "Confirmar Reabertura"}
+                {action === "cancel" ? "Confirmar" : "Reabrir"}
               </Button>
             </div>
           </form>

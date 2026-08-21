@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
@@ -57,9 +60,9 @@ const statusLabels: Record<string, string> = {
   in_budget: "Em Orçamento",
   awaiting_approval: "Aguardando Aprovação",
   approved: "Aprovada",
-  in_service: "Em Manutenção",
-  ready: "Pronto para Entrega",
-  invoiced: "Faturada (NF-e)",
+  in_service: "Em Reparo",
+  ready: "Pronto",
+  invoiced: "Faturada",
   partial_delivery: "Entrega Parcial",
   delivered: "Entregue",
   rejected: "Não Aprovada",
@@ -71,138 +74,128 @@ export function OperationalDetailPage({ collection }: OperationalDetailProps) {
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 py-6 pb-24">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title={collection.officialCode ?? "Guia de Coleta"}
+        subtitle={`${collection.items.length} itens · ${statusLabels[collection.status] ?? collection.status}`}
+        backHref={"/coletas" as Route}
+        badge={
+          <Badge status={collection.status}>
+            {statusLabels[collection.status] ?? collection.status}
+          </Badge>
+        }
+      />
+
+      <div className="flex flex-col gap-4 px-4">
+        {/* Customer Info Card */}
         <div>
-          <Link href="/coletas" className="text-xs text-[var(--color-primary)] font-medium hover:underline">
-            ← Voltar para lista
-          </Link>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">
-            {collection.officialCode ?? "Coleta Rascunho"}
-          </h1>
-          <p className="text-xs text-[var(--color-muted)]">
-            ID: {collection.id.slice(0, 8)}... • Versão {collection.rowVersion}
+          <h2 className="text-[24px] font-semibold text-[var(--color-text)]">
+            {collection.customerName ?? "Cliente não informado"}
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            CPF/CNPJ: {collection.customerTaxId ?? "Não informado"}
           </p>
         </div>
-        <Badge status={collection.status}>
-          {statusLabels[collection.status] ?? collection.status}
-        </Badge>
-      </div>
 
-      {/* Customer Info Card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <h2 className="text-sm font-semibold text-gray-700">Dados do Cliente & Local</h2>
-        </CardHeader>
-        <CardContent className="space-y-1.5 text-sm text-gray-800">
-          <p><strong className="text-gray-600">Cliente:</strong> {collection.customerName ?? "Não informado"}</p>
-          <p><strong className="text-gray-600">CPF/CNPJ:</strong> {collection.customerTaxId ?? "Não informado"}</p>
-          <p><strong className="text-gray-600">Local:</strong> {collection.locationDescription ?? "Local da Coleta MJT"}</p>
-          <p><strong className="text-gray-600">Data de Coleta:</strong> {collection.collectedAt ? new Date(collection.collectedAt).toLocaleDateString("pt-BR") : "Pendente"}</p>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Local & Data da Coleta
+            </h3>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 text-[12px] text-[var(--color-muted)]">
+            <p><strong>Local:</strong> {collection.locationDescription ?? "Endereço cadastrado"}</p>
+            <p><strong>Data:</strong> {collection.collectedAt ? new Date(collection.collectedAt).toLocaleDateString("pt-BR") : "Pendente"}</p>
+          </CardContent>
+        </Card>
 
-      {/* Operational Actions Menu */}
-      <Card className="border-[var(--color-primary)]/30 bg-[var(--color-surface-green)]/30">
-        <CardHeader className="pb-2">
-          <h2 className="text-sm font-bold text-[var(--color-primary-strong)]">Ações Operacionais da Oficina</h2>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2">
-          <Link href={`/coletas/${collection.id}/oficina/entrada`}>
-            <Button variant="secondary" className="w-full text-xs h-10 bg-white">
-              📥 Entrada Oficina
-            </Button>
-          </Link>
-          <Link href={`/coletas/${collection.id}/orcamento`}>
-            <Button variant="secondary" className="w-full text-xs h-10 bg-white">
-              💰 Criar Orçamento
-            </Button>
-          </Link>
-          <Link href={`/coletas/${collection.id}/aprovacao`}>
-            <Button variant="secondary" className="w-full text-xs h-10 bg-white">
-              ✅ Aprovação Cliente
-            </Button>
-          </Link>
-          <Link href={`/coletas/${collection.id}/servico`}>
-            <Button variant="secondary" className="w-full text-xs h-10 bg-white">
-              🛠️ Manutenção
-            </Button>
-          </Link>
-          <Link href={`/coletas/${collection.id}/faturamento`}>
-            <Button variant="secondary" className="w-full text-xs h-10 bg-white">
-              🧾 Faturamento NF-e
-            </Button>
-          </Link>
-          <Link href={`/coletas/${collection.id}/entrega`}>
-            <Button variant="primary" className="w-full text-xs h-10">
-              📦 Entregar ao Cliente
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+        {/* Operational Actions Menu */}
+        <Card>
+          <CardHeader className="pb-2">
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Ações Operacionais da Oficina
+            </h3>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-2">
+            <Link href={`/coletas/${collection.id}/oficina/entrada` as Route}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] text-[12px]">
+                📥 Entrada Oficina
+              </Button>
+            </Link>
+            <Link href={`/coletas/${collection.id}/orcamento` as Route}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] text-[12px]">
+                💰 Criar Orçamento
+              </Button>
+            </Link>
+            <Link href={`/coletas/${collection.id}/aprovacao` as Route}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] text-[12px]">
+                ✅ Aprovação
+              </Button>
+            </Link>
+            <Link href={`/coletas/${collection.id}/servico` as Route}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] text-[12px]">
+                🛠️ Reparo
+              </Button>
+            </Link>
+            <Link href={`/coletas/${collection.id}/faturamento` as Route}>
+              <Button variant="secondary" size="sm" className="min-h-[44px] text-[12px]">
+                🧾 Faturamento
+              </Button>
+            </Link>
+            <Link href={`/coletas/${collection.id}/entrega` as Route}>
+              <Button variant="primary" size="sm" className="min-h-[44px] text-[12px]">
+                📦 Entregar
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-      {/* Items Section */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <h2 className="text-sm font-semibold text-gray-700">Equipamentos ({collection.items.length})</h2>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {collection.items.map((item, index) => (
-            <div key={item.id} className="rounded-xl border border-[var(--color-border)] p-3 space-y-1.5 text-xs bg-white">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-900">Item #{index + 1} — Qtd: {item.quantity}</span>
-                <Link href={`/coletas/${collection.id}/itens/${item.id}/ciclo`} className="text-[var(--color-primary)] font-medium hover:underline">
-                  Ver Ciclo →
-                </Link>
-              </div>
-              <p className="text-gray-800">{item.description}</p>
-              {item.condition && <p className="text-gray-500"><strong>Condição:</strong> {item.condition}</p>}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Cancellation / Reopen Trigger Button */}
-      <div className="pt-2">
-        <Button
-          variant="danger"
-          className="w-full text-xs h-11"
-          onClick={() => setShowCancelModal(true)}
-        >
-          {collection.status === "canceled" ? "🔄 Reabrir Coleta Cancelada" : "⚠️ Cancelar ou Alterar Status da Coleta"}
-        </Button>
-      </div>
-
-      {/* Event Timeline (Append-Only) */}
-      <Card>
-        <CardHeader className="pb-2">
-          <h2 className="text-sm font-semibold text-gray-700">Timeline de Eventos Auditados</h2>
-        </CardHeader>
-        <CardContent>
-          {collection.events.length === 0 ? (
-            <p className="text-xs text-[var(--color-muted)]">Nenhum evento registrado até o momento.</p>
-          ) : (
-            <div className="relative border-l-2 border-[var(--color-border)] pl-4 space-y-4 text-xs">
-              {collection.events.map((evt) => (
-                <div key={evt.id} className="relative">
-                  <div className="absolute -left-[21px] top-0 h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
-                  <p className="font-semibold text-gray-900">{evt.type}</p>
-                  <p className="text-gray-600">
-                    {evt.previousStatus ?? "N/A"} → <span className="font-medium text-[var(--color-primary-strong)]">{evt.nextStatus ?? "N/A"}</span>
-                  </p>
-                  {evt.reason && <p className="mt-0.5 text-gray-500 italic">Motivo: &quot;{evt.reason}&quot;</p>}
-                  <p className="mt-0.5 text-[10px] text-[var(--color-muted)]">
-                    Por {evt.actorName ?? "Sistema"} em {new Date(evt.createdAt).toLocaleString("pt-BR")}
-                  </p>
+        {/* Items Section */}
+        <Card>
+          <CardHeader className="pb-2">
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Equipamentos na Coleta ({collection.items.length})
+            </h3>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {collection.items.map((item, index) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-1 rounded-[12px] border border-[var(--color-border)] p-3 text-[12px]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[var(--color-text)]">
+                    Item #{index + 1} — {item.quantity}x {item.description}
+                  </span>
+                  <Link
+                    href={`/coletas/${collection.id}/itens/${item.id}/ciclo` as Route}
+                    className="text-[12px] font-semibold text-[var(--color-primary-strong)] hover:underline"
+                  >
+                    Ver Ciclo →
+                  </Link>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {item.condition && (
+                  <p className="text-[12px] text-[var(--color-muted)]">
+                    Condição: {item.condition}
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-      {/* Modal */}
+        {/* Cancellation Trigger */}
+        <div className="pt-1">
+          <Button
+            variant="danger"
+            size="md"
+            onClick={() => setShowCancelModal(true)}
+          >
+            {collection.status === "canceled" ? "🔄 Reabrir Coleta" : "⚠️ Cancelar Coleta"}
+          </Button>
+        </div>
+      </div>
+
       {showCancelModal && (
         <CancelReopenModal
           collectionId={collection.id}
@@ -211,6 +204,8 @@ export function OperationalDetailPage({ collection }: OperationalDetailProps) {
           onClose={() => setShowCancelModal(false)}
         />
       )}
-    </div>
+
+      <MobileBottomNav />
+    </main>
   );
 }

@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 
 export interface CustomerDeliveryProps {
@@ -26,7 +30,6 @@ export function CustomerDeliveryPage({
   customerName,
   items,
 }: CustomerDeliveryProps) {
-  // Pre-select items that are ready
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>(
     items.filter((i) => i.status === "pronto").map((i) => i.id)
   );
@@ -76,75 +79,76 @@ export function CustomerDeliveryPage({
 
   if (deliveryResult) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center space-y-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] text-2xl font-bold border border-[var(--color-primary)]">
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] px-4 py-12 text-center flex flex-col items-center justify-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef8f2] text-[#31674c] text-2xl font-bold border border-[#4c916f]">
           📦
         </div>
-        <h1 className="text-xl font-bold text-gray-900">
-          {deliveryResult === "delivered" ? "Entrega Total Concluída!" : "Entrega Parcial Registrada!"}
-        </h1>
-        <p className="text-xs text-[var(--color-muted)]">
+        <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-text)]">
+          {deliveryResult === "delivered" ? "Entrega Concluída!" : "Entrega Parcial Registrada!"}
+        </h2>
+        <p className="mt-1 text-[13px] text-[var(--color-muted)]">
           {selectedItemIds.length} de {items.length} itens entregues para {receiverName}.
-          {deliveryResult === "partial_delivery" && (
-            <span className="block mt-1 font-semibold text-orange-700">
-              Os itens restantes permanecem pendentes na oficina até nova entrega.
-            </span>
-          )}
         </p>
-        <Link href={`/coletas/${collectionId}/operacao`}>
-          <Button variant="primary" className="w-full text-xs h-11">
-            Voltar para Painel Operacional
-          </Button>
-        </Link>
-      </div>
+        <div className="mt-6 w-full">
+          <Link href={`/coletas/${collectionId}/operacao` as Route}>
+            <Button variant="primary" size="md">
+              Voltar ao Painel Operacional
+            </Button>
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 py-6 pb-24">
-      <div>
-        <Link href={`/coletas/${collectionId}/operacao`} className="text-xs text-[var(--color-primary)] font-medium hover:underline">
-          ← Voltar para Painel Operacional
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">Entrega de Equipamentos</h1>
-        <p className="text-xs text-[var(--color-muted)]">
-          Termo de entrega com assinatura ({officialCode ?? collectionId})
-        </p>
-      </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Entrega final"
+        subtitle="Termo e assinatura"
+        backHref={`/coletas/${collectionId}/operacao` as Route}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
         <input type="hidden" name="expectedVersion" value={expectedVersion} />
+
+        <div>
+          <h2 className="text-[22px] font-semibold text-[var(--color-text)]">
+            Recibo de devolução.
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Guia {officialCode ?? collectionId}
+          </p>
+        </div>
+
         {/* Item Selection Card */}
         <Card>
           <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-700">Itens para Entrega</h2>
-              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${isPartial ? "bg-orange-100 text-orange-800" : "bg-emerald-100 text-emerald-800"}`}>
-                {isPartial ? "Entrega Parcial" : "Entrega Total"}
-              </span>
-            </div>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Itens para Devolução ({selectedItemIds.length}/{items.length})
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="flex flex-col gap-2">
             {items.map((it) => {
               const isChecked = selectedItemIds.includes(it.id);
               return (
                 <label
                   key={it.id}
-                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`flex items-start gap-3 rounded-[12px] border p-3 cursor-pointer transition-all ${
                     isChecked
-                      ? "border-[var(--color-primary)] bg-[var(--color-surface-green)]/40"
-                      : "border-gray-200 bg-white"
+                      ? "border-[var(--color-primary)] bg-[var(--color-surface-green)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)]"
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggleItemSelection(it.id)}
-                    className="mt-0.5 h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                    className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                   />
-                  <div className="text-xs space-y-0.5">
-                    <p className="font-bold text-gray-900">{it.description} (Qtd: {it.quantity})</p>
-                    <p className="text-[11px] text-gray-500">Status Atual: {it.status === "pronto" ? "Pronto" : it.status === "entregue" ? "Entregue Anteriormente" : "Em Reparo"}</p>
+                  <div className="text-[12px]">
+                    <p className="font-semibold text-[var(--color-text)]">
+                      {it.quantity}x {it.description}
+                    </p>
                   </div>
                 </label>
               );
@@ -155,70 +159,48 @@ export function CustomerDeliveryPage({
         {/* Receiver Credentials */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Dados do Recebedor</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Dados do Recebedor
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <label htmlFor="receiverName" className="mb-1 block text-xs font-medium text-gray-700">
-                Nome do Recebedor
-              </label>
-              <input
-                id="receiverName"
-                type="text"
-                required
-                value={receiverName}
-                onChange={(e) => setReceiverName(e.target.value)}
-                placeholder="Nome completo..."
-                className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-              />
-            </div>
-            <div>
-              <label htmlFor="receiverTaxId" className="mb-1 block text-xs font-medium text-gray-700">
-                CPF ou CNPJ do Recebedor
-              </label>
-              <input
-                id="receiverTaxId"
-                type="text"
-                required
-                value={receiverTaxId}
-                onChange={(e) => setReceiverTaxId(e.target.value)}
-                placeholder="000.000.000-00"
-                className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-              />
-            </div>
-            <div>
-              <label htmlFor="deliveryNotes" className="mb-1 block text-xs font-medium text-gray-700">
-                Observações de Entrega (Opcional)
-              </label>
-              <input
-                id="deliveryNotes"
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Entregue com manuais, cabos..."
-                className="h-10 w-full rounded-xl border border-[var(--color-border)] px-3 text-xs"
-              />
-            </div>
+          <CardContent className="flex flex-col gap-3">
+            <Input
+              label="Nome de quem recebe *"
+              placeholder="Nome completo..."
+              value={receiverName}
+              onChange={(e) => setReceiverName(e.target.value)}
+              required
+            />
+            <Input
+              label="CPF ou CNPJ do recebedor *"
+              placeholder="000.000.000-00"
+              value={receiverTaxId}
+              onChange={(e) => setReceiverTaxId(e.target.value)}
+              required
+            />
+            <Input
+              label="Observações da entrega"
+              placeholder="Entregue com cabo de força..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </CardContent>
         </Card>
 
         {/* Receiver Signature Pad */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Assinatura do Termo de Recebimento</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Assinatura do Recebedor *
+            </h3>
           </CardHeader>
           <CardContent>
             <SignaturePad onSave={(data) => setSignatureData(data)} />
-            {signatureData && (
-              <p className="mt-2 text-xs text-[var(--color-primary-strong)] font-medium">
-                ✓ Assinatura de aceite capturada com sucesso!
-              </p>
-            )}
           </CardContent>
         </Card>
 
         {errorMsg && (
-          <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 font-medium">
+          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3 text-[12px] font-semibold text-[#ba5b52]">
             {errorMsg}
           </div>
         )}
@@ -227,11 +209,13 @@ export function CustomerDeliveryPage({
           type="submit"
           variant="primary"
           isLoading={isSubmitting}
-          className="w-full text-xs h-11 rounded-xl font-semibold"
+          size="md"
         >
-          {isPartial ? "Registrar Entrega Parcial" : "Finalizar Entrega Completa"}
+          Confirmar entrega ao cliente
         </Button>
       </form>
-    </div>
+
+      <MobileBottomNav />
+    </main>
   );
 }

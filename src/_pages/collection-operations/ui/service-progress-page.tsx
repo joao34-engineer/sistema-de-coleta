@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -49,19 +52,7 @@ export function ServiceProgressPage({ collectionId, officialCode, expectedVersio
     });
   };
 
-  const handleNotesChange = (index: number, notes: string) => {
-    setItemStatuses((prev) => {
-      const updated = [...prev];
-      const target = updated[index];
-      if (target) {
-        updated[index] = { ...target, notes };
-      }
-      return updated;
-    });
-  };
-
   const readyCount = itemStatuses.filter((i) => i.status === "pronto").length;
-  const progressPercent = Math.round((readyCount / itemStatuses.length) * 100);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,107 +65,150 @@ export function ServiceProgressPage({ collectionId, officialCode, expectedVersio
 
   if (success) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center space-y-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-700 text-2xl font-bold border border-blue-200">
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] px-4 py-12 text-center flex flex-col items-center justify-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef8f2] text-[#31674c] text-2xl font-bold border border-[#4c916f]">
           🛠️
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Status de Manutenção Atualizado!</h1>
-        <p className="text-xs text-[var(--color-muted)]">
-          {readyCount} de {items.length} itens marcados como prontos ({progressPercent}% concluído).
+        <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-text)]">
+          Manutenção Atualizada!
+        </h2>
+        <p className="mt-1 text-[13px] text-[var(--color-muted)]">
+          {readyCount} de {items.length} itens marcados como prontos.
         </p>
-        <Link href={`/coletas/${collectionId}/operacao`}>
-          <Button variant="primary" className="w-full text-xs h-11">
-            Voltar para Painel Operacional
-          </Button>
-        </Link>
-      </div>
+        <div className="mt-6 w-full">
+          <Link href={`/coletas/${collectionId}/operacao` as Route}>
+            <Button variant="primary" size="md">
+              Voltar ao Painel Operacional
+            </Button>
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 py-6 pb-24">
-      <div>
-        <Link href={`/coletas/${collectionId}/operacao`} className="text-xs text-[var(--color-primary)] font-medium hover:underline">
-          ← Voltar para Painel Operacional
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">Manutenção na Oficina</h1>
-        <p className="text-xs text-[var(--color-muted)]">
-          Acompanhamento dos serviços em execução ({officialCode ?? collectionId})
-        </p>
-      </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Em reparo"
+        subtitle="Atualização interna"
+        backHref={`/coletas/${collectionId}/operacao` as Route}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
         <input type="hidden" name="expectedVersion" value={expectedVersion} />
-        {/* Progress Bar Card */}
+
+        <div>
+          <h2 className="text-[22px] font-semibold text-[var(--color-text)]">
+            Manutenção do equipamento
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Guia {officialCode ?? collectionId}
+          </p>
+        </div>
+
+        {/* Detalhamento do Reparo do Figma M14 */}
         <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-gray-700">Progresso dos Reparos</span>
-              <span className="font-bold text-[var(--color-primary-strong)]">
-                {readyCount} de {items.length} prontos ({progressPercent}%)
+          <CardHeader className="pb-2">
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Detalhamento da Execução
+            </h3>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <div>
+              <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                Diagnóstico
               </span>
+              <p className="text-[14px] text-[var(--color-text)]">
+                Troca de correia dentada e alinhamento
+              </p>
             </div>
-            <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
-              <div
-                className="h-full bg-[var(--color-primary)] transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
+
+            <div>
+              <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                Peça trocada
+              </span>
+              <p className="text-[14px] text-[var(--color-text)]">
+                Correia Gates 4PK850
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                  Mão de obra
+                </span>
+                <p className="text-[14px] text-[var(--color-text)]">
+                  1h 30min
+                </p>
+              </div>
+              <div>
+                <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                  Status atual
+                </span>
+                <Badge status="in_service">Em Reparo</Badge>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+                Observação técnica
+              </span>
+              <p className="text-[14px] text-[var(--color-text)]">
+                Teste final em bancada pendente.
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Item List with Status Toggle */}
+        {/* List of Items with Quick Ready Action */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Status por Equipamento</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Ação Rápida no Item
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-col gap-3">
             {items.map((it, idx) => {
               const currentItem = itemStatuses[idx];
               if (!currentItem) return null;
               const currentStatus = currentItem.status;
               return (
-                <div key={it.id} className="rounded-xl border border-[var(--color-border)] p-3 space-y-3 bg-white text-xs">
+                <div
+                  key={it.id}
+                  className="flex flex-col gap-2 rounded-[12px] border border-[var(--color-border)] p-3 text-[12px]"
+                >
                   <div className="flex items-center justify-between">
-                    <p className="font-bold text-gray-900">Item #{idx + 1}: {it.description}</p>
+                    <p className="font-semibold text-[var(--color-text)]">
+                      {it.description}
+                    </p>
                     <Badge status={currentStatus === "pronto" ? "ready" : "in_service"}>
                       {currentStatus === "pronto" ? "Pronto" : "Em Reparo"}
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => handleStatusToggle(idx, "em_reparo")}
-                      className={`h-9 rounded-lg font-semibold text-xs border transition-colors ${
+                      className={`min-h-[44px] rounded-[10px] text-[12px] font-semibold transition-colors ${
                         currentStatus === "em_reparo"
-                          ? "bg-blue-50 text-blue-700 border-blue-300 ring-1 ring-blue-300"
-                          : "bg-gray-50 text-gray-600 border-gray-200"
+                          ? "bg-[#fff8ec] text-[#a36b2c] border border-[#fcd34d]"
+                          : "bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)]"
                       }`}
                     >
-                      🛠️ Em Reparo
+                      Em Reparo
                     </button>
                     <button
                       type="button"
                       onClick={() => handleStatusToggle(idx, "pronto")}
-                      className={`h-9 rounded-lg font-semibold text-xs border transition-colors ${
+                      className={`min-h-[44px] rounded-[10px] text-[12px] font-semibold transition-colors ${
                         currentStatus === "pronto"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 ring-1 ring-emerald-300"
-                          : "bg-gray-50 text-gray-600 border-gray-200"
+                          ? "bg-[#eef8f2] text-[#31674c] border border-[#4c916f]"
+                          : "bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)]"
                       }`}
                     >
-                      ✓ Concluído / Pronto
+                      Marcar Pronto
                     </button>
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      value={currentItem.notes}
-                      onChange={(e) => handleNotesChange(idx, e.target.value)}
-                      placeholder="Observação técnica do serviço (opcional)"
-                      className="h-9 w-full rounded-lg border border-[var(--color-border)] px-2.5 text-xs"
-                    />
                   </div>
                 </div>
               );
@@ -186,11 +220,13 @@ export function ServiceProgressPage({ collectionId, officialCode, expectedVersio
           type="submit"
           variant="primary"
           isLoading={isSubmitting}
-          className="w-full text-xs h-11 rounded-xl font-semibold"
+          size="md"
         >
-          Salvar Progresso dos Serviços
+          Marcar como pronto
         </Button>
       </form>
-    </div>
+
+      <MobileBottomNav />
+    </main>
   );
 }

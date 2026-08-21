@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -142,42 +143,37 @@ export function NewCollectionPage() {
   };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-lg px-4 py-6">
-      {/* Top Header Mobile */}
-      <header className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-        <Link href={"/dashboard" as Route}>
-          <Button variant="ghost" size="sm" className="gap-1 text-xs">
-            ← Voltar
-          </Button>
-        </Link>
-        <div className="text-right">
-          <Badge status="draft">M02 · Nova Coleta</Badge>
-          <span className="mt-0.5 block text-[10px] text-[var(--color-muted)]">Passo 1 de 3</span>
-        </div>
-      </header>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Nova coleta"
+        subtitle="Passo 1 de 4"
+        backHref={"/coletas" as Route}
+      />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-4">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text)]">Dados do Cliente</h1>
-          <p className="text-xs text-[var(--color-muted)]">
+          <h2 className="text-[20px] font-semibold text-[var(--color-text)]">
+            Dados do cliente e da coleta
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
             Identifique quem está entregando o equipamento para a coleta MJT.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3 text-[12px] font-semibold text-[#ba5b52]">
             {errorMsg}
           </div>
         )}
 
-        {/* Selector de Modos: Buscar vs Novo */}
-        <div className="grid grid-cols-2 rounded-lg bg-[var(--color-surface-neutral)] p-1">
+        {/* Seleção de Modos: Buscar vs Novo */}
+        <div className="grid grid-cols-2 rounded-[12px] bg-[var(--color-surface-neutral)] p-1">
           <button
             type="button"
             onClick={() => setTab("search")}
-            className={`min-h-[44px] rounded-md text-xs font-bold transition-colors ${
+            className={`min-h-[44px] rounded-[10px] text-[12px] font-semibold transition-colors ${
               tab === "search"
-                ? "bg-[var(--color-card-bg)] text-[var(--color-primary)] shadow-sm"
+                ? "bg-[var(--color-surface)] text-[var(--color-primary-strong)] shadow-xs"
                 : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
             }`}
           >
@@ -186,9 +182,9 @@ export function NewCollectionPage() {
           <button
             type="button"
             onClick={() => setTab("new")}
-            className={`min-h-[44px] rounded-md text-xs font-bold transition-colors ${
+            className={`min-h-[44px] rounded-[10px] text-[12px] font-semibold transition-colors ${
               tab === "new"
-                ? "bg-[var(--color-card-bg)] text-[var(--color-primary)] shadow-sm"
+                ? "bg-[var(--color-surface)] text-[var(--color-primary-strong)] shadow-xs"
                 : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
             }`}
           >
@@ -200,7 +196,9 @@ export function NewCollectionPage() {
         {tab === "search" && (
           <Card>
             <CardHeader className="pb-2">
-              <h2 className="text-sm font-bold text-[var(--color-text)]">Localizar por Nome ou CPF/CNPJ</h2>
+              <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+                Localizar por Nome ou CPF/CNPJ
+              </h3>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <Input
@@ -211,12 +209,14 @@ export function NewCollectionPage() {
               />
 
               {isSearching && (
-                <p className="py-2 text-center text-xs text-[var(--color-muted)]">Buscando clientes...</p>
+                <p className="py-2 text-center text-[12px] text-[var(--color-muted)]">
+                  Buscando clientes...
+                </p>
               )}
 
               {searchResults.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-bold text-[var(--color-muted)] uppercase">
+                  <span className="text-[11px] font-semibold uppercase text-[var(--color-muted)]">
                     Resultados ({searchResults.length}):
                   </span>
                   {searchResults.map((cust) => {
@@ -226,15 +226,17 @@ export function NewCollectionPage() {
                         key={cust.id}
                         type="button"
                         onClick={() => handleSelectCustomer(cust)}
-                        className={`flex min-h-[44px] items-center justify-between rounded-md border p-3 text-left transition-colors ${
+                        className={`flex min-h-[44px] items-center justify-between rounded-[12px] border p-3 text-left transition-colors ${
                           isSelected
                             ? "border-[var(--color-primary)] bg-[var(--color-surface-green)]"
                             : "border-[var(--color-border)] hover:bg-[var(--color-surface-neutral)]"
                         }`}
                       >
                         <div>
-                          <p className="text-xs font-bold text-[var(--color-text)]">{cust.displayName}</p>
-                          <p className="text-[10px] text-[var(--color-muted)]">
+                          <p className="text-[13px] font-semibold text-[var(--color-text)]">
+                            {cust.displayName}
+                          </p>
+                          <p className="text-[11px] text-[var(--color-muted)]">
                             CPF/CNPJ: {cust.taxId} | Tel: {cust.phone}
                           </p>
                         </div>
@@ -246,10 +248,16 @@ export function NewCollectionPage() {
               )}
 
               {selectedCustomer && (
-                <div className="mt-2 rounded-md border border-[var(--color-primary)] bg-[var(--color-surface-green)] p-3">
-                  <span className="text-[10px] font-bold text-[var(--color-primary)] uppercase">Cliente Selecionado:</span>
-                  <p className="text-xs font-bold text-[var(--color-text)]">{selectedCustomer.displayName}</p>
-                  <p className="text-xs text-[var(--color-muted)]">CPF/CNPJ: {selectedCustomer.taxId}</p>
+                <div className="mt-2 rounded-[12px] border border-[var(--color-primary)] bg-[var(--color-surface-green)] p-3">
+                  <span className="text-[10px] font-semibold uppercase text-[var(--color-primary-strong)]">
+                    Cliente Selecionado:
+                  </span>
+                  <p className="text-[13px] font-semibold text-[var(--color-text)]">
+                    {selectedCustomer.displayName}
+                  </p>
+                  <p className="text-[12px] text-[var(--color-muted)]">
+                    CPF/CNPJ: {selectedCustomer.taxId}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -260,25 +268,27 @@ export function NewCollectionPage() {
         {tab === "new" && (
           <Card>
             <CardHeader className="pb-2">
-              <h2 className="text-sm font-bold text-[var(--color-text)]">Cadastrar Novo Cliente</h2>
+              <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+                Cadastrar Novo Cliente
+              </h3>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <Input
-                label="Nome Completo ou Razão Social *"
+                label="Nome ou razão social *"
                 placeholder="Ex: Auto Oficina Silva Ltda"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
               />
               <Input
-                label="CPF ou CNPJ *"
+                label="CPF/CNPJ *"
                 placeholder="Ex: 00000000000 ou 00000000000000"
                 value={taxId}
                 onChange={(e) => setTaxId(e.target.value)}
                 required
               />
               <Input
-                label="Telefone / WhatsApp *"
+                label="Telefone *"
                 placeholder="Ex: 11999998888"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -291,8 +301,12 @@ export function NewCollectionPage() {
         {/* Seção de Endereço da Coleta */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-bold text-[var(--color-text)]">Endereço de Retirada / Coleta</h2>
-            <p className="text-xs text-[var(--color-muted)]">Onde o equipamento está sendo coletado hoje.</p>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Endereço cadastral / Retirada
+            </h3>
+            <p className="text-[12px] text-[var(--color-muted)]">
+              Onde o equipamento está sendo coletado hoje.
+            </p>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <Input
@@ -333,7 +347,7 @@ export function NewCollectionPage() {
               />
             </div>
             <Input
-              label="Ponto de Referência ou Obs. do Local"
+              label="Observações do local"
               placeholder="Ex: Portão lateral da oficina, falar com o Marcos"
               value={collectionLocation}
               onChange={(e) => setCollectionLocation(e.target.value)}
@@ -344,13 +358,15 @@ export function NewCollectionPage() {
               type="submit"
               variant="primary"
               isLoading={isLoading}
-              className="w-full text-sm font-bold"
+              size="md"
             >
-              Avançar para Itens →
+              Continuar →
             </Button>
           </CardFooter>
         </Card>
       </form>
+
+      <MobileBottomNav />
     </main>
   );
 }

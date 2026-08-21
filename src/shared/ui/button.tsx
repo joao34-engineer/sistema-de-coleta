@@ -8,19 +8,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className = "", variant = "primary", size = "md", isLoading = false, disabled, children, ...props }, ref) => {
-    const baseStyles = "inline-flex items-center justify-center font-semibold rounded-md transition-colors focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+    const baseStyles = "inline-flex w-full items-center justify-center font-semibold rounded-[12px] transition-all focus-visible:outline-none disabled:bg-[var(--color-surface-neutral)] disabled:text-[var(--color-muted)] disabled:border-transparent disabled:pointer-events-none active:scale-[0.99]";
     
     const sizeStyles = {
-      sm: "min-h-[36px] px-3 text-xs",
-      md: "min-h-[44px] px-4 text-sm", // Touch target mínimo de 44px
-      lg: "min-h-[52px] px-6 text-base",
+      sm: "min-h-[38px] px-3 text-[12px]",
+      md: "min-h-[52px] px-4 text-[14px]", // Altura padrão do Figma: 52px
+      lg: "min-h-[56px] px-6 text-[16px]",
     };
 
     const variantStyles = {
-      primary: "bg-[var(--color-primary)] hover:bg-[var(--color-primary-strong)] text-white shadow-sm",
-      secondary: "bg-[var(--color-surface-neutral)] hover:bg-[var(--color-border)] text-[var(--color-text)]",
+      primary: "bg-[var(--color-primary)] hover:bg-[var(--color-primary-strong)] text-white shadow-xs",
+      secondary: "bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-neutral)] text-[var(--color-text)] shadow-xs",
       ghost: "bg-transparent hover:bg-[var(--color-surface-neutral)] text-[var(--color-text)]",
-      danger: "bg-[var(--color-danger)] hover:opacity-90 text-white shadow-sm",
+      danger: "bg-[var(--color-danger)] hover:opacity-90 text-white shadow-xs",
     };
 
     return (

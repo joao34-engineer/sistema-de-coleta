@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 
 export interface BudgetItemState {
   itemId: string;
@@ -69,121 +73,124 @@ export function BudgetFormPage({ collectionId, officialCode, expectedVersion, it
 
   if (success) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center space-y-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] text-2xl font-bold border border-[var(--color-primary)]">
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] px-4 py-12 text-center flex flex-col items-center justify-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] text-2xl font-bold border border-[var(--color-primary)]">
           💰
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Orçamento Técnico Gerado!</h1>
-        <p className="text-xs text-[var(--color-muted)]">
+        <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-text)]">
+          Orçamento Técnico Gerado!
+        </h2>
+        <p className="mt-1 text-[13px] text-[var(--color-muted)]">
           Valor Total Calculado:{" "}
-          <strong className="text-gray-900 text-sm">
+          <strong className="text-[var(--color-text)]">
             {totalBudgetBrl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           </strong>
         </p>
-        <Link href={`/coletas/${collectionId}/aprovacao`}>
-          <Button variant="primary" className="w-full text-xs h-11">
-            Ir para Tela de Aprovação do Cliente →
-          </Button>
-        </Link>
-      </div>
+        <div className="mt-6 w-full">
+          <Link href={`/coletas/${collectionId}/aprovacao` as Route}>
+            <Button variant="primary" size="md">
+              Ir para Aprovação do Cliente →
+            </Button>
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 py-6 pb-24">
-      <div>
-        <Link href={`/coletas/${collectionId}/operacao`} className="text-xs text-[var(--color-primary)] font-medium hover:underline">
-          ← Voltar para Painel Operacional
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">Orçamento Técnico</h1>
-        <p className="text-xs text-[var(--color-muted)]">
-          Detalhamento financeiro em BRL para a coleta {officialCode ?? collectionId}
-        </p>
-      </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Orçamento e reparo"
+        subtitle="Uso interno"
+        backHref={`/coletas/${collectionId}/operacao` as Route}
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
         <input type="hidden" name="expectedVersion" value={expectedVersion} />
+
+        <div>
+          <h2 className="text-[22px] font-semibold text-[var(--color-text)]">
+            Avaliação do reparo
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Guia {officialCode ?? collectionId}
+          </p>
+        </div>
+
         {/* Total Budget Card Header */}
         <Card className="border-[var(--color-primary)] bg-[var(--color-surface-green)]">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="flex items-center justify-between p-4">
             <div>
-              <p className="text-xs text-[var(--color-primary-strong)] font-medium uppercase tracking-wide">Valor Total do Orçamento</p>
-              <p className="text-2xl font-extrabold text-gray-900">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-primary-strong)]">
+                Valor Total do Orçamento
+              </p>
+              <p className="text-[24px] font-bold text-[var(--color-text)]">
                 {totalBudgetBrl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
               </p>
             </div>
-            <span className="text-xs font-semibold text-[var(--color-primary-strong)] bg-white px-3 py-1 rounded-full border border-[var(--color-primary)]">
-              {items.length} {items.length === 1 ? "item" : "itens"}
-            </span>
           </CardContent>
         </Card>
 
         {/* Item by Item Budget */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Custos por Equipamento</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Custos por Equipamento
+            </h3>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex flex-col gap-4">
             {items.map((it, idx) => {
               const currentBudgetItem = budgetItems[idx];
               if (!currentBudgetItem) return null;
 
               const itemTotal = calculateItemTotal(currentBudgetItem.laborCostBrl, currentBudgetItem.partsCostBrl);
               return (
-                <div key={it.id} className="rounded-xl border border-[var(--color-border)] p-3.5 space-y-3 bg-white text-xs">
+                <div
+                  key={it.id}
+                  className="flex flex-col gap-3 rounded-[12px] border border-[var(--color-border)] p-3 text-[12px]"
+                >
                   <div className="flex items-center justify-between">
-                    <p className="font-bold text-gray-900">Item #{idx + 1}: {it.description}</p>
-                    <span className="font-bold text-[var(--color-primary-strong)]">
-                      Subtotal: {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    <p className="font-semibold text-[var(--color-text)]">
+                      Item #{idx + 1}: {it.description}
+                    </p>
+                    <span className="font-semibold text-[var(--color-primary-strong)]">
+                      {itemTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-1 block text-[11px] text-gray-600">Mão de Obra (R$)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={currentBudgetItem.laborCostBrl}
-                        onChange={(e) => handleItemChange(idx, "laborCostBrl", Number(e.target.value))}
-                        className="h-9 w-full rounded-lg border border-[var(--color-border)] px-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] text-gray-600">Peças / Insumos (R$)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={currentBudgetItem.partsCostBrl}
-                        onChange={(e) => handleItemChange(idx, "partsCostBrl", Number(e.target.value))}
-                        className="h-9 w-full rounded-lg border border-[var(--color-border)] px-2"
-                      />
-                    </div>
+                    <Input
+                      label="Mão de Obra (R$)"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={currentBudgetItem.laborCostBrl}
+                      onChange={(e) => handleItemChange(idx, "laborCostBrl", Number(e.target.value))}
+                    />
+                    <Input
+                      label="Peças / Insumos (R$)"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={currentBudgetItem.partsCostBrl}
+                      onChange={(e) => handleItemChange(idx, "partsCostBrl", Number(e.target.value))}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-1 block text-[11px] text-gray-600">Prazo Estimado (Dias)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={currentBudgetItem.estimatedDays}
-                        onChange={(e) => handleItemChange(idx, "estimatedDays", Number(e.target.value))}
-                        className="h-9 w-full rounded-lg border border-[var(--color-border)] px-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] text-gray-600">Observações Técnicas</label>
-                      <input
-                        type="text"
-                        value={currentBudgetItem.notes}
-                        onChange={(e) => handleItemChange(idx, "notes", e.target.value)}
-                        placeholder="Substituição de rolamento..."
-                        className="h-9 w-full rounded-lg border border-[var(--color-border)] px-2"
-                      />
-                    </div>
+                    <Input
+                      label="Prazo (Dias)"
+                      type="number"
+                      min="1"
+                      value={currentBudgetItem.estimatedDays}
+                      onChange={(e) => handleItemChange(idx, "estimatedDays", Number(e.target.value))}
+                    />
+                    <Input
+                      label="Observações"
+                      placeholder="Substituição de rolamento..."
+                      value={currentBudgetItem.notes}
+                      onChange={(e) => handleItemChange(idx, "notes", e.target.value)}
+                    />
                   </div>
                 </div>
               );
@@ -194,7 +201,9 @@ export function BudgetFormPage({ collectionId, officialCode, expectedVersion, it
         {/* General Notes */}
         <Card>
           <CardHeader className="pb-2">
-            <h2 className="text-sm font-semibold text-gray-700">Observações Gerais do Orçamento</h2>
+            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+              Observações Gerais
+            </h3>
           </CardHeader>
           <CardContent>
             <textarea
@@ -202,7 +211,7 @@ export function BudgetFormPage({ collectionId, officialCode, expectedVersion, it
               value={generalNotes}
               onChange={(e) => setGeneralNotes(e.target.value)}
               placeholder="Condições de pagamento, prazos de garantia..."
-              className="w-full rounded-xl border border-[var(--color-border)] p-3 text-xs"
+              className="w-full rounded-[12px] border border-[var(--color-border)] p-3 text-[14px] text-[var(--color-text)] placeholder-[var(--color-border-subdued)] focus:border-[var(--color-primary)] focus:outline-none"
             />
           </CardContent>
         </Card>
@@ -211,11 +220,13 @@ export function BudgetFormPage({ collectionId, officialCode, expectedVersion, it
           type="submit"
           variant="primary"
           isLoading={isSubmitting}
-          className="w-full text-xs h-11 rounded-xl font-semibold"
+          size="md"
         >
-          Salvar & Enviar para Aprovação
+          Salvar orçamento
         </Button>
       </form>
-    </div>
+
+      <MobileBottomNav />
+    </main>
   );
 }

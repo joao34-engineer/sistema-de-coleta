@@ -2,27 +2,43 @@ import { LoginForm } from "./login-form";
 
 export function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--color-background)] px-4 py-8">
-      <section className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-surface p-6 shadow-sm sm:p-8">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] font-bold text-xl border border-[var(--color-primary)]">
-            MJT
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-between bg-[var(--color-background)] px-4 py-8">
+      <div>
+        {/* Topbar / Header MJT do Figma */}
+        <header className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] p-4 rounded-[16px] border shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--color-primary)] text-sm font-bold text-white">
+              MJT
+            </div>
+            <div>
+              <h1 className="text-[18px] font-semibold text-[var(--color-text)]">
+                Acessar
+              </h1>
+              <p className="text-[12px] text-[var(--color-muted)]">
+                Sistema de Coleta MJT
+              </p>
+            </div>
           </div>
-          <span className="inline-block rounded-full bg-[var(--color-surface-green)] px-3 py-1 text-xs font-medium text-[var(--color-primary-strong)]">
-            Sistema de Coleta PWA
-          </span>
-          <h1 className="mt-3 text-2xl font-bold text-gray-900">Acesso do Operador</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Entre com suas credenciais de coletor ou gestor da oficina
+        </header>
+
+        {/* Hero Title do Figma */}
+        <section className="mb-6 px-1">
+          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text)]">
+            Entre para continuar.
+          </h2>
+          <p className="mt-1 text-[13px] text-[var(--color-muted)]">
+            Credenciais do coletor ou administrador da oficina.
           </p>
-        </div>
+        </section>
 
         <LoginForm />
+      </div>
 
-        <div className="mt-6 border-t border-[var(--color-border)] pt-4 text-center text-xs text-[var(--color-muted)]">
-          <p>MJT Soluções Industriais • M12 Mobile</p>
-        </div>
-      </section>
+      <footer className="mt-8 text-center">
+        <p className="text-[12px] text-[var(--color-muted)]">
+          Sem cadastro ou recuperação de senha neste MVP.
+        </p>
+      </footer>
     </main>
   );
 }

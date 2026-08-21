@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
@@ -32,7 +33,7 @@ const CONDITION_OPTIONS = [
 
 export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
   const router = useRouter();
-  const [draft, setDraft] = useState<DraftDTO | null>(initialDraft ?? null);
+  const [, setDraft] = useState<DraftDTO | null>(initialDraft ?? null);
   const [items, setItems] = useState<readonly DraftItemDTO[]>(initialItems ?? []);
   const [rowVersion, setRowVersion] = useState<number>(initialDraft?.rowVersion ?? 1);
 
@@ -177,53 +178,38 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
 
   if (isLoading) {
     return (
-      <main className="mx-auto min-h-screen w-full max-w-lg px-4 py-12 text-center">
-        <p className="text-sm text-[var(--color-muted)]">Carregando itens da coleta...</p>
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] px-4 py-12 text-center">
+        <p className="text-[14px] text-[var(--color-muted)]">Carregando itens da coleta...</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-lg px-4 py-6">
-      {/* Top Header Mobile */}
-      <header className="mb-4 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-        <Link href={"/coletas/nova" as Route}>
-          <Button variant="ghost" size="sm" className="gap-1 text-xs">
-            ← Dados do Cliente
-          </Button>
-        </Link>
-        <div className="text-right">
-          <Badge status="draft">M03 · Itens da Coleta</Badge>
-          <span className="mt-0.5 block text-[10px] text-[var(--color-muted)]">Passo 2 de 4</span>
-        </div>
-      </header>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      <MobilePageHeader
+        title="Itens da coleta"
+        subtitle="Passo 2 de 4"
+        backHref={"/coletas/nova" as Route}
+      />
 
-      <div className="flex flex-col gap-5">
-        {/* Banner de Rascunho Ativo */}
-        <Card className="bg-[var(--color-surface-neutral)]">
-          <CardHeader className="py-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[var(--color-muted)] uppercase">
-                Rascunho #{draftId.substring(0, 8)}
-              </span>
-              <Badge status="draft">v{rowVersion} · Autosave Ativo</Badge>
-            </div>
-            {draft?.collectionLocation && (
-              <p className="mt-1 text-xs font-semibold text-[var(--color-text)]">
-                📍 Local: {draft.collectionLocation}
-              </p>
-            )}
-          </CardHeader>
-        </Card>
+      <div className="flex flex-col gap-5 px-4">
+        <div>
+          <h2 className="text-[20px] font-semibold text-[var(--color-text)]">
+            Adicione ao menos um item.
+          </h2>
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Rascunho #{draftId.substring(0, 8)} · v{rowVersion}
+          </p>
+        </div>
 
         {errorMsg && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3 text-[12px] font-semibold text-[#ba5b52]">
             {errorMsg}
           </div>
         )}
 
         {successMsg && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
+          <div className="rounded-[12px] border border-[#4c916f] bg-[#eef8f2] p-3 text-[12px] font-semibold text-[#31674c]">
             {successMsg}
           </div>
         )}
@@ -232,15 +218,14 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
         <form onSubmit={handleAddItem}>
           <Card>
             <CardHeader className="pb-2">
-              <h2 className="text-sm font-bold text-[var(--color-text)]">+ Adicionar Equipamento / Item</h2>
-              <p className="text-xs text-[var(--color-muted)]">
-                Descreva a peça ou equipamento sendo recolhido.
-              </p>
+              <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
+                + Adicionar Equipamento
+              </h3>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Input
                 label="Descrição do Equipamento *"
-                placeholder="Ex: Turbina Master Power T3 ou Bloco do Motor"
+                placeholder="Ex: Máquina de costura ou Turbina T3"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
@@ -248,14 +233,14 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
 
               {/* Controle de Quantidade Touch */}
               <div>
-                <label className="mb-1 block text-xs font-bold text-[var(--color-text)]">
+                <label className="mb-1 block text-[12px] font-semibold text-[var(--color-muted)]">
                   Quantidade *
                 </label>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="flex h-11 w-11 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-neutral)] text-lg font-bold text-[var(--color-text)] transition-colors hover:bg-[var(--color-border)]"
+                    className="flex h-12 w-12 items-center justify-center rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface-neutral)] text-lg font-bold text-[var(--color-text)]"
                   >
                     -
                   </button>
@@ -265,7 +250,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="flex h-11 w-11 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-neutral)] text-lg font-bold text-[var(--color-text)] transition-colors hover:bg-[var(--color-border)]"
+                    className="flex h-12 w-12 items-center justify-center rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface-neutral)] text-lg font-bold text-[var(--color-text)]"
                   >
                     +
                   </button>
@@ -274,7 +259,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
 
               {/* Chips de Condição */}
               <div>
-                <label className="mb-1.5 block text-xs font-bold text-[var(--color-text)]">
+                <label className="mb-1.5 block text-[12px] font-semibold text-[var(--color-muted)]">
                   Condição Física do Item
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -285,10 +270,10 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                         key={opt.value}
                         type="button"
                         onClick={() => setCondition(opt.value)}
-                        className={`flex min-h-[44px] items-center justify-center rounded-md border text-xs font-semibold transition-colors ${
+                        className={`flex min-h-[44px] items-center justify-center rounded-[12px] border text-[12px] font-semibold transition-colors ${
                           isSelected
-                            ? "border-[var(--color-primary)] bg-[var(--color-surface-green)] text-[var(--color-primary)] shadow-sm"
-                            : "border-[var(--color-border)] bg-[var(--color-card-bg)] text-[var(--color-muted)] hover:border-[var(--color-primary)]"
+                            ? "border-[var(--color-primary)] bg-[var(--color-surface-green)] text-[var(--color-primary-strong)]"
+                            : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-muted)]"
                         }`}
                       >
                         {opt.label}
@@ -299,8 +284,8 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
               </div>
 
               <Input
-                label="Observações Técnicas / Avarias"
-                placeholder="Ex: Folga no eixo, caracol com marcas de vazamento"
+                label="Observações / Foto opcional"
+                placeholder="Ex: Folga no eixo ou marcas de vazamento"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -310,7 +295,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                 type="submit"
                 variant="primary"
                 isLoading={isAdding}
-                className="w-full text-sm font-bold"
+                size="md"
               >
                 + Adicionar Item à Coleta
               </Button>
@@ -322,21 +307,18 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[var(--color-text)]">
+              <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
                 Itens na Coleta ({items.length})
-              </h2>
-              {items.length > 0 && <Badge status="collected">{items.length} itens salvos</Badge>}
+              </h3>
+              {items.length > 0 && <Badge status="collected">{items.length} salvos</Badge>}
             </div>
           </CardHeader>
           <CardContent>
             {items.length === 0 ? (
               <div className="py-6 text-center">
                 <span className="text-3xl">📦</span>
-                <p className="mt-2 text-xs font-semibold text-[var(--color-muted)]">
+                <p className="mt-2 text-[12px] font-semibold text-[var(--color-muted)]">
                   Nenhum item adicionado ainda.
-                </p>
-                <p className="text-[11px] text-[var(--color-muted)]">
-                  Preencha o formulário acima para registrar as peças.
                 </p>
               </div>
             ) : (
@@ -344,12 +326,12 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] p-3 transition-colors"
+                    className="flex flex-col gap-2 rounded-[12px] border border-[var(--color-border)] p-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-[var(--color-text)]">
+                          <span className="text-[14px] font-semibold text-[var(--color-text)]">
                             {item.quantity}x {item.description}
                           </span>
                           {item.condition && (
@@ -357,7 +339,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                           )}
                         </div>
                         {item.notes && (
-                          <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+                          <p className="mt-1 text-[12px] text-[var(--color-muted)]">
                             Obs: {item.notes}
                           </p>
                         )}
@@ -367,7 +349,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingItem(item)}
-                          className="text-xs text-[var(--color-primary,#4c916f)] hover:bg-[var(--color-surface-green)]"
+                          className="text-[12px] text-[var(--color-primary-strong)]"
                         >
                           Editar
                         </Button>
@@ -376,7 +358,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
                           size="sm"
                           isLoading={removingId === item.id}
                           onClick={() => handleRemoveItem(item.id)}
-                          className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="text-[12px] text-[#ba5b52]"
                         >
                           Remover
                         </Button>
@@ -393,7 +375,7 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
               <Button
                 variant="primary"
                 onClick={() => router.push(`/coletas/${draftId}/revisao` as Route)}
-                className="w-full text-sm font-bold min-h-[44px]"
+                size="md"
               >
                 Avançar para Revisão →
               </Button>
@@ -410,7 +392,8 @@ export function DraftItemsPage({ draftId, initialDraft, initialItems }: Props) {
           onSave={handleSaveEditedItem}
         />
       )}
+
+      <MobileBottomNav />
     </main>
   );
 }
-

@@ -3,6 +3,8 @@ import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import { signOutAction } from "@/shared/auth/index.server";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardFooter } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -14,68 +16,69 @@ export function DashboardPage({ administrator, settings }: Props) {
   const isSetupComplete = settings.setupStatus === "complete";
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-lg px-4 py-6">
-      {/* Mobile Top Header (MJT Header) */}
-      <header className="mb-6 flex items-center justify-between border-b border-[var(--color-border)] pb-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
-            {administrator.organizationName}
-          </span>
-          <h1 className="mt-0.5 text-2xl font-bold text-[var(--color-text)]">
-            Olá, {greeting}
-          </h1>
-        </div>
-        <form action={signOutAction}>
-          <Button variant="secondary" size="sm" type="submit">
-            Sair
-          </Button>
-        </form>
-      </header>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+      {/* Mobile Page Header do Figma com Botão de Logout */}
+      <MobilePageHeader
+        title="Início"
+        subtitle={`Olá, ${greeting}`}
+        badge={
+          <form action={signOutAction}>
+            <Button
+              variant="secondary"
+              size="sm"
+              type="submit"
+              className="min-h-[38px] px-3.5 text-[12px] font-semibold text-[#ba5b52] hover:bg-[#fdf2f1] hover:border-[#fca5a5]"
+            >
+              Sair 🚪
+            </Button>
+          </form>
+        }
+      />
 
-      <div className="flex flex-col gap-5">
-        {/* Ação Principal Mobile: Nova Coleta */}
-        <Card className="bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-surface-green)]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <Badge status="collected">Sistema Ativo</Badge>
-              <span className="text-xs text-[var(--color-muted)]">Coletor Mobile</span>
-            </div>
-            <h2 className="mt-2 text-xl font-bold text-[var(--color-text)]">
-              Iniciar Nova Coleta
-            </h2>
-            <p className="text-xs text-[var(--color-muted)]">
-              Registre a retirada de equipamentos com autosave e assinatura na tela.
-            </p>
-          </CardHeader>
-          <CardFooter className="pt-2">
-            <Link href={"/coletas/nova" as Route} className="w-full">
-              <Button variant="primary" className="w-full text-sm">
-                + Nova Coleta
-              </Button>
-            </Link>
-          </CardFooter>
+      <div className="flex flex-col gap-4 px-4">
+        {/* Card Resumo do Figma (342x120px) */}
+        <Card className="flex flex-col gap-2 p-5 bg-[var(--color-surface)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+              {administrator.organizationName}
+            </span>
+            <Badge status="collected">Operação Ativa</Badge>
+          </div>
+          <h2 className="text-[20px] font-semibold text-[var(--color-text)]">
+            Sistema de Coleta MJT
+          </h2>
+          <p className="text-[13px] text-[var(--color-muted)]">
+            Gerencie coletas no cliente e acompanhe os reparos da oficina.
+          </p>
         </Card>
+
+        {/* Botão de Ação Rápida Nova Coleta */}
+        <Link href={"/coletas/nova" as Route}>
+          <Button variant="primary" size="md">
+            + Nova Coleta
+          </Button>
+        </Link>
 
         {/* Status de Configuração Institucional */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+              <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
                 Perfil Emissor MJT
               </h3>
               <Badge status={isSetupComplete ? "ready" : "draft"}>
-                {isSetupComplete ? "Pronto para emissão" : "Configuração pendente"}
+                {isSetupComplete ? "Pronto" : "Pendente"}
               </Badge>
             </div>
-            <p className="text-xs text-[var(--color-muted)]">
+            <p className="text-[12px] text-[var(--color-muted)]">
               {isSetupComplete
-                ? "Dados jurídicos e logo institucional confirmados para guias."
-                : "Complete o endereço e logo para habilitar a emissão de recibos."}
+                ? "Dados jurídicos e logo institucional confirmados."
+                : "Complete o endereço e logo para habilitar recibos."}
             </p>
           </CardHeader>
           <CardFooter>
-            <Link href="/configuracoes/empresa" className="w-full">
-              <Button variant="secondary" size="sm" className="w-full">
+            <Link href={"/configuracoes/empresa" as Route} className="w-full">
+              <Button variant="secondary" size="md">
                 Configurações da Empresa
               </Button>
             </Link>
@@ -85,23 +88,25 @@ export function DashboardPage({ administrator, settings }: Props) {
         {/* Acessos Rápidos Mobile */}
         <div className="grid grid-cols-2 gap-3">
           <Link href={"/coletas" as Route}>
-            <Card className="flex flex-col items-center justify-center py-5 text-center transition-colors hover:border-[var(--color-primary)]">
+            <Card className="flex flex-col items-center justify-center py-4 text-center transition-colors hover:border-[var(--color-primary)]">
               <span className="text-2xl">📋</span>
-              <span className="mt-2 text-xs font-semibold text-[var(--color-text)]">
+              <span className="mt-1 text-[12px] font-semibold text-[var(--color-text)]">
                 Lista de Coletas
               </span>
             </Card>
           </Link>
-          <Link href={"/coletas/rascunhos" as Route}>
-            <Card className="flex flex-col items-center justify-center py-5 text-center transition-colors hover:border-[var(--color-primary)]">
+          <Link href={"/coletas" as Route}>
+            <Card className="flex flex-col items-center justify-center py-4 text-center transition-colors hover:border-[var(--color-primary)]">
               <span className="text-2xl">⏳</span>
-              <span className="mt-2 text-xs font-semibold text-[var(--color-text)]">
+              <span className="mt-1 text-[12px] font-semibold text-[var(--color-text)]">
                 Rascunhos Em Aberto
               </span>
             </Card>
           </Link>
         </div>
       </div>
+
+      <MobileBottomNav />
     </main>
   );
 }
