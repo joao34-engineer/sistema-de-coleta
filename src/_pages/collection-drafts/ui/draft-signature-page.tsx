@@ -8,7 +8,8 @@ import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
-import { fetchDraftWithItemsAction, finalizeCollectionWithSignatureAction } from "../api/actions";
+import { fetchDraftWithItemsAction } from "../api/actions";
+import { finalizeCollectionWithSignatureAction } from "@/app/actions/draft-flow.actions";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
 
 type Props = Readonly<{
@@ -25,8 +26,8 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
   const [items, setItems] = useState<readonly DraftItemDTO[]>(initialItems ?? []);
   const [rowVersion, setRowVersion] = useState<number>(initialDraft?.rowVersion ?? 1);
 
-  const [signerName, setSignerName] = useState(initialDraft?.responsibleName ?? "Ana Beatriz Silva");
-  const [signerTaxId, setSignerTaxId] = useState(initialDraft?.responsibleTaxId ?? "00.000.000/0001-00");
+  const [signerName, setSignerName] = useState(initialDraft?.responsibleName ?? "");
+  const [signerTaxId, setSignerTaxId] = useState(initialDraft?.responsibleTaxId ?? "");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(!initialDraft);
@@ -120,7 +121,7 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
             Confirme a entrega dos itens descritos.
           </h2>
           <div className="mt-2 inline-flex items-center rounded-full bg-[var(--color-surface-green)] px-3 py-1 text-[13px] font-medium text-[var(--color-primary-dark)]">
-            Guia MJT-2026-000021 · {items.length || 2} itens
+            Rascunho · {items.length} {items.length === 1 ? "item" : "itens"}
           </div>
         </div>
 
@@ -149,7 +150,7 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
         <div className="flex flex-col gap-4">
           <Input
             label="Nome de quem assinou *"
-            placeholder="Ana Beatriz Silva"
+            placeholder="Nome completo de quem assina"
             value={signerName}
             onChange={(e) => setSignerName(e.target.value)}
             required
@@ -157,7 +158,7 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
 
           <Input
             label="CPF/CNPJ de quem assinou *"
-            placeholder="00.000.000/0001-00"
+            placeholder="000.000.000-00"
             value={signerTaxId}
             onChange={(e) => setSignerTaxId(e.target.value)}
             required

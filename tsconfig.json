@@ -38,6 +38,9 @@
       "@/_pages/*": [
         "src/_pages/*"
       ],
+      "@/app/*": [
+        "src/_app/*"
+      ],
       "@/shared/*": [
         "src/shared/*"
       ]

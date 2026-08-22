@@ -15,6 +15,11 @@
   --color-danger: #ba5b52;
   --color-success: #4c916f;
   --color-warning: #a36b2c;
+  /* Aliases usados pelas páginas mobile (nomes semânticos do Figma). */
+  --color-surface-bg: #f7f8f7;
+  --color-card-bg: #ffffff;
+  --color-text-primary: #28312b;
+  --color-text-muted: #748078;
   --radius-small: 0.5rem;
   --radius-medium: 0.75rem;
   --radius-large: 1.125rem;

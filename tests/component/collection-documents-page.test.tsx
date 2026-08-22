@@ -6,7 +6,7 @@ describe("CollectionDocumentsPage", () => {
   afterEach(() => cleanup());
 
   it("shows immutable versions and only available artifact actions", () => {
-    render(<CollectionDocumentsPage collectionId="11111111-1111-4111-8111-111111111111" documents={[{
+    render(<CollectionDocumentsPage collectionId="11111111-1111-4111-8111-111111111111" officialCode="MJT-2026-000001" documents={[{
       id: "22222222-2222-4222-8222-222222222222",
       collectionId: "11111111-1111-4111-8111-111111111111",
       version: 2,
@@ -22,7 +22,7 @@ describe("CollectionDocumentsPage", () => {
   });
 
   it("explains when a collection has no generated document", () => {
-    render(<CollectionDocumentsPage collectionId="11111111-1111-4111-8111-111111111111" documents={[]} />);
+    render(<CollectionDocumentsPage collectionId="11111111-1111-4111-8111-111111111111" officialCode={null} documents={[]} />);
     expect(screen.getByText("Nenhum documento disponível para esta coleta.")).toBeInTheDocument();
   });
 });

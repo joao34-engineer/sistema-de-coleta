@@ -7,16 +7,15 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { createDraftWithCustomerAction, searchCustomersAction } from "../api/actions";
-import type { CustomerDTO } from "@/_pages/customers/model/customer";
+import { createDraftWithCustomerAction, searchCustomersAction, type CustomerView } from "@/app/actions/draft-flow.actions";
 
 export function NewCollectionPage() {
   const router = useRouter();
   const [tab, setTab] = useState<"new" | "search">("new");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<readonly CustomerDTO[]>([]);
+  const [searchResults, setSearchResults] = useState<readonly CustomerView[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerDTO | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerView | null>(null);
 
   // Form states matching Figma M02 (13:27)
   const [displayName, setDisplayName] = useState("");
@@ -41,7 +40,7 @@ export function NewCollectionPage() {
     }
   };
 
-  const handleSelectCustomer = (cust: CustomerDTO) => {
+  const handleSelectCustomer = (cust: CustomerView) => {
     setSelectedCustomer(cust);
     setDisplayName(cust.displayName);
     setTaxId(cust.taxId);

@@ -103,15 +103,15 @@ export function CollectionsListPage({ initialItems }: Props) {
               >
                 <div className="flex flex-col gap-1">
                   <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {item.officialCode ?? "MJT-2026-000021"}
+                    {item.officialCode ?? "Rascunho"}
                   </h2>
                   <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-                    {item.customerName ?? "Clínica Horizonte"} · 4 itens
+                    {item.customerName ?? "Cliente não informado"}
                   </p>
                 </div>
 
-                <Badge status={item.status === "draft" ? "collected" : item.status}>
-                  {item.status === "draft" ? "Coletada" : item.status === "ready" ? "Pronto" : "Em reparo"}
+                <Badge status={item.status === "draft" ? "draft" : item.status}>
+                  {item.status === "draft" ? "Rascunho" : item.status === "ready" ? "Pronto" : "Em reparo"}
                 </Badge>
               </Link>
             ))}

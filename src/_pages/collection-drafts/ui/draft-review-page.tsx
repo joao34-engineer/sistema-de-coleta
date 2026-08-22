@@ -87,10 +87,10 @@ export function DraftReviewPage({ draftId, initialDraft, initialItems }: Props) 
             CLIENTE
           </span>
           <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-            {draft.responsibleName || "Clínica Horizonte"}
+            {draft.responsibleName || "Responsável não informado"}
           </h3>
           <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-            CNPJ / CPF · {draft.responsibleTaxId || "00.000.000/0001-00"}
+            CNPJ / CPF · {draft.responsibleTaxId || "não informado"}
           </p>
         </div>
 
@@ -115,7 +115,7 @@ export function DraftReviewPage({ draftId, initialDraft, initialItems }: Props) 
             LOCAL DA COLETA
           </span>
           <p className="text-[13px] font-normal text-[var(--color-text-primary)]">
-            {draft.collectionLocation || "Rua das Flores, 120 · Centro"}
+            {draft.collectionLocation || "Local da coleta não informado"}
           </p>
         </div>
 
