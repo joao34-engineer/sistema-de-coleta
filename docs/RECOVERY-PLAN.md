@@ -139,10 +139,57 @@ Fidelidade A01/M01 + logo real. Eixo unico desta sessao; validacao colada ao fin
 **Validacao real da Onda 2.5 (saida colada):**
 
 ```text
-(preencher apos execucao)
+npx steiger src
+√ No problems found!
+
+npm run lint
+✖ 1 problem (0 errors, 1 warning)
+  (warning pre-existente: scripts/parse_figma_nodes.mjs 'path' is defined but never used)
+
+npm run typecheck
+✓ Types generated successfully — 0 erros
+
+npm run test
+ Test Files  22 passed | 2 skipped (24)
+      Tests  81 passed | 18 skipped (99)
+
+npm run build
+✓ Compiled successfully — 50 rotas geradas, sem warnings de CSS
 ```
 
 **Nao commitado.** Commit sugerido: `fix: onda 2.5 - logo real MJT no login/dashboard, dashboard fiel ao M01, navegacao honesta`.
+
+---
+
+## 6.6 ONDA 3a — EXECUTADA nesta sessao (22/08/2026)
+
+Migration Fase 3 (operação de oficina) aplicada no remoto. Dry-run verde antes da aplicacao.
+
+| # | Acao | Arquivo |
+| --- | --- | --- |
+| 1 | Constraint `collections.status` ampliada (draft/collected/canceled → +12 novos status) | `supabase/migrations/20260822125100_phase_3_operations_workshop.sql` |
+| 2 | Constraints `collection_events.previous_status/new_status` ampliadas | mesmo arquivo |
+| 3 | Tabelas criadas: `service_orders`, `invoice_references`, `delivery_items`, `service_order_items`, `workshop_checkin_items` | mesmo arquivo |
+| 4 | RPCs `security definer`: workshop_check_in, create_technical_budget, approve_technical_budget, update_service_progress, register_invoice_reference, deliver_to_customer, cancel_or_reopen_collection | mesmo arquivo |
+| 5 | RLS admin + grants replicando padrão Fase 1A | mesmo arquivo |
+| 6 | `supabase db push --dry-run` → verde (duas migrations listadas) | saída colada |
+| 7 | `supabase db push` aplicado no remoto com sucesso | saída colada |
+
+**Validacao real da Onda 3a (saida colada):**
+
+```text
+npx supabase db push --dry-run
+Would push these migrations:
+ • 20260820230000_phase_2_document_artifacts_jobs_shares_revisions.sql
+ • 20260822125100_phase_3_operations_workshop.sql
+
+npx supabase db push
+Applying migration 20260820230000_phase_2_document_artifacts_jobs_shares_revisions.sql...
+Applying migration 20260822125100_phase_3_operations_workshop.sql...
+{"upToDate":false,"dryRun":false,"migrations":[...],"message":"Finished supabase db push."}
+```
+
+**Commit separado:** `feat: onda 3a - migration fase 3 operacao de oficina`
 
 ---
 
