@@ -1,14 +1,20 @@
+import Image from "next/image";
 import { LoginForm } from "./login-form";
 
 export function LoginPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[390px] flex-col justify-between bg-[var(--color-surface-bg)] px-6 py-10">
       <div>
-        {/* Logo Mark MJT do Figma (64x64px, radius 18px, bg #4c916f) */}
+        {/* Logo real da MJT Tornearia (PNG 395x288, fundo transparente) */}
         <div className="mb-8 flex items-center justify-start">
-          <div className="flex h-[64px] w-[64px] items-center justify-center rounded-[18px] bg-[var(--color-primary)] text-[18px] font-semibold text-white shadow-xs">
-            MJT
-          </div>
+          <Image
+            src="/logo/Logo_-_MJT-removebg-preview.png"
+            alt="MJT Tornearia"
+            width={88}
+            height={64}
+            priority
+            className="h-16 w-auto"
+          />
         </div>
 
         {/* Hero Title do Figma Node 27:3 */}
@@ -25,11 +31,13 @@ export function LoginPage() {
       </div>
 
       <footer className="mt-10 text-center">
-        <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-          MJT © 2026 · Sistema de Coleta e Operação
+        <p className="text-[12px] font-semibold text-[var(--color-text-primary)]">
+          MJT Tornearia · Usinagem de peças · Solda Elétrica e Mecânica
+        </p>
+        <p className="mt-1 text-[12px] font-normal text-[var(--color-text-muted)]">
+          (21) 98663-8936 · mjt.mjtornearia@gmail.com
         </p>
       </footer>
     </main>
   );
 }
-

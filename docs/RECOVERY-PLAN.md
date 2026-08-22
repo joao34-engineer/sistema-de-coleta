@@ -124,6 +124,28 @@ npm run build
 
 ---
 
+## 6.5 ONDA 2.5 — EXECUTADA nesta sessao (22/08/2026)
+
+Fidelidade A01/M01 + logo real. Eixo unico desta sessao; validacao colada ao final.
+
+| # | Acao | Arquivos |
+| --- | --- | --- |
+| 1 | `MobilePageHeader` ganhou props opcionais `logoSrc`/`logoAlt` renderizando `next/image` (h-8, proporcao real do PNG 395x288) no lugar do quadrado verde; demais telas inalteradas | `src/shared/ui/mobile-page-header.tsx` |
+| 2 | Login A01: quadrado verde substituido pela logo real (h-16); footer com identidade real da MJT Tornearia (atividades + contatos oficiais da tabela-de-preco); hero e LoginForm intocados | `src/_pages/login/ui/login-page.tsx` |
+| 3 | Dashboard server busca dados reais: `listCollections({ limit: 50 })` em try/catch → `items=[]` + `loadFailed` (padrao da listagem de coletas) | `src/_pages/dashboard/index.server.tsx` |
+| 4 | Dashboard M01 reconstruida fiel ao node `13:2`: header com logo + "Ola, {primeiro nome}" + "Operacao de hoje" + data pt-BR; headline 28px em 2 linhas; contador real de coletas fora de draft/canceled/delivered com nota "{n} prontas para entrega"; botao "Nova coleta" + link "Ver rascunhos" → `/coletas/rascunhos` (corrige link quebrado que apontava `/coletas`); secao "Proximas atividades" com ate 3 coletas recentes (Badge + codigo + cliente) ou estado vazio honesto via `MobileStatePanel`; erro de carga com retry via `router.refresh()`; card Perfil Emissor mantido; ZERO emojis | `src/_pages/dashboard/ui/dashboard-page.tsx` |
+| 5 | Verdade documental: linha 06/08 anota M01/A01 alinhados com logo real; fase 3 registra tabela-de-preco como insumo canonico dos orcamentos O03 | `docs/design-system/mobile-execution-plan.md`, `docs/execution/phase-3-operations-workshop.md` |
+
+**Validacao real da Onda 2.5 (saida colada):**
+
+```text
+(preencher apos execucao)
+```
+
+**Nao commitado.** Commit sugerido: `fix: onda 2.5 - logo real MJT no login/dashboard, dashboard fiel ao M01, navegacao honesta`.
+
+---
+
 ## 7. Contexto util rapido
 
 - Branch atual: `main` (remote `origin/main` no GitHub; branch antiga `codex/phase-1-core` intacta como rede de seguranca).

@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Route } from "next";
 
 export interface MobilePageHeaderProps {
@@ -9,6 +10,8 @@ export interface MobilePageHeaderProps {
   stepText?: string;
   progressText?: string;
   badge?: React.ReactNode;
+  logoSrc?: string;
+  logoAlt?: string;
 }
 
 export function MobilePageHeader({
@@ -18,6 +21,8 @@ export function MobilePageHeader({
   stepText,
   progressText,
   badge,
+  logoSrc,
+  logoAlt,
 }: MobilePageHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex min-h-[80px] w-full flex-col justify-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-xs">
@@ -31,6 +36,15 @@ export function MobilePageHeader({
             >
               ‹
             </Link>
+          ) : logoSrc ? (
+            <Image
+              src={logoSrc}
+              alt={logoAlt ?? "Logo MJT Tornearia"}
+              width={44}
+              height={32}
+              priority
+              className="h-8 w-auto shrink-0"
+            />
           ) : (
             /* Logo Mark MJT do Figma (38x32px, radius 14px, bg #4c916f) */
             <div className="flex h-8 w-[38px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-primary)] text-xs font-bold text-white shadow-xs">

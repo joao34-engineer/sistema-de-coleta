@@ -18,6 +18,13 @@ Onda 3 — ver [RECOVERY-PLAN](../RECOVERY-PLAN.md)):
 1. Contratos Zod prontos e testados: `src/_pages/collection-operations/model/contracts.ts` (7 schemas) + `tests/unit/mobile-phase4-operations.test.ts`.
 2. Eventos append-only e transicoes ja modeladas em `docs/architecture/data-and-rules.md`.
 3. Nenhuma migration da Fase 3 existe ainda (`supabase/migrations/` para na Fase 2).
+4. Insumo canonico de identidade e catalogo (registrado na Onda 2.5, 22/08/2026):
+   `docs/tabela-de-preco/*.pdf` — tabela oficial da MJT Tornearia com 63 servicos
+   e precos BRL, base para o catalogo dos orcamentos O03; dados de emissao do PDF
+   oficial: CNPJ 28.316.431/0001-80, Estrada do Cabuçu, 1190 – Campo Grande/RJ,
+   tels (21) 98663-8936 / (21) 97674-3502, mjt.mjtornearia@gmail.com.
+   Nao criar migration nem catalogo no banco nesta etapa — apenas consumir como
+   referencia quando a Onda 3 implementar orcamentos.
 
 ## Passos
 
