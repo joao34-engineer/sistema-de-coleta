@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
@@ -101,8 +102,37 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
 
   if (isLoading) {
     return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] px-6 py-12 text-center">
-        <p className="text-[14px] text-[var(--color-text-muted)]">Carregando assinatura...</p>
+      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+        <MobilePageHeader
+          title="Assinatura do cliente"
+          subtitle="Emissão da guia"
+          backHref={`/coletas/${draftId}/revisao` as Route}
+        />
+        <MobileStatePanel
+          type="loading"
+          title="Carregando assinatura"
+          subtitle="Recuperando os dados do rascunho para emissão da guia."
+        />
+      </main>
+    );
+  }
+
+  if (errorMsg === "Rascunho de coleta não encontrado.") {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+        <MobilePageHeader
+          title="Assinatura do cliente"
+          subtitle="Emissão da guia"
+          backHref={"/coletas/rascunhos" as Route}
+        />
+        <MobileStatePanel
+          type="error"
+          title="Rascunho não encontrado"
+          subtitle="Este rascunho pode ter sido descartado ou o link está incorreto."
+          actionText="Ver rascunhos"
+          onAction={() => router.push("/coletas/rascunhos" as Route)}
+        />
+        <MobileBottomNav />
       </main>
     );
   }

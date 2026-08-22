@@ -1,24 +1,47 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 
 type Props = Readonly<{
   initialItems: ReadonlyArray<CollectionListItemDTO>;
+  loadFailed?: boolean;
 }>;
 
 type StatusFilter = "all" | "collected" | "in_repair" | "ready";
 
-export function CollectionsListPage({ initialItems }: Props) {
+export function CollectionsListPage({ initialItems, loadFailed = false }: Props) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<StatusFilter>("all");
   const [, startTransition] = useTransition();
+
+  if (loadFailed) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+        <MobilePageHeader
+          title="Coletas"
+          subtitle="Buscar, filtrar e abrir"
+        />
+        <MobileStatePanel
+          type="error"
+          title="Não foi possível carregar as coletas"
+          subtitle="Ocorreu um erro ao consultar o servidor. Suas dados não foram alterados."
+          actionText="Tentar novamente"
+          onAction={() => router.refresh()}
+        />
+        <MobileBottomNav />
+      </main>
+    );
+  }
 
   const filteredItems = initialItems.filter((item) => {
     const matchesStatus =
@@ -84,11 +107,17 @@ export function CollectionsListPage({ initialItems }: Props) {
 
         {/* Lista de Cards de Coleta (Figma Node 22:2) */}
         {filteredItems.length === 0 ? (
-          <div className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-6 text-center shadow-xs">
-            <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-              Nenhuma coleta encontrada
-            </p>
-          </div>
+          <MobileStatePanel
+            type="empty"
+            title="Nenhuma coleta encontrada"
+            subtitle={
+              searchTerm.trim() || selectedFilter !== "all"
+                ? "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta."
+                : "Você ainda não registrou nenhuma coleta. Crie a primeira para começar."
+            }
+            actionText="Nova coleta"
+            onAction={() => router.push("/coletas/nova" as Route)}
+          />
         ) : (
           <div className="flex flex-col gap-3">
             {filteredItems.map((item) => (

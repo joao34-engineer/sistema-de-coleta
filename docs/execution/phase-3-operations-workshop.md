@@ -4,6 +4,21 @@
 
 Dar continuidade rastreavel a coleta apos sua retirada, sem transformar o V1 em um ERP completo.
 
+## Estado real (22/08/2026)
+
+**NAO INICIADA.** Auditoria do RECOVERY-PLAN confirmou que as telas O01–O05/M13–M16
+que existiam em `src/_pages/collection-operations/ui/` eram cenografia (submits
+simulados com `setTimeout` e mocks hardcoded) e foram REMOVIDAS DO BUILD na
+Onda 2, junto com as rotas `app/(protected)/coletas/[id]/{operacao,oficina,
+orcamento,aprovacao,servico,faturamento,entrega,itens/[itemId]/ciclo}`.
+
+O que existe de aproveitavel para a implementacao real (ordem obrigatoria da
+Onda 3 — ver [RECOVERY-PLAN](../RECOVERY-PLAN.md)):
+
+1. Contratos Zod prontos e testados: `src/_pages/collection-operations/model/contracts.ts` (7 schemas) + `tests/unit/mobile-phase4-operations.test.ts`.
+2. Eventos append-only e transicoes ja modeladas em `docs/architecture/data-and-rules.md`.
+3. Nenhuma migration da Fase 3 existe ainda (`supabase/migrations/` para na Fase 2).
+
 ## Passos
 
 1. Implementar transicoes de estado autorizadas conforme `data-and-rules.md`.

@@ -35,17 +35,17 @@ export function PublicVerificationPage({ verification }: Props) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-between bg-[var(--color-background)] px-4 py-8">
       <div>
-        {/* Topbar MJT do Figma */}
-        <header className="mb-6 flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xs">
+        {/* Topbar MJT fiel ao frame revisado 23:361: full-width, mark 38x32, título+subtítulo, badge à direita */}
+        <header className="sticky top-0 z-30 -mx-4 mb-6 flex min-h-[80px] items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--color-primary)] text-sm font-bold text-white">
+            <div className="flex h-8 w-[38px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-primary)] text-xs font-bold text-white shadow-xs">
               MJT
             </div>
             <div>
-              <h1 className="text-[18px] font-semibold text-[var(--color-text)]">
+              <h1 className="text-[18px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
                 Verificação
               </h1>
-              <p className="text-[12px] text-[var(--color-muted)]">
+              <p className="text-[12px] font-normal leading-tight text-[var(--color-text-muted)]">
                 Validação pública de recibo
               </p>
             </div>

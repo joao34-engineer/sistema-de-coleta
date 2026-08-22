@@ -3,6 +3,7 @@ import type { Route } from "next";
 import type { DocumentListDTO } from "../api/delivery/contracts";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { DocumentDeliveryActions } from "./document-delivery-actions";
 
 type Props = Readonly<{
@@ -26,9 +27,15 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
 
       <div className="flex flex-col gap-4 px-6 pt-4">
         {documents.length === 0 ? (
-          <p className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 text-center text-[13px] font-normal text-[var(--color-text-muted)] shadow-xs">
-            Nenhum documento disponível para esta coleta.
-          </p>
+          <MobileStatePanel
+            type="empty"
+            title="Nenhum documento disponível"
+            subtitle={
+              officialCode
+                ? "Esta coleta ainda não tem guia emitida. Finalize o fluxo de assinatura para gerar o documento."
+                : "Rascunho sem guia emitida. Finalize a coleta para gerar o documento."
+            }
+          />
         ) : (
           documents.map((doc) => (
             <div

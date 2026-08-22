@@ -84,9 +84,49 @@ Ordem obrigatoria (postura feature-first do projeto):
 - Um eixo por sessao/PR; nao misturar quarentena com feature nova.
 - Comando de validacao: `npx steiger src && npm run lint && npm run typecheck` (+ vitest alvo quando tocar codigo coberto).
 
-## 6. Contexto util rapido
+## 6. ONDA 2 — EXECUTADA nesta sessao (22/08/2026)
+
+| # | Acao | Evidencia / Arquivos |
+| --- | --- | --- |
+| 1 | Quarentena por REMOCAO (decisao do humano): 8 pastas de rota fake + `collection-operations/ui` + teste orfao fora do build | `git rm`: `app/(protected)/coletas/[id]/{operacao,oficina,orcamento,aprovacao,servico,faturamento,entrega,itens/[itemId]}`, `src/_pages/collection-operations/ui/*`, `tests/component/mobile-phase4-ui.test.tsx`. `index.ts` da slice reduzido a `export * from "./model/contracts"`. Grep final: zero referencias penduradas. Contratos Zod + `mobile-phase4-operations.test.ts` PRESERVADOS para a Onda 3 |
+| 2 | Verdade documental | `docs/design-system/mobile-execution-plan.md`: status CONCLUIDO 100% → **PARCIAL**, tabela corrigida (linha 09 = removida/fake; S01–S05 parcial; A02 inexistente). `phase-3-operations-workshop.md` e `phase-4-hardening-launch.md`: secoes "Estado real (22/08/2026)" adicionadas (Fase 3 NAO INICIADA; Fase 4 so manifest) |
+| 3 | Dumps JSON do Figma fora do git (~10,5 MB) | `.gitignore` += `docs/design-system/*.json`; `git rm --cached` nos 7 JSONs; arquivos preservados no disco local |
+| 4 | Bottom-nav fiel ao Figma e honesta | `mobile-bottom-nav.tsx`: emojis → SVG inline 24px stroke currentColor; "Início" → `/dashboard` (antes apontava p/ `/coletas`); item "Documentos" oculto ate existir rota global real |
+| 5 | Tokens canonicos | `signature-pad.tsx`: traco `#111827` → `#28312b`; `badge.tsx`: bordas Tailwind `#fcd34d`/`#fca5a5` → derivadas dos tokens (`#a36b2c/40`, `#ba5b52/40`, verde `#4c916f/40`) |
+| 6 | Header publico revisado replicado (frame `23:361`) | `public-verification-page.tsx`: card flutuante → topbar sticky full-width, mark MJT 38x32 radius-14, titulo 18px + subtitulo 12px, badge a direita |
+| 7 | MobileStatePanel integrado aos estados reais | `collections-list-page.tsx` (vazio contextual + erro com retry via nova prop `loadFailed`), `collection-documents-page.tsx` (vazio), `new-collection-page.tsx` (erro de criacao), `draft-signature-page.tsx` (loading + rascunho nao encontrado). Zero dado ficticio |
+| 8 | Cenografia residual da Fase 4 removida | `pwa-status-card.tsx` deletado (alegava "Service Worker: Ativo" sem SW, lia localStorage que nada grava, causava warning de CSS malformada no build); removido de `collector-profile-page.tsx` |
+
+**Validacao real da Onda 2 (saida colada):**
+
+```text
+npx steiger src
+√ No problems found!
+
+npm run lint
+✖ 1 problem (0 errors, 1 warning)
+  (warning pre-existente: scripts/parse_figma_nodes.mjs 'path' is defined but never used)
+
+npm run typecheck   (typegen + tsc --noEmit)
+✓ Types generated successfully — 0 erros
+
+npm run test
+ Test Files  23 passed | 2 skipped (25)
+      Tests  83 passed | 18 skipped (101)
+
+npm run build
+✓ Compiled successfully — 50 rotas geradas, sem warnings de CSS
+```
+
+**Correcao adicional de suíte:** `login-form.test.tsx` esperava label `^Senha$` mas o form renderiza "Senha *" — teste falso-verde pre-existente ajustado ao contrato real.
+
+**Nao commitado.** Commit unico sugerido quando o humano decidir: `fix: onda 2 - quarentena das telas fake, verdade documental, tokens canonicos e estados reais`.
+
+---
+
+## 7. Contexto util rapido
 
 - Branch atual: `main` (remote `origin/main` no GitHub; branch antiga `codex/phase-1-core` intacta como rede de seguranca).
-- Figma: arquivo `akpo5W8c3ViA1hvjeqg9YJ` — paginas 8-8 (Coleta M01–M11), 8-9 (Operacao O01–O05/M13–M16), 8-11 (QR Q01–Q02), 8-12 (Estados S01–S05), 23-361 (QR revisado, ainda nao replicado), 27-2 (Acesso A01 mobile/A02 desktop ausente).
+- Figma: arquivo `akpo5W8c3ViA1hvjeqg9YJ` — paginas 8-8 (Coleta M01–M11), 8-9 (Operacao O01–O05/M13–M16), 8-11 (QR Q01–Q02), 8-12 (Estados S01–S05), 23-361 (QR revisado — REPLICADO na Onda 2), 27-2 (Acesso A01 mobile/A02 desktop ausente).
 - Screenshots locais dos frames: `docs/design-system/figma-screenshots/frame_*.png`.
 - Token Figma configurado em `.cursor/mcp.json` do monorepo (nao expor em chamadas sem necessidade).

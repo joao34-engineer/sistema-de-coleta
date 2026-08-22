@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { PwaStatusCard } from "./pwa-status-card";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
@@ -52,9 +51,6 @@ export function CollectorProfilePage({ administrator }: Props) {
             </div>
           </CardContent>
         </Card>
-
-        {/* Card da PWA */}
-        <PwaStatusCard />
 
         {/* Card da Empresa do Figma */}
         <Card>

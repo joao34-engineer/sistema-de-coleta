@@ -23,6 +23,7 @@ describe("CollectionDocumentsPage", () => {
 
   it("explains when a collection has no generated document", () => {
     render(<CollectionDocumentsPage collectionId="11111111-1111-4111-8111-111111111111" officialCode={null} documents={[]} />);
-    expect(screen.getByText("Nenhum documento disponível para esta coleta.")).toBeInTheDocument();
+    expect(screen.getByText("Nenhum documento disponível")).toBeInTheDocument();
+    expect(screen.getByText(/Rascunho sem guia emitida\. Finalize/i)).toBeInTheDocument();
   });
 });

@@ -9,6 +9,12 @@ supabase/.branches/
 .supabase-cli/
 supabase-start-debug.log
 
+# Figma raw dumps (keep mobile-tokens.md, mobile-execution-plan.md and figma-screenshots/)
+docs/design-system/*.json
+
+# Local validation scratch output
+check-output.txt
+
 # Test and browser artifacts
 playwright-report/
 test-results/

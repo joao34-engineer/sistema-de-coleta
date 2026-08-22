@@ -4,6 +4,14 @@ import { CollectionsListPage } from "@/_pages/collection-lifecycle/ui/collection
 export const dynamic = "force-dynamic";
 
 export default async function CollectionsRoute() {
-  const result = await listCollections({ limit: 50 });
-  return <CollectionsListPage initialItems={result.items} />;
+  let items: Awaited<ReturnType<typeof listCollections>>["items"] = [];
+  let loadFailed = false;
+
+  try {
+    items = (await listCollections({ limit: 50 })).items;
+  } catch {
+    loadFailed = true;
+  }
+
+  return <CollectionsListPage initialItems={items} loadFailed={loadFailed} />;
 }

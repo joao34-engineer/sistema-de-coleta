@@ -47,7 +47,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, dis
     if (!ctx) return;
 
     const { x, y } = getCoordinates(e);
-    ctx.strokeStyle = "#111827";
+    ctx.strokeStyle = "#28312b";
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { createDraftWithCustomerAction, searchCustomersAction, type CustomerView } from "@/app/actions/draft-flow.actions";
@@ -125,9 +126,13 @@ export function NewCollectionPage() {
         </div>
 
         {errorMsg && (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
-            {errorMsg}
-          </div>
+          <MobileStatePanel
+            type="error"
+            title="Não foi possível criar a coleta"
+            subtitle={errorMsg}
+            actionText="Tentar novamente"
+            onAction={() => setErrorMsg(null)}
+          />
         )}
 
         {/* Tab Toggle entre Cadastrar e Buscar */}
