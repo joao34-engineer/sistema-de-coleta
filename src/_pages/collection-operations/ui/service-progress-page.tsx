@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -42,6 +42,7 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
     progressItems.map((item) => ({ itemId: item.itemId, itemDescription: item.itemDescription, status: item.status, notes: item.notes ?? "" })),
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const readyCount = items.filter((item) => item.status === "pronto").length;
@@ -81,7 +82,9 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
         return;
       }
 
-      router.push(`/coletas/${collectionId}` as Route);
+      startTransition(() => {
+        router.push(`/coletas/${collectionId}` as Route);
+      });
     } catch {
       setErrorMsg("Não foi possível salvar o progresso. Verifique a conexão e tente novamente.");
       setIsSubmitting(false);
@@ -149,7 +152,7 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

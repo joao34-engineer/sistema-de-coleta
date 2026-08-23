@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -38,6 +38,7 @@ export function CancelReopenPage({ collectionId, officialCode, allowedAction, ro
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const copy = actionCopy[allowedAction];
 
@@ -68,7 +69,9 @@ export function CancelReopenPage({ collectionId, officialCode, allowedAction, ro
         return;
       }
 
-      router.push(`/coletas/${collectionId}` as Route);
+      startTransition(() => {
+        router.push(`/coletas/${collectionId}` as Route);
+      });
     } catch {
       setErrorMsg("Não foi possível concluir a operação. Verifique a conexão e tente novamente.");
       setIsSubmitting(false);
@@ -109,7 +112,7 @@ export function CancelReopenPage({ collectionId, officialCode, allowedAction, ro
         <Button
           variant={copy.buttonVariant}
           size="md"
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

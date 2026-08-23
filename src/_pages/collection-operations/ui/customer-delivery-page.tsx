@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -33,6 +33,7 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
   const [notes, setNotes] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   function toggleItem(itemId: string): void {
@@ -90,7 +91,9 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
       return;
     }
 
-    router.push(`/coletas/${collectionId}` as Route);
+    startTransition(() => {
+      router.push(`/coletas/${collectionId}` as Route);
+    });
   }
 
   const isPartialSelection = deliveredItemIds.length > 0 && deliveredItemIds.length < items.length;
@@ -188,7 +191,7 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
           />
         </Card>
 
-        <Button variant="primary" size="md" isLoading={isSubmitting} onClick={() => void handleSubmit()}>
+        <Button variant="primary" size="md" isLoading={isSubmitting || isPending} onClick={() => void handleSubmit()}>
           Confirmar entrega
         </Button>
       </div>

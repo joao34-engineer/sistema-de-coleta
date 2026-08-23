@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -49,6 +49,7 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
   const [totalBrl, setTotalBrl] = useState(existingInvoice ? String(existingInvoice.totalBrl).replace(".", ",") : "");
   const [notes, setNotes] = useState(existingInvoice?.notes ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   async function handleSubmit() {
@@ -88,7 +89,9 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
         return;
       }
 
-      router.push(`/coletas/${collectionId}` as Route);
+      startTransition(() => {
+        router.push(`/coletas/${collectionId}` as Route);
+      });
     } catch {
       setErrorMsg("Não foi possível registrar a NF-e. Verifique a conexão e tente novamente.");
       setIsSubmitting(false);
@@ -170,7 +173,7 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

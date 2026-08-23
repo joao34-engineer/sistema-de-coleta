@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -61,6 +61,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
   );
   const [generalNotes, setGeneralNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const liveTotal = items.reduce((total, item) => total + parseBrl(item.laborCostBrl) + parseBrl(item.partsCostBrl), 0);
@@ -107,7 +108,9 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
         return;
       }
 
-      router.push(`/coletas/${collectionId}` as Route);
+      startTransition(() => {
+        router.push(`/coletas/${collectionId}` as Route);
+      });
     } catch {
       setErrorMsg("Não foi possível registrar o orçamento. Verifique a conexão e tente novamente.");
       setIsSubmitting(false);
@@ -208,7 +211,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

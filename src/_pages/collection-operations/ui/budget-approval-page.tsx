@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -27,6 +27,7 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
   const [signerTaxId, setSignerTaxId] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   async function handleSubmit(approved: boolean) {
@@ -60,7 +61,9 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
         return;
       }
 
-      router.push(`/coletas/${collectionId}` as Route);
+      startTransition(() => {
+        router.push(`/coletas/${collectionId}` as Route);
+      });
     } catch {
       setErrorMsg("Não foi possível registrar a decisão. Verifique a conexão e tente novamente.");
       setIsSubmitting(false);
@@ -121,7 +124,7 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
           <Button
             variant="primary"
             size="md"
-            isLoading={isSubmitting}
+            isLoading={isSubmitting || isPending}
             onClick={() => void handleSubmit(true)}
             className="h-[52px]"
           >
@@ -130,7 +133,7 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
           <Button
             variant="danger"
             size="md"
-            isLoading={isSubmitting}
+            isLoading={isSubmitting || isPending}
             onClick={() => void handleSubmit(false)}
             className="h-[52px]"
           >

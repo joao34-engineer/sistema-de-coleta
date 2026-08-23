@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -46,6 +46,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
   const [administratorTaxId, setAdministratorTaxId] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const itemSourceById = new Map<string, { description: string; quantity: number }>(
@@ -108,7 +109,9 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
       return;
     }
 
-    router.push(`/coletas/${collectionId}` as Route);
+    startTransition(() => {
+      router.push(`/coletas/${collectionId}` as Route);
+    });
   }
 
   return (
@@ -216,7 +219,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || isPending}
           className="h-[52px]"
           onClick={() => void handleSubmit()}
         >
