@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
+import { collectionStatusLabel, matchesStatusFilter, type CollectionsListFilter } from "../model/status-filters";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
@@ -16,7 +17,7 @@ type Props = Readonly<{
   loadFailed?: boolean;
 }>;
 
-type StatusFilter = "all" | "collected" | "in_repair" | "ready";
+type StatusFilter = CollectionsListFilter;
 
 export function CollectionsListPage({ initialItems, loadFailed = false }: Props) {
   const router = useRouter();
@@ -44,11 +45,7 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
   }
 
   const filteredItems = initialItems.filter((item) => {
-    const matchesStatus =
-      selectedFilter === "all" ||
-      (selectedFilter === "collected" && item.status === "collected") ||
-      (selectedFilter === "ready" && item.status === "ready") ||
-      (selectedFilter === "in_repair" && item.status === "draft");
+    const matchesStatus = matchesStatusFilter(item.status, selectedFilter);
 
     const term = searchTerm.trim().toLowerCase();
     if (!term) return matchesStatus;
@@ -126,7 +123,7 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
                 href={
                   item.status === "draft"
                     ? (`/coletas/${item.id}/itens` as Route)
-                    : (`/coletas/${item.id}/documentos` as Route)
+                    : (`/coletas/${item.id}` as Route)
                 }
                 className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
               >
@@ -139,9 +136,7 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
                   </p>
                 </div>
 
-                <Badge status={item.status === "draft" ? "draft" : item.status}>
-                  {item.status === "draft" ? "Rascunho" : item.status === "ready" ? "Pronto" : "Em reparo"}
-                </Badge>
+                <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
               </Link>
             ))}
           </div>

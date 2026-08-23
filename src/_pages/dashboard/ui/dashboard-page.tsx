@@ -129,7 +129,7 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
                 upcomingActivities.map((item) => (
                   <Link
                     key={item.id}
-                    href={(item.status === "draft" ? `/coletas/${item.id}/itens` : `/coletas/${item.id}/documentos`) as Route}
+                    href={(item.status === "draft" ? `/coletas/${item.id}/itens` : `/coletas/${item.id}`) as Route}
                     className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
                   >
                     <div className="flex flex-col gap-1">

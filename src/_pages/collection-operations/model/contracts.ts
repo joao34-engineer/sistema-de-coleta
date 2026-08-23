@@ -34,7 +34,7 @@ export const workshopCheckInSchema = z.object({
   administratorName: z.string().trim().min(2, "Informe o nome do administrador responsavel.").max(160),
   administratorTaxId: taxIdSchema,
   items: z.array(workshopCheckInItemSchema).min(1, "Confira ao menos um item."),
-  signature: z.string().min(10, "A assinatura do administrador e obrigatoria."),
+  signatureIntentId: uuidSchema,
 });
 
 // 2. Technical Budget (O03)
@@ -101,7 +101,7 @@ export const customerDeliverySchema = z.object({
   receiverName: z.string().trim().min(2, "Informe o nome de quem recebeu os equipamentos.").max(160),
   receiverTaxId: taxIdSchema,
   notes: z.string().trim().max(1000).optional(),
-  signature: z.string().min(10, "Assinatura obrigatoria no termo de entrega."),
+  signatureIntentId: uuidSchema,
 });
 
 // 7. Cancel / Reopen Audit (O05)
@@ -119,3 +119,54 @@ export type ServiceProgressDTO = z.infer<typeof serviceProgressSchema>;
 export type InvoiceReferenceDTO = z.infer<typeof invoiceReferenceSchema>;
 export type CustomerDeliveryDTO = z.infer<typeof customerDeliverySchema>;
 export type CancelReopenDTO = z.infer<typeof cancelReopenSchema>;
+
+// Result schemas for operations commands
+export const workshopCheckInResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.literal("in_workshop"),
+  rowVersion: z.number().int().positive(),
+  administratorName: z.string(),
+});
+
+export const technicalBudgetResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.literal("in_budget"),
+  rowVersion: z.number().int().positive(),
+  serviceOrderId: uuidSchema,
+});
+
+export const budgetApprovalResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.enum(["approved", "rejected"]),
+  rowVersion: z.number().int().positive(),
+  serviceOrderId: uuidSchema,
+});
+
+export const serviceProgressResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.enum(["approved", "in_service", "ready"]),
+  rowVersion: z.number().int().positive(),
+  serviceOrderId: uuidSchema,
+});
+
+export const invoiceReferenceResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.literal("invoiced"),
+  rowVersion: z.number().int().positive(),
+  invoiceId: uuidSchema,
+});
+
+export const customerDeliveryResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.enum(["partial_delivery", "delivered"]),
+  rowVersion: z.number().int().positive(),
+  delivered: z.boolean(),
+  partial: z.boolean(),
+  deliveryTermId: uuidSchema,
+});
+
+export const cancelReopenResultSchema = z.object({
+  collectionId: uuidSchema,
+  status: z.enum(["canceled", "collected", "in_workshop", "in_budget", "approved", "in_service", "ready", "invoiced", "partial_delivery", "delivered"]),
+  rowVersion: z.number().int().positive(),
+});

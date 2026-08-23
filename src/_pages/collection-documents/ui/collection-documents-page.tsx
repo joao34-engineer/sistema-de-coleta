@@ -22,10 +22,18 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
       <MobilePageHeader
         title="Documentos"
         subtitle={officialCode ? `Guia ${officialCode}` : "Rascunho sem guia emitida"}
-        backHref={"/coletas" as Route}
+        backHref={`/coletas/${collectionId}` as Route}
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
+        <Link
+          href={`/coletas/${collectionId}` as Route}
+          prefetch
+          className="text-center text-[13px] font-semibold text-[var(--color-primary)] active:opacity-70"
+        >
+          Voltar ao detalhe da coleta
+        </Link>
+
         {documents.length === 0 ? (
           <MobileStatePanel
             type="empty"

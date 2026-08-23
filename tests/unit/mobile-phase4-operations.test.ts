@@ -3,6 +3,7 @@ import {
   workshopCheckInSchema,
   technicalBudgetSchema,
   budgetApprovalSchema,
+  serviceProgressSchema,
   invoiceReferenceSchema,
   customerDeliverySchema,
   cancelReopenSchema,
@@ -26,7 +27,7 @@ describe("Phase 4 Operations & Workshop Zod Contracts", () => {
           conditionObserved: "Sem avarias visíveis",
         },
       ],
-      signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+      signatureIntentId: sampleUuid,
     };
 
     const result = workshopCheckInSchema.safeParse(validCheckIn);
@@ -106,12 +107,30 @@ describe("Phase 4 Operations & Workshop Zod Contracts", () => {
       deliveredItemIds: [sampleUuid],
       receiverName: "Marcio Souza",
       receiverTaxId: "12345678909",
-      signature: "data:image/png;base64,iVBORw0KGgo...",
+      signatureIntentId: sampleUuid,
     };
     expect(customerDeliverySchema.safeParse(validDelivery).success).toBe(true);
 
     const emptyItemsDelivery = { ...validDelivery, deliveredItemIds: [] };
     expect(customerDeliverySchema.safeParse(emptyItemsDelivery).success).toBe(false);
+  });
+
+  it("validates service progress schema (M14)", () => {
+    const validProgress = {
+      collectionId: sampleUuid,
+      expectedVersion: 1,
+      items: [
+        {
+          itemId: sampleUuid,
+          itemDescription: "Motor WEG 15HP",
+          status: "pronto",
+        },
+      ],
+    };
+    expect(serviceProgressSchema.safeParse(validProgress).success).toBe(true);
+
+    const invalidStatus = { ...validProgress, items: [{ ...validProgress.items[0], status: "invalid" }] };
+    expect(serviceProgressSchema.safeParse(invalidStatus).success).toBe(false);
   });
 
   it("validates cancel and reopen reason schema (O05)", () => {

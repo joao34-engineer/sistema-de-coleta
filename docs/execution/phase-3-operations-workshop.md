@@ -6,25 +6,23 @@ Dar continuidade rastreavel a coleta apos sua retirada, sem transformar o V1 em 
 
 ## Estado real (22/08/2026)
 
-**NAO INICIADA.** Auditoria do RECOVERY-PLAN confirmou que as telas O01–O05/M13–M16
-que existiam em `src/_pages/collection-operations/ui/` eram cenografia (submits
-simulados com `setTimeout` e mocks hardcoded) e foram REMOVIDAS DO BUILD na
-Onda 2, junto com as rotas `app/(protected)/coletas/[id]/{operacao,oficina,
-orcamento,aprovacao,servico,faturamento,entrega,itens/[itemId]/ciclo}`.
+**EXECUTADA — Sessão 3a (Migration).** A Fase 3 estava NAO INICIADA até esta sessão.
+A migration `20260822125100_phase_3_operations_workshop.sql` foi criada (por outra
+sessão em 12:51), validada e aplicada no remoto. O que existe agora:
 
-O que existe de aproveitavel para a implementacao real (ordem obrigatoria da
-Onda 3 — ver [RECOVERY-PLAN](../RECOVERY-PLAN.md)):
+1. Migration aditiva aplicada: `supabase/migrations/20260822125100_phase_3_operations_workshop.sql`
+   - Constraints `collections.status`, `collection_events.previous_status/new_status` ampliadas para os 14 estados do workflow (draft → collected → in_workshop → in_budget → awaiting_approval → approved → in_service → ready → invoiced → partial_delivery → delivered + rejected/reopened).
+   - Tabelas: `service_orders`, `service_order_items`, `invoice_references`, `delivery_items`, `workshop_checkin_items`.
+   - 7 RPCs `security definer`: `workshop_check_in`, `create_technical_budget`, `approve_technical_budget`, `update_service_progress`, `register_invoice_reference`, `deliver_to_customer`, `cancel_or_reopen_collection`.
+   - RLS admin-only + grants replicando padrão Fase 1A.
+2. Contratos Zod prontos: `src/_pages/collection-operations/model/contracts.ts` (7 schemas) + `tests/unit/mobile-phase4-operations.test.ts`.
+3. Testes pgTAP: `supabase/tests/phase_3_operations_workshop_test.sql` (48 assertions: tabelas, colunas, RPCs, RLS, grants, roles anon/authenticated).
+4. `supabase db push --dry-run` → verde; `supabase db push` → aplicado com sucesso no remoto.
 
-1. Contratos Zod prontos e testados: `src/_pages/collection-operations/model/contracts.ts` (7 schemas) + `tests/unit/mobile-phase4-operations.test.ts`.
-2. Eventos append-only e transicoes ja modeladas em `docs/architecture/data-and-rules.md`.
-3. Nenhuma migration da Fase 3 existe ainda (`supabase/migrations/` para na Fase 2).
-4. Insumo canonico de identidade e catalogo (registrado na Onda 2.5, 22/08/2026):
-   `docs/tabela-de-preco/*.pdf` — tabela oficial da MJT Tornearia com 63 servicos
-   e precos BRL, base para o catalogo dos orcamentos O03; dados de emissao do PDF
-   oficial: CNPJ 28.316.431/0001-80, Estrada do Cabuçu, 1190 – Campo Grande/RJ,
-   tels (21) 98663-8936 / (21) 97674-3502, mjt.mjtornearia@gmail.com.
-   Nao criar migration nem catalogo no banco nesta etapa — apenas consumir como
-   referencia quando a Onda 3 implementar orcamentos.
+O que falta para Fase 3 completa (Sessões 3b/3c):
+- Comandos server-only consumindo os schemas Zod + Route Handlers finos em `app/api/...`
+- Religar telas do Figma 8-9 com dados reais (entry point: `/coletas/[id]/documentos` ou nova tela de detalhe).
+- Corrigir filtro "Em reparo" em `collections-list-page.tsx` (hoje mapeia `draft`).
 
 ## Passos
 

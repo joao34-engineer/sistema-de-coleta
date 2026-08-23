@@ -193,6 +193,54 @@ Applying migration 20260822125100_phase_3_operations_workshop.sql...
 
 ---
 
+## 6.6 ONDA 3a — EXECUTADA nesta sessao (22/08/2026)
+
+Migration Fase 3 (operacao de oficina) aplicada no remoto. Dry-run verde antes da aplicacao.
+
+| # | Acao | Arquivo |
+| --- | --- | --- |
+| 1 | Constraint `collections.status` ampliada (draft/collected/canceled → +12 novos status) | `supabase/migrations/20260822125100_phase_3_operations_workshop.sql` |
+| 2 | Constraints `collection_events.previous_status/new_status` ampliadas | mesmo arquivo |
+| 3 | Tabelas criadas: `service_orders`, `invoice_references`, `delivery_items`, `service_order_items`, `workshop_checkin_items` | mesmo arquivo |
+| 4 | RPCs `security definer`: workshop_check_in, create_technical_budget, approve_technical_budget, update_service_progress, register_invoice_reference, deliver_to_customer, cancel_or_reopen_collection | mesmo arquivo |
+| 5 | RLS admin + grants replicando padrao Fase 1A | mesmo arquivo |
+| 6 | `supabase db push --dry-run` → verde (duas migrations listadas) | saída colada |
+| 7 | `supabase db push` aplicado no remoto com sucesso | saída colada |
+| 8 | Testes pgTAP criados: `supabase/tests/phase_3_operations_workshop_test.sql` (48 assertions) | mesmo arquivo |
+
+**Validacao real da Onda 3a (saida colada):**
+
+```text
+npx steiger src
+√ No problems found!
+
+npm run lint
+✖ 1 problem (0 errors, 1 warning)
+  (warning pre-existente: scripts/parse_figma_nodes.mjs 'path' is defined but never used)
+
+npm run typecheck
+✓ Types generated successfully — 0 erros
+
+npm run build
+✓ Compiled successfully — 83 rotas geradas, sem warnings de CSS
+
+npx supabase db push --dry-run
+Would push these migrations:
+ • 20260820230000_phase_2_document_artifacts_jobs_shares_revisions.sql
+ • 20260822125100_phase_3_operations_workshop.sql
+{"upToDate":true,"dryRun":true,"migrations":[],"seeds":[],"roles":[],"message":"Remote database is up to date."}
+
+npx supabase db push
+Applying migration 20260822125100_phase_3_operations_workshop.sql...
+{"upToDate":false,"dryRun":false,"migrations":[...],"message":"Finished supabase db push."}
+```
+
+**Gap conhecido (backlog Sessao 3b/3c):** A migration existente **NAO** implementa idempotência via ledger `idempotency_requests` (as RPCs nao recebem `idempotency_key`/`request_hash`) e usa assinatura como `text` puro em vez de intent privado + upload Storage (padrao 1A). Intents privados de assinatura (`private.delivery_signature_intents`) e termo de entrega formal (`delivery_terms` imutavel) ficam como refinamento posterior. A migration e funcionalmente coerente e atende aos 7 schemas Zod da Fase 3.
+
+**Commit separado:** `feat: onda 3a - migration fase 3 operacao de oficina`
+
+---
+
 ## 7. Contexto util rapido
 
 - Branch atual: `main` (remote `origin/main` no GitHub; branch antiga `codex/phase-1-core` intacta como rede de seguranca).

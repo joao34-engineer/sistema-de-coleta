@@ -92,7 +92,7 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
         return;
       }
 
-      router.push(`/coletas/${draftId}/documentos` as Route);
+      router.push(`/coletas/${draftId}` as Route);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Erro inesperado ao finalizar.";
       setErrorMsg(message);
