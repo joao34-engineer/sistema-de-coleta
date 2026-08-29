@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `planned` — análise e plano; **não autoriza implementação** |
+| **Status** | `planned` — Fases 2–7; **Fase 1 entregue** (shells + pending Link + CTAs) |
 | **Authority** | `informative` |
 | **Owner** | product / sistema-coleta |
 | **Last verified** | 2026-08-29 |
@@ -93,13 +93,13 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P0-1 — Quase nenhum `loading.tsx`
+### P0-1 — Quase nenhum `loading.tsx` — **feito (Fase 1)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Toque em Link: a tela antiga fica parada até o fetch do destino. |
-| **Onde** | Só existe `app/(protected)/coletas/[id]/oficina/loading.tsx`. Falta em `(protected)/`, `dashboard/`, `coletas/`, `coletas/[id]/`. |
-| **Por que dói** | Sem boundary de loading, o App Router não mostra shell. É a causa nº 1 do “botão espera o fetch”. |
+| **Onde** | Só existia `oficina/loading.tsx`. Agora há shells em `(protected)/`, `dashboard/`, `coletas/`, `coletas/[id]/`, `coletas/[id]/documentos/`. |
+| **Por que dói** | Sem boundary de loading, o App Router não mostra shell. Era a causa nº 1 do “botão espera o fetch”. |
 | **Não confundir** | `error.tsx` / `global-error.tsx` já existem. Não substituem loading. |
 
 ---
@@ -286,13 +286,13 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P2-5 — `Button` dentro de `Link` no dashboard
+### P2-5 — `Button` dentro de `Link` no dashboard — **feito (Fase 1.4)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | HTML inválido (`<a><button>`). |
-| **Onde** | `dashboard-page.tsx` — **Nova coleta** e **Configurações da Empresa**. |
-| **Por que dói** | Não causa o atraso; piora alvo de toque e a11y. Estilizar o `Link` como botão. |
+| **Onde** | `dashboard-page.tsx` — **Nova coleta** e **Configurações da Empresa** agora são `PendingNavLink` + `buttonClassName`. |
+| **Por que dói** | Não causava o atraso; piorava alvo de toque e a11y. |
 
 ---
 
@@ -304,33 +304,33 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 ---
 
-### Fase 1 — Feedback instantâneo de navegação
+### Fase 1 — Feedback instantâneo de navegação — **feito**
 
 **Objetivo:** o tap troca o chrome **antes** do dado chegar. É o P0 que o humano descreveu.
 
 **Não faz:** mudar auth, fila offline, headers globais, nem mutações.
 
-#### Passo 1.1 — Shell em `(protected)/loading.tsx`
+#### Passo 1.1 — Shell em `(protected)/loading.tsx` — **feito**
 
-**Faz:** skeleton no mesmo chrome mobile (header 80px + cards pulse + bottom nav), copiando `oficina/loading.tsx`.
+**Faz:** skeleton no mesmo chrome mobile (header 80px + cards pulse + bottom nav), via `ProtectedRouteSkeleton` (padrão de `oficina/loading.tsx`).
 
 **Aceite:** toque Início ↔ Coletas mostra o pulse imediatamente.
 
-#### Passo 1.2 — Shell por destino pesado
+#### Passo 1.2 — Shell por destino pesado — **feito**
 
-**Faz:** `loading.tsx` em `dashboard/`, `coletas/`, `coletas/[id]/` (hub). Oficinas já têm.
+**Faz:** `loading.tsx` em `dashboard/`, `coletas/`, `coletas/[id]/` (hub) e `coletas/[id]/documentos/`. Oficinas já tinham.
 
 **Aceite:** abrir um card de coleta mostra skeleton do hub, não a lista congelada.
 
-#### Passo 1.3 — Estado pendente no `Link`
+#### Passo 1.3 — Estado pendente no `Link` — **feito**
 
-**Faz:** `useLinkStatus` (Next 16) ou classe visual de “abrindo” no bottom nav, cards e CTA operacional.
+**Faz:** `PendingNavLink` + `useLinkStatus` no bottom nav, cards, CTA operacional, Voltar, Ver rascunhos e Ver documentos.
 
 **Aceite:** o alvo tocado muda de estilo no mesmo frame, sem esperar RSC.
 
-#### Passo 1.4 — `Link` estilizado, sem `Button` interno
+#### Passo 1.4 — `Link` estilizado, sem `Button` interno — **feito**
 
-**Faz:** dashboard — **Nova coleta** e **Configurações da Empresa** como `Link` com as classes do botão (P2-5).
+**Faz:** dashboard — **Nova coleta** e **Configurações da Empresa** como `PendingNavLink` com `buttonClassName` (P2-5).
 
 **Aceite:** um único elemento focável; sem `<button>` dentro de `<a>`.
 

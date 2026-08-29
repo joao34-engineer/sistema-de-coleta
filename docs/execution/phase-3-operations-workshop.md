@@ -19,6 +19,8 @@ sessão em 12:51), validada e aplicada no remoto. O que existe agora:
 3. Testes pgTAP: `supabase/tests/phase_3_operations_workshop_test.sql` (48 assertions: tabelas, colunas, RPCs, RLS, grants, roles anon/authenticated).
 4. `supabase db push --dry-run` → verde; `supabase db push` → aplicado com sucesso no remoto.
 
+**Fase 0 (scan B01–B09, 29/08/2026):** migration `20260829220000_phase_0_workshop_schema_contracts.sql` — CHECKs de identidade/cancel/SO `rejected`, coluna `collections.check_in_signature_path`, unique de `delivery_terms` por coleta removido, REPLACE 3b de `create_technical_budget`/`update_service_progress`, snapshot de cliente em todo status emitido em `get_collection_detail`/`list_collections`. Sem `DROP FUNCTION`. Aplicacao no remoto: ver `docs/supabase.md`.
+
 O que falta para Fase 3 completa (Sessões 3b/3c):
 - Comandos server-only consumindo os schemas Zod + Route Handlers finos em `app/api/...`
 - Religar telas do Figma 8-9 com dados reais (entry point: `/coletas/[id]/documentos` ou nova tela de detalhe).

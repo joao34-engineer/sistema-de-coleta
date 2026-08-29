@@ -16,6 +16,9 @@
     "db:types:remote": "supabase gen types --linked --lang typescript",
     "bootstrap:admin": "tsx scripts/bootstrap-admin.ts",
     "cleanup:upload-intents": "tsx scripts/cleanup-collection-upload-intents.ts",
+    "backup:export": "tsx scripts/export-backup.ts",
+    "backup:verify": "tsx scripts/verify-backup.ts",
+    "backup:restore-isolated": "tsx scripts/restore-backup-isolated.ts",
     "check": "npm run architecture && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {

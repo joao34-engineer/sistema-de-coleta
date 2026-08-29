@@ -20,6 +20,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local one-off tooling (not TypeScript entrypoints)
+    "scripts/**/*.cjs",
+    "scripts/**/*.mjs",
   ]),
 ]);
 

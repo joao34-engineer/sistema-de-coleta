@@ -27,6 +27,7 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | Next.js, App Router e PWA | [nextjs-pwa.md](nextjs-pwa.md) |
 | TypeScript e contratos | [typescript.md](typescript.md) |
 | Supabase, migrations, RLS e Storage | [supabase.md](supabase.md) |
+| Backup e restore (Chat 5) | [runbook-backup-restore.md](runbook-backup-restore.md) · ADR [0010](decisions/0010-backup-restore-isolated.md) |
 | Seguranca, privacidade e evidencias | [security.md](security.md) |
 | Contratos HTTP da Fase 1A | [http-api.md](http-api.md) |
 | Clean code e fronteiras | [coding-standards.md](coding-standards.md) |
@@ -47,6 +48,6 @@ Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS
 | 1 | [Coleta principal](execution/phase-1-collection-core.md) | Cadastro, itens, assinatura e numero oficial |
 | 2 | [Documento e compartilhamento](execution/phase-2-documents-sharing.md) | PDF, QR, consulta e envio |
 | 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |
-| 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Chats 1–4 verdes (PWA, offline, seguranca, observabilidade); faltam backup, campo e go-live |
+| 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Chats 1–5 ferramentas; prova humana de restore adiada; faltam campo e go-live formal |
 
 Nenhum documento de execucao deve ultrapassar 500 linhas. Novas decisoes devem ser registradas em `decisions/` ou no documento tematico correspondente, nao diluidas em prompts ou codigo.

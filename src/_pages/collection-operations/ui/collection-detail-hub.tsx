@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { Route } from "next";
 import type { CollectionHubView, CollectionEventSummary, ServiceOrder, BudgetItem } from "../model/view-models";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Card } from "@/shared/ui/card";
 import { CollectionStatusBadge } from "./collection-status-badge";
 import { CollectionTimeline } from "./collection-timeline";
@@ -101,13 +101,15 @@ export function CollectionDetailHub({ collection, events, serviceOrder, budgetIt
 
         {/* Documentos */}
         {collection.currentDocument ? (
-          <Link
+          <PendingNavLink
             href={`/coletas/${collection.id}/documentos` as Route}
             prefetch
             className="text-center text-[13px] font-semibold text-[var(--color-primary)] active:opacity-70"
+            contentClassName="block w-full"
+            pendingClassName="opacity-70"
           >
             Ver documentos emitidos
-          </Link>
+          </PendingNavLink>
         ) : null}
       </div>
 

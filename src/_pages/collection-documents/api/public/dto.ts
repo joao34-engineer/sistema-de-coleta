@@ -1,4 +1,4 @@
-import { publicVerificationSchema, verificationTokenSchema, type PublicVerificationDTO } from "../../model/public-verification";
+import { issuedCollectionStatusSchema, publicVerificationSchema, verificationTokenSchema, type PublicVerificationDTO } from "../../model/public-verification";
 import { z } from "zod";
 
 export { publicVerificationSchema, verificationTokenSchema } from "../../model/public-verification";
@@ -8,7 +8,7 @@ export const publicVerificationRowSchema = z.object({
   is_authentic: z.boolean(),
   official_code: z.string().regex(/^MJT-\d{4}-\d{6}$/),
   issued_at: z.iso.datetime({ offset: true }),
-  collection_status: z.enum(["collected", "canceled"]),
+  collection_status: issuedCollectionStatusSchema,
   organization_name: z.string().trim().min(1).max(160),
   document_version: z.number().int().positive(),
 });

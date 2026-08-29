@@ -1,6 +1,8 @@
-import Link from "next/link";
+"use client";
+
 import type { Route } from "next";
 import type { CollectionStatus } from "@/shared/model/collection-status";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 export type OperationalAction = Readonly<{
   segment: "checkin" | "orcamento" | "aprovacao" | "progresso" | "nfe" | "entrega" | "reabrir";
@@ -37,12 +39,14 @@ export function OperationalActions({ collectionId, status }: Props) {
   if (!action) return null;
 
   return (
-    <Link
+    <PendingNavLink
       href={`/coletas/${collectionId}/oficina/${action.segment}` as Route}
       prefetch
       className="flex h-[52px] w-full items-center justify-center rounded-[12px] bg-[var(--color-primary)] text-[14px] font-semibold text-white shadow-xs transition-all hover:bg-[var(--color-primary-strong)] active:scale-[0.99] active:bg-[var(--color-primary-strong)]"
+      contentClassName="flex h-full w-full items-center justify-center rounded-[12px]"
+      pendingClassName="opacity-80 ring-2 ring-white/50"
     >
       {action.label}
-    </Link>
+    </PendingNavLink>
   );
 }

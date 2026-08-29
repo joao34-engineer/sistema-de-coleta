@@ -16,7 +16,7 @@ type VerificationDatabase = {
           is_authentic: boolean;
           official_code: string;
           issued_at: string;
-          collection_status: "collected" | "canceled";
+          collection_status: PublicVerificationDTO["status"];
           organization_name: string;
           document_version: number;
         }>;

@@ -31,8 +31,27 @@ describe("public verification DTO", () => {
     });
   });
 
+  it("accepts workshop issued statuses such as in_workshop", () => {
+    expect(mapPublicVerificationRow({
+      is_authentic: true,
+      official_code: "MJT-2026-000124",
+      issued_at: "2026-08-20T15:30:00.000Z",
+      collection_status: "in_workshop",
+      organization_name: "MJT Oficina",
+      document_version: 1,
+    })).toEqual({
+      authentic: true,
+      officialCode: "MJT-2026-000124",
+      issuedAt: "2026-08-20T15:30:00.000Z",
+      status: "in_workshop",
+      organization: { name: "MJT Oficina" },
+      documentVersion: 1,
+    });
+  });
+
   it("rejects malformed or incomplete RPC rows", () => {
     expect(mapPublicVerificationRow({ official_code: "MJT-2026-000123" })).toBeNull();
     expect(mapPublicVerificationRow(null)).toBeNull();
   });
 });
+

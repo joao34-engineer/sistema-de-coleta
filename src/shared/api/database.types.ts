@@ -13,7 +13,7 @@ export type CustomerRow = { id: string; organization_id: number; legal_name: str
 export type CustomerContactRow = { id: string; organization_id: number; customer_id: string; full_name: string; phone: string | null; email: string | null; job_title: string | null; is_primary: boolean; created_by: string; created_at: string; updated_at: string };
 export type CustomerAddressRow = { id: string; organization_id: number; customer_id: string; label: string | null; street: string; street_number: string | null; address_complement: string | null; district: string | null; city: string; state_code: string; postal_code: string | null; is_primary: boolean; created_by: string; created_at: string; updated_at: string };
 export type VehicleRow = { id: string; organization_id: number; customer_id: string; plate: string | null; description: string | null; created_by: string; created_at: string; updated_at: string };
-export type CollectionRow = { id: string; organization_id: number; customer_id: string | null; customer_snapshot: Json | null; status: string; official_code: string | null; issued_year: number | null; sequence_number: number | null; collection_location: string | null; responsible_name: string | null; responsible_tax_id: string | null; collected_at: string | null; row_version: number; canceled_at: string | null; canceled_by: string | null; cancel_reason: string | null; reopened_at: string | null; reopened_by: string | null; reopen_reason: string | null; previous_status_before_cancellation: string | null; created_by: string; updated_by: string | null; created_at: string; updated_at: string };
+export type CollectionRow = { id: string; organization_id: number; customer_id: string | null; customer_snapshot: Json | null; status: string; official_code: string | null; issued_year: number | null; sequence_number: number | null; collection_location: string | null; responsible_name: string | null; responsible_tax_id: string | null; collected_at: string | null; row_version: number; canceled_at: string | null; canceled_by: string | null; cancel_reason: string | null; reopened_at: string | null; reopened_by: string | null; reopen_reason: string | null; previous_status_before_cancellation: string | null; check_in_signature_path: string | null; created_by: string; updated_by: string | null; created_at: string; updated_at: string };
 export type CollectionItemRow = { id: string; organization_id: number; collection_id: string; description: string; quantity: number; condition_note: string | null; observation: string | null; position: number; removed_at: string | null; removed_by: string | null; created_by: string; updated_by: string | null; created_at: string; updated_at: string };
 export type EvidenceRow = { id: string; organization_id: number; collection_id: string; collection_item_id: string | null; storage_path: string; content_type: string; byte_size: number; sha256: string | null; created_by: string; created_at: string };
 export type SignatureRow = { id: string; organization_id: number; collection_id: string; signer_name: string; signer_tax_id: string; acceptance_text: string; storage_path: string; byte_size: number; sha256: string | null; created_by: string; signed_at: string; created_at: string };
@@ -35,7 +35,7 @@ type PhaseOneTables = {
   customer_contacts: PhaseOneTable<CustomerContactRow, Omit<CustomerContactRow, "id" | "created_at" | "updated_at" | "created_by"> & { id?: string; phone?: string | null; email?: string | null; job_title?: string | null; is_primary?: boolean; created_by?: string; created_at?: string; updated_at?: string }, Partial<CustomerContactRow>>;
   customer_addresses: PhaseOneTable<CustomerAddressRow, Omit<CustomerAddressRow, "id" | "created_at" | "updated_at" | "created_by" | "label" | "street_number" | "address_complement" | "district" | "postal_code" | "is_primary"> & { id?: string; label?: string | null; street_number?: string | null; address_complement?: string | null; district?: string | null; postal_code?: string | null; is_primary?: boolean; created_by?: string; created_at?: string; updated_at?: string }, Partial<CustomerAddressRow>>;
   vehicles: PhaseOneTable<VehicleRow, Omit<VehicleRow, "id" | "created_at" | "updated_at" | "created_by" | "plate" | "description"> & { id?: string; plate?: string | null; description?: string | null; created_by?: string; created_at?: string; updated_at?: string }, Partial<VehicleRow>>;
-  collections: PhaseOneTable<CollectionRow, Omit<CollectionRow, "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "customer_snapshot" | "status" | "official_code" | "issued_year" | "sequence_number" | "row_version" | "canceled_at" | "canceled_by" | "cancel_reason" | "reopened_at" | "reopened_by" | "reopen_reason" | "previous_status_before_cancellation"> & { id?: string; customer_id?: string | null; customer_snapshot?: Json | null; collection_location?: string | null; responsible_name?: string | null; responsible_tax_id?: string | null; collected_at?: string | null; status?: string; official_code?: string | null; issued_year?: number | null; sequence_number?: number | null; row_version?: number; canceled_at?: string | null; canceled_by?: string | null; cancel_reason?: string | null; reopened_at?: string | null; reopened_by?: string | null; reopen_reason?: string | null; previous_status_before_cancellation?: string | null; created_by?: string; updated_by?: string | null; created_at?: string; updated_at?: string }, Partial<CollectionRow>>;
+  collections: PhaseOneTable<CollectionRow, Omit<CollectionRow, "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "customer_snapshot" | "status" | "official_code" | "issued_year" | "sequence_number" | "row_version" | "canceled_at" | "canceled_by" | "cancel_reason" | "reopened_at" | "reopened_by" | "reopen_reason" | "previous_status_before_cancellation" | "check_in_signature_path"> & { id?: string; customer_id?: string | null; customer_snapshot?: Json | null; collection_location?: string | null; responsible_name?: string | null; responsible_tax_id?: string | null; collected_at?: string | null; status?: string; official_code?: string | null; issued_year?: number | null; sequence_number?: number | null; row_version?: number; canceled_at?: string | null; canceled_by?: string | null; cancel_reason?: string | null; reopened_at?: string | null; reopened_by?: string | null; reopen_reason?: string | null; previous_status_before_cancellation?: string | null; check_in_signature_path?: string | null; created_by?: string; updated_by?: string | null; created_at?: string; updated_at?: string }, Partial<CollectionRow>>;
   collection_items: PhaseOneTable<CollectionItemRow, Omit<CollectionItemRow, "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "condition_note" | "observation" | "position" | "removed_at" | "removed_by"> & { id?: string; condition_note?: string | null; observation?: string | null; position?: number; removed_at?: string | null; removed_by?: string | null; created_by?: string; updated_by?: string | null; created_at?: string; updated_at?: string }, Partial<CollectionItemRow>>;
   evidences: PhaseOneTable<EvidenceRow, Omit<EvidenceRow, "id" | "created_at" | "created_by" | "collection_item_id" | "sha256"> & { id?: string; collection_item_id?: string | null; sha256?: string | null; created_by?: string; created_at?: string }, Partial<EvidenceRow>>;
   signatures: PhaseOneTable<SignatureRow, Omit<SignatureRow, "id" | "created_at" | "created_by" | "signed_at" | "sha256"> & { id?: string; sha256?: string | null; created_by?: string; signed_at?: string; created_at?: string }, Partial<SignatureRow>>;
@@ -56,40 +56,43 @@ type PhaseTwoTables = {
   document_revisions: PhaseOneTable<DocumentRevisionRow, Omit<DocumentRevisionRow, "id" | "created_at"> & { id?: string; created_at?: string }, Partial<DocumentRevisionRow>>;
 };
 
+type PhaseFunctionOverlays = {
+  update_collection_draft: { Args: { p_collection_id: string; p_expected_version: number; p_patch: Json }; Returns: Json };
+  create_collection_item: { Args: { p_collection_id: string; p_expected_version: number; p_description: string; p_quantity: number; p_condition_note?: string | null; p_observation?: string | null; p_position?: number; p_client_item_id?: string | null }; Returns: Json };
+  update_collection_item: { Args: { p_collection_id: string; p_item_id: string; p_expected_version: number; p_patch: Json }; Returns: Json };
+  remove_collection_item: { Args: { p_collection_id: string; p_item_id: string; p_expected_version: number }; Returns: Json };
+  prepare_collection_upload: { Args: { p_collection_id: string; p_expected_version: number; p_kind: string; p_item_id: string | null; p_content_type: string; p_byte_size: number; p_sha256: string; p_extension?: string | null; p_signer_name?: string | null; p_signer_tax_id?: string | null; p_acceptance_text?: string | null }; Returns: Json };
+  commit_collection_upload: { Args: { p_upload_intent_id: string; p_expected_version: number }; Returns: Json };
+  cancel_collection_upload: { Args: { p_upload_intent_id: string }; Returns: Json };
+  save_collection_signature: { Args: { p_collection_id: string; p_expected_version: number; p_signer_name: string; p_signer_tax_id: string; p_acceptance_text: string; p_storage_path: string; p_file_sha256: string; p_byte_size: number }; Returns: Json };
+  finalize_collection: { Args: { p_collection_id: string; p_expected_version: number; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
+  cancel_collection: { Args: { p_collection_id: string; p_expected_version: number; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
+  reopen_collection: { Args: { p_collection_id: string; p_expected_version: number; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
+  verify_collection_document: { Args: { p_verification_token: string }; Returns: { is_authentic: boolean; official_code: string; issued_at: string; collection_status: string; organization_name: string; document_version: number }[] };
+  validate_document_issuer_profile: { Args: { p_organization_id: number; p_issuer_profile_id: string }; Returns: Json };
+  save_company_issuer_settings: { Args: { p_legal_name: string; p_tax_id: string; p_phone: string; p_street: string; p_street_number: string; p_district: string; p_city: string; p_state_code: string; p_postal_code: string; p_receipt_legal_text: string; p_signer_name: string; p_signer_title: string; p_logo_asset_id?: string | null }; Returns: Json };
+  consume_document_rate_limit: { Args: { p_scope: string; p_subject_hash: string; p_window_seconds: number; p_limit: number }; Returns: { allowed: boolean; retry_after_seconds: number }[] };
+  claim_document_job: { Args: { p_worker_id: string; p_lease_seconds?: number }; Returns: Json };
+  prepare_document_render_upload: { Args: { p_job_id: string; p_lease_token: string; p_artifact_type: string; p_content_type: string; p_byte_size: number; p_sha256: string }; Returns: Json };
+  commit_document_render_upload: { Args: { p_intent_id: string }; Returns: Json };
+  cancel_document_render_upload: { Args: { p_intent_id: string }; Returns: Json };
+  cleanup_document_render_upload_intents: { Args: { p_limit?: number }; Returns: { intentId: string; storagePath: string; bucket: "collection-documents" }[] };
+  ack_document_render_upload_cleanup: { Args: { p_intent_id: string }; Returns: Json };
+  complete_document_job: { Args: { p_job_id: string; p_lease_token: string; p_status: string; p_artifact_id?: string | null; p_error_code?: string | null; p_error_message?: string | null }; Returns: Json };
+  create_document_share: { Args: { p_document_id: string; p_share_type?: string; p_expires_at?: string | null; p_max_downloads?: number }; Returns: Json };
+  revoke_document_share: { Args: { p_share_id: string }; Returns: Json };
+  consume_document_share: { Args: { p_token: string }; Returns: Json };
+  reserve_document_share_email_delivery: { Args: { p_share_id: string; p_idempotency_hash: string; p_lease_seconds?: number }; Returns: Json };
+  complete_document_share_email_delivery: { Args: { p_reservation_id: string; p_reservation_token: string; p_result: string; p_recipient_masked?: string | null; p_provider_reference?: string | null; p_error_code?: string | null }; Returns: Json };
+  revise_collection_document: { Args: { p_source_document_id: string; p_expected_version: number; p_typed_document_patch: Json; p_revision_type: string; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
+  create_document_revision: { Args: { p_previous_document_id: string; p_replacement_document_id: string; p_revision_type: string; p_reason: string }; Returns: Json };
+};
+
 export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<GeneratedDatabase["public"], "Tables" | "Functions"> & {
     Tables: GeneratedDatabase["public"]["Tables"] & PhaseOneTables & PhaseTwoTables;
-    Functions: GeneratedDatabase["public"]["Functions"] & {
-      update_collection_draft: { Args: { p_collection_id: string; p_expected_version: number; p_patch: Json }; Returns: Json };
-      create_collection_item: { Args: { p_collection_id: string; p_expected_version: number; p_description: string; p_quantity: number; p_condition_note?: string | null; p_observation?: string | null; p_position?: number; p_client_item_id?: string | null }; Returns: Json };
-      update_collection_item: { Args: { p_collection_id: string; p_item_id: string; p_expected_version: number; p_patch: Json }; Returns: Json };
-      remove_collection_item: { Args: { p_collection_id: string; p_item_id: string; p_expected_version: number }; Returns: Json };
-      prepare_collection_upload: { Args: { p_collection_id: string; p_expected_version: number; p_kind: string; p_item_id: string | null; p_content_type: string; p_byte_size: number; p_sha256: string; p_extension?: string | null; p_signer_name?: string | null; p_signer_tax_id?: string | null; p_acceptance_text?: string | null }; Returns: Json };
-      commit_collection_upload: { Args: { p_upload_intent_id: string; p_expected_version: number }; Returns: Json };
-      cancel_collection_upload: { Args: { p_upload_intent_id: string }; Returns: Json };
-      save_collection_signature: { Args: { p_collection_id: string; p_expected_version: number; p_signer_name: string; p_signer_tax_id: string; p_acceptance_text: string; p_storage_path: string; p_file_sha256: string; p_byte_size: number }; Returns: Json };
-      finalize_collection: { Args: { p_collection_id: string; p_expected_version: number; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
-      cancel_collection: { Args: { p_collection_id: string; p_expected_version: number; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
-      reopen_collection: { Args: { p_collection_id: string; p_expected_version: number; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
-      verify_collection_document: { Args: { p_verification_token: string }; Returns: { is_authentic: boolean; official_code: string; issued_at: string; collection_status: string; organization_name: string; document_version: number }[] };
-      validate_document_issuer_profile: { Args: { p_organization_id: number; p_issuer_profile_id: string }; Returns: Json };
-      save_company_issuer_settings: { Args: { p_legal_name: string; p_tax_id: string; p_phone: string; p_street: string; p_street_number: string; p_district: string; p_city: string; p_state_code: string; p_postal_code: string; p_receipt_legal_text: string; p_signer_name: string; p_signer_title: string; p_logo_asset_id?: string | null }; Returns: Json };
-      consume_document_rate_limit: { Args: { p_scope: string; p_subject_hash: string; p_window_seconds: number; p_limit: number }; Returns: { allowed: boolean; retry_after_seconds: number }[] };
-      claim_document_job: { Args: { p_worker_id: string; p_lease_seconds?: number }; Returns: Json };
-      prepare_document_render_upload: { Args: { p_job_id: string; p_lease_token: string; p_artifact_type: string; p_content_type: string; p_byte_size: number; p_sha256: string }; Returns: Json };
-      commit_document_render_upload: { Args: { p_intent_id: string }; Returns: Json };
-      cancel_document_render_upload: { Args: { p_intent_id: string }; Returns: Json };
-      cleanup_document_render_upload_intents: { Args: { p_limit?: number }; Returns: { intentId: string; storagePath: string; bucket: "collection-documents" }[] };
-      ack_document_render_upload_cleanup: { Args: { p_intent_id: string }; Returns: Json };
-      complete_document_job: { Args: { p_job_id: string; p_lease_token: string; p_status: string; p_artifact_id?: string | null; p_error_code?: string | null; p_error_message?: string | null }; Returns: Json };
-      create_document_share: { Args: { p_document_id: string; p_share_type?: string; p_expires_at?: string | null; p_max_downloads?: number }; Returns: Json };
-      revoke_document_share: { Args: { p_share_id: string }; Returns: Json };
-      consume_document_share: { Args: { p_token: string }; Returns: Json };
-      reserve_document_share_email_delivery: { Args: { p_share_id: string; p_idempotency_hash: string; p_lease_seconds?: number }; Returns: Json };
-      complete_document_share_email_delivery: { Args: { p_reservation_id: string; p_reservation_token: string; p_result: string; p_recipient_masked?: string | null; p_provider_reference?: string | null; p_error_code?: string | null }; Returns: Json };
-      revise_collection_document: { Args: { p_source_document_id: string; p_expected_version: number; p_typed_document_patch: Json; p_revision_type: string; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
-      create_document_revision: { Args: { p_previous_document_id: string; p_replacement_document_id: string; p_revision_type: string; p_reason: string }; Returns: Json };
-    };
+    // Overlay wins for nullability under exactOptionalPropertyTypes; generated supplies the rest.
+    Functions: Omit<GeneratedDatabase["public"]["Functions"], keyof PhaseFunctionOverlays> & PhaseFunctionOverlays;
   };
 };
 export type OrganizationRow = Database["public"]["Tables"]["organizations"]["Row"];

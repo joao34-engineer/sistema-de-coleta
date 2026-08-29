@@ -167,6 +167,20 @@ export const customerDeliveryResultSchema = z.object({
 
 export const cancelReopenResultSchema = z.object({
   collectionId: uuidSchema,
-  status: z.enum(["canceled", "collected", "in_workshop", "in_budget", "approved", "in_service", "ready", "invoiced", "partial_delivery", "delivered"]),
+  status: z.enum([
+    "canceled",
+    "collected",
+    "in_workshop",
+    "in_budget",
+    "awaiting_approval",
+    "approved",
+    "in_service",
+    "ready",
+    "invoiced",
+    "partial_delivery",
+    "delivered",
+    "rejected",
+    "reopened",
+  ]),
   rowVersion: z.number().int().positive(),
 });

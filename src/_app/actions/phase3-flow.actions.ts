@@ -17,6 +17,7 @@ import {
   type CustomerDeliveryDTO,
   type CancelReopenDTO,
 } from "@/_pages/collection-operations/model/contracts";
+import { parseJsonFormField } from "@/_pages/collection-operations/model/workshop-rpc-items";
 import {
   workshopCheckIn,
   saveTechnicalBudget,
@@ -36,15 +37,6 @@ function revalidateDetail(collectionId: string): void {
   revalidatePath(`/coletas/${collectionId}`);
 }
 
-function parseJsonItems(value: FormDataEntryValue | null): unknown {
-  if (typeof value !== "string" || value.trim() === "") return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
-
 export type WorkshopCheckInActionResult =
   | ActionSuccess<{ status: "in_workshop" }>
   | ActionFailure;
@@ -60,7 +52,7 @@ export async function workshopCheckInAction(collectionId: string, formData: Form
       expectedVersion: Number(formData.get("expectedVersion")),
       administratorName: formData.get("administratorName"),
       administratorTaxId: formData.get("administratorTaxId"),
-      items: parseJsonItems(formData.get("items")),
+      items: parseJsonFormField(formData.get("items")),
       signatureIntentId: formData.get("signatureIntentId"),
     });
     if (!parsed.success) {
@@ -156,7 +148,7 @@ export async function deliverToCustomerAction(collectionId: string, formData: Fo
     if (!(signatureFile instanceof File)) {
       return { ok: false, error: "Desenhe a assinatura antes de confirmar." };
     }
-    const deliveredItemIds = parseJsonItems(formData.get("deliveredItemIds"));
+    const deliveredItemIds = parseJsonFormField(formData.get("deliveredItemIds"));
     const parsed = customerDeliverySchema.safeParse({
       collectionId,
       expectedVersion: Number(formData.get("expectedVersion")),

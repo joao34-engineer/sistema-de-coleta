@@ -21,7 +21,7 @@ Antes de uma mudanca que alcance o banco remoto:
 5. Validar RLS, Auth e Storage com usuarios e dados sinteticos autorizados.
 6. Registrar o resultado e manter o projeto pronto para a revisao de backup/restauracao da Fase 4.
 
-Na validacao de 28/08/2026 (`supabase migration list --linked`), as 11 migrations locais estavam aplicadas no remoto, inclusive Fase 1A–3, Chat 2 (`p_client_item_id`) e Chat 3 (`phase_4_chat3_security_acl`). Chat 4 (observabilidade) nao altera schema. O advisor de seguranca ainda pode reportar `auth_leaked_password_protection`; essa opcao deve ser ativada manualmente em Auth > Password Security antes do gate final da Fase 0. Indices sem uso em banco pequeno permanecem se suportam consultas previstas.
+Na validacao de 28/08/2026 (`supabase migration list --linked`), as 11 migrations locais estavam aplicadas no remoto, inclusive Fase 1A–3, Chat 2 (`p_client_item_id`) e Chat 3 (`phase_4_chat3_security_acl`). Chat 4 (observabilidade) nao altera schema. O advisor de seguranca ainda pode reportar `auth_leaked_password_protection`; essa opcao deve ser ativada manualmente em Auth > Password Security antes do gate final da Fase 0. Indices sem uso em banco pequeno permanecem se suportam consultas previstas. Em 29/08/2026 foi aplicada `20260829220000_phase_0_workshop_schema_contracts.sql` (Fase 0 B01–B09: CHECKs de oficina, `collections.check_in_signature_path`, REPLACE 3b de budget/progress e snapshot em status emitidos).
 
 O Supabase CLI fica fixado no lockfile (`2.114.0`). O estado global da CLI nao e versionado. Quando o perfil global do Windows estiver ausente, a sessao pode usar um `SUPABASE_HOME` local ignorado pelo Git:
 
@@ -57,6 +57,14 @@ Assinaturas, fotos e PDFs ficam em buckets privados separados ou prefixos de fin
 Antes do upload, validar tamanho, MIME permitido e assinatura de arquivo quando a biblioteca permitir. Permitir apenas formatos necessarios; servir download por URL temporaria e autorizada. Nao tornar um bucket publico para simplificar PDF ou foto.
 
 O banco guarda metadata, hash, dono, objetivo e referencia do objeto. O backup operacional inclui banco e objetos do Storage: backup do Postgres sozinho nao recupera assinaturas ou PDFs.
+
+## Backup operacional (Chat 5)
+
+- Procedimento: [`runbook-backup-restore.md`](runbook-backup-restore.md). Decisao: [ADR 0010](decisions/0010-backup-restore-isolated.md).
+- Export do MVP: `npm run backup:export` + `npm run backup:verify` (bundle fora do Git).
+- Restore somente em projeto throwaway (`RESTORE_*`), nunca no projeto linkado. Conta free pode usar um segundo projeto em outra conta/org; nao conectar GitHub ao throwaway.
+- Humano executa o drill (PDF + assinatura) e apaga o throwaway. Scripts nao apontam o app nem a Vercel ao alvo de restore.
+- Auth users ficam fora do dump de Storage; admin no throwaway e recriado no painel se necessario.
 
 ## Auth e autorizacao
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { workshopCheckInSchema, workshopCheckIn, toOperationsApiError, validatePngSignature } from "@/_pages/collection-operations/index.server";
+import { parseJsonFormField } from "@/_pages/collection-operations/model/workshop-rpc-items";
 import { apiErrorResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
 import { getRequestId } from "@/shared/lib/server-logger";
 
@@ -15,7 +16,7 @@ export async function POST(request: Request, context: RouteContext<"/api/collect
     expectedVersion: Number(formData.get("expectedVersion")),
     administratorName: formData.get("administratorName"),
     administratorTaxId: formData.get("administratorTaxId"),
-    items: formData.get("items"),
+    items: parseJsonFormField(formData.get("items")),
     signatureIntentId: formData.get("signatureIntentId"),
   });
   const file = formData.get("signature");

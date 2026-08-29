@@ -19,6 +19,7 @@ const row: OrganizationSettingsRow = {
   signer_name: "João Marcelo",
   signer_title: "Administrador",
   logo_path: null,
+  logo_asset_id: null,
   setup_complete: false,
   updated_by: null,
   created_at: "2026-08-14T00:00:00.000Z",

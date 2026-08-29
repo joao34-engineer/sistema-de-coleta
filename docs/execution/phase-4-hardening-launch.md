@@ -4,14 +4,15 @@
 
 Autorizar o uso real em campo, incluindo operacao com internet instavel, recuperacao e seguranca. Ate esta fase, a producao remota do MVP permanece em validacao controlada.
 
-## Estado real (28/08/2026)
+## Estado real (29/08/2026)
 
 - Chat 1 (casca PWA) concluido: manifest (`app/manifest.ts`, `display: standalone`, icones/maskable nas cores MJT), service worker estatico de shell (`public/sw.js`, cache `mjt-shell-v1` so para `/_next/static/` e `/icons/`), `Cache-Control` no SW, prompt de instalacao e banner de atualizacao com confirmacao do usuario.
 - Chat 2 (fila offline de rascunhos) concluido: IndexedDB `mjt-offline-v1`, wizard em `/coletas/nova`, fila serial com lock de aba reusando as actions existentes, `p_client_item_id` aditivo, painel de pendentes no `PwaShell` e `canReload` via snapshot. Ver ADR `docs/decisions/0006-offline-draft-queue.md`.
 - Chat 3 (revisao de seguranca) concluido: rate limit de login e download de share, ACL das RPCs de oficina, proxy de `/coletas`, HSTS em producao, erros de action sem vazamento e ator nos logs 500. Ver ADR `docs/decisions/0007-shared-rate-limit-login-download.md`. Migration `20260828120000_phase_4_chat3_security_acl.sql` aplicada no remoto. Os 4 gates remotos da Fase 1A permanecem adiados.
 - Chat 4 (observabilidade) concluido: `app/error.tsx` / `global-error.tsx` com digest seguro, alerta fail-open via `logTransactionFailure` + `ERROR_ALERT_WEBHOOK_URL`, `GET`/`HEAD /api/health` (app + Auth/REST). Sem migration. Ver ADR `docs/decisions/0008-observability-health-alerts.md`. Follow-up humano: monitor em `/api/health` e webhook opcional.
+- Chat 5 (backup/restore) **ferramentas entregues**: ADR `docs/decisions/0010-backup-restore-isolated.md`, runbook `docs/runbook-backup-restore.md`, scripts `backup:export` / `backup:verify` / `backup:restore-isolated`. **Prova humana de restore isolado: ADIADA** (29/08/2026) — operador prioriza entregar a primeira versao do app; o drill (export+verify+restore throwaway+PDF/assinatura) fica para quando houver tempo. Ate la o MVP segue em **validacao controlada** (dados sinteticos / familia), nao autorizacao plena de evidencias insubstituiveis.
 - Migrations locais e remotas alinhadas ate Chat 3 ACL; em 29/08/2026 aplicadas `20260829010000` + `20260829020000` (scope `auth_login` na RPC e no CHECK da tabela de rate limit — corrige login apos Chat 3).
-- Ainda faltam: backup/restore (Chat 5), testes de campo (Chat 6) e treino/go-live (Chat 7).
+- Ainda faltam: prova humana do Chat 5 (adiada), testes de campo (Chat 6) e treino/go-live formal (Chat 7).
 - Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, storage privado, cleanup real) permanecem ADIADOS — ver `phase-1-collection-core.md`.
 
 Organizacao em chats (26/08/2026): os 10 passos abaixo **nao** se executam num unico chat. Ver [Disciplina de chat](#disciplina-de-chat).
@@ -83,6 +84,8 @@ Proibido no mesmo chat: instalacao + fila; fila + auditoria de RLS; observabilid
 **Faz:** backup de banco e de arquivos; restauracao comprovada em ambiente isolado, inclusive PDF/assinatura. LLM ajuda no runbook; o humano executa o restore.
 
 **Nao faz:** UI de oficina, SW, treino de usuario.
+
+**Gate deste chat:** `npm run check` em `sistema-coleta` + ADR 0010 + runbook. Aceite operacional (PDF + assinatura no throwaway) permanece checkbox humano — ver `docs/runbook-backup-restore.md` §6.
 
 ## Chat 6 — Testes de campo
 

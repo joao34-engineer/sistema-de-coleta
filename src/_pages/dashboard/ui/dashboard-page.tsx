@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
@@ -11,7 +10,8 @@ import { signOutAction } from "@/shared/auth/actions";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
-import { Button } from "@/shared/ui/button";
+import { Button, buttonClassName } from "@/shared/ui/button";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Card, CardHeader, CardFooter } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 
@@ -103,17 +103,22 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
             </Card>
 
             {/* Ações principais */}
-            <Link href={"/coletas/nova" as Route}>
-              <Button variant="primary" size="md">
-                Nova coleta
-              </Button>
-            </Link>
-            <Link
+            <PendingNavLink
+              href={"/coletas/nova" as Route}
+              className={buttonClassName({ variant: "primary", size: "md" })}
+              contentClassName="flex w-full items-center justify-center"
+              pendingClassName="opacity-80 ring-2 ring-white/40"
+            >
+              Nova coleta
+            </PendingNavLink>
+            <PendingNavLink
               href={"/coletas/rascunhos" as Route}
               className="text-center text-[13px] font-semibold text-[var(--color-primary)]"
+              contentClassName="block w-full"
+              pendingClassName="opacity-70"
             >
               Ver rascunhos
-            </Link>
+            </PendingNavLink>
 
             {/* Próximas atividades */}
             <section className="flex flex-col gap-3">
@@ -127,10 +132,12 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
                 />
               ) : (
                 upcomingActivities.map((item) => (
-                  <Link
+                  <PendingNavLink
                     key={item.id}
                     href={(item.status === "draft" ? `/coletas/${item.id}/itens` : `/coletas/${item.id}`) as Route}
                     className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
+                    contentClassName="flex w-full items-center justify-between"
+                    pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
                   >
                     <div className="flex flex-col gap-1">
                       <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
@@ -141,7 +148,7 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
                       </p>
                     </div>
                     <Badge status={item.status}>{statusLabels[item.status]}</Badge>
-                  </Link>
+                  </PendingNavLink>
                 ))
               )}
             </section>
@@ -164,11 +171,14 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
             </p>
           </CardHeader>
           <CardFooter>
-            <Link href={"/configuracoes/empresa" as Route} className="w-full">
-              <Button variant="secondary" size="md">
-                Configurações da Empresa
-              </Button>
-            </Link>
+            <PendingNavLink
+              href={"/configuracoes/empresa" as Route}
+              className={buttonClassName({ variant: "secondary", size: "md", className: "w-full" })}
+              contentClassName="flex w-full items-center justify-center"
+              pendingClassName="opacity-80 ring-2 ring-[var(--color-primary)]/30"
+            >
+              Configurações da Empresa
+            </PendingNavLink>
           </CardFooter>
         </Card>
       </div>

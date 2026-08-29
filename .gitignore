@@ -15,6 +15,10 @@ docs/design-system/*.json
 # Local validation scratch output
 check-output.txt
 
+# Backup bundles (Chat 5) — never commit dumps or Storage copies
+/backups/
+*.dump.sql
+
 # Test and browser artifacts
 playwright-report/
 test-results/

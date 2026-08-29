@@ -20,6 +20,7 @@ import {
   customerDeliveryResultSchema,
   cancelReopenResultSchema,
 } from "../model/contracts";
+import { toServiceProgressRpcItems, toTechnicalBudgetRpcItems, toWorkshopCheckInRpcItems } from "../model/workshop-rpc-items";
 
 async function digestSha256(file: File): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
@@ -130,7 +131,7 @@ export async function workshopCheckIn(
       p_expected_version: input.expectedVersion,
       p_administrator_name: input.administratorName,
       p_administrator_tax_id: input.administratorTaxId,
-      p_items: input.items,
+      p_items: toWorkshopCheckInRpcItems(input.items),
       p_signature_intent_id: intentId,
     },
     workshopCheckInResultSchema,
@@ -148,7 +149,7 @@ export async function saveTechnicalBudget(
     {
       p_collection_id: collectionId,
       p_expected_version: input.expectedVersion,
-      p_items: input.items,
+      p_items: toTechnicalBudgetRpcItems(input.items),
       p_general_notes: input.generalNotes ?? null,
     },
     technicalBudgetResultSchema,
@@ -186,7 +187,7 @@ export async function serviceProgress(
     {
       p_collection_id: collectionId,
       p_expected_version: input.expectedVersion,
-      p_items: input.items,
+      p_items: toServiceProgressRpcItems(input.items),
     },
     serviceProgressResultSchema,
     idempotencyKey

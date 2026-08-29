@@ -1,7 +1,9 @@
+"use client";
+
 import React from "react";
-import Link from "next/link";
 import Image from "next/image";
 import type { Route } from "next";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 export interface MobilePageHeaderProps {
   title: string;
@@ -29,13 +31,15 @@ export function MobilePageHeader({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {backHref ? (
-            <Link
+            <PendingNavLink
               href={backHref}
               aria-label="Voltar"
               className="flex h-9 w-9 items-center justify-center rounded-full text-[22px] font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-neutral)] active:scale-95"
+              contentClassName="flex h-full w-full items-center justify-center rounded-full"
+              pendingClassName="bg-[var(--color-surface-neutral)] opacity-80 ring-2 ring-[var(--color-primary)]/40"
             >
               ‹
-            </Link>
+            </PendingNavLink>
           ) : logoSrc ? (
             <Image
               src={logoSrc}
@@ -82,4 +86,3 @@ export function MobilePageHeader({
     </header>
   );
 }
-

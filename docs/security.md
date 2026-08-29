@@ -69,9 +69,10 @@ Login depende de `DOCUMENT_RATE_LIMIT_SECRET` (>=32), `SUPABASE_SECRET_KEY` e `S
 - MFA continua adiado (administrador unico).
 - Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, Storage privado, cleanup real) permanecem adiados ate existir projeto isolado.
 - Chat 4: apontar monitor de uptime para `GET /api/health` e, se quiser alerta ativo, configurar `ERROR_ALERT_WEBHOOK_URL` (somente `https:`) no deploy.
+- Chat 5: ferramentas de backup/restore entregues (ADR 0010 + runbook). **Prova humana de restore isolado: ADIADA** (29/08/2026). Sem essa prova o app funciona; o criterio de lancamento “backup/restauracao comprovados” e a autorizacao plena de evidencias reais permanecem abertos. Nunca restore no MVP.
 
 ## Estado das migrations (remoto)
 
-Conferido em 28/08/2026 com `supabase migration list --linked`: as migrations ate `20260828120000_phase_4_chat3_security_acl.sql` estavam aplicadas. Em 29/08/2026 foram aplicadas `20260829010000_phase_4_auth_login_rate_limit_scope.sql` (allowlist `auth_login` na RPC) e `20260829020000_phase_4_auth_login_rate_limit_scope_check.sql` (CHECK da tabela `private.document_rate_limit_windows`). Chat 4 (observabilidade) nao cria migration de schema de negocio.
+Conferido em 28/08/2026 com `supabase migration list --linked`: as migrations ate `20260828120000_phase_4_chat3_security_acl.sql` estavam aplicadas. Em 29/08/2026 foram aplicadas `20260829010000_phase_4_auth_login_rate_limit_scope.sql` (allowlist `auth_login` na RPC), `20260829020000_phase_4_auth_login_rate_limit_scope_check.sql` (CHECK da tabela `private.document_rate_limit_windows`) e `20260829220000_phase_0_workshop_schema_contracts.sql` (Fase 0 oficina: CHECKs, `collections.check_in_signature_path`, REPLACE 3b; sem grant extra de UPDATE em `collections`; RPCs continuam SECURITY DEFINER). Chat 4 (observabilidade) nao cria migration de schema de negocio.
 
 Fontes: [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/), [ASVS para desenvolvedores](https://devguide.owasp.org/en/03-requirements/05-asvs/) e [seguranca de dados Next.js](https://nextjs.org/docs/app/guides/data-security).

@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
 import { collectionStatusLabel, matchesStatusFilter, type CollectionsListFilter } from "../model/status-filters";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 
@@ -118,7 +118,7 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
         ) : (
           <div className="flex flex-col gap-3">
             {filteredItems.map((item) => (
-              <Link
+              <PendingNavLink
                 key={item.id}
                 href={
                   item.status === "draft"
@@ -126,6 +126,8 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
                     : (`/coletas/${item.id}` as Route)
                 }
                 className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
+                contentClassName="flex w-full items-center justify-between"
+                pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
               >
                 <div className="flex flex-col gap-1">
                   <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
@@ -137,7 +139,7 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
                 </div>
 
                 <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
-              </Link>
+              </PendingNavLink>
             ))}
           </div>
         )}

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `active` — inventário de correção; **não autoriza implementação sozinho** |
+| **Status** | `active` — inventário de correção; **Fase 0 (B01–B09) fechada**; **não autoriza implementação sozinho** |
 | **Authority** | `informative` até o humano pedir um eixo |
 | **Owner** | product / sistema-coleta |
 | **Last verified** | 2026-08-29 |
@@ -42,84 +42,85 @@ Não implementar Fase 2 de oficina (passos 2.1–2.4) antes da Fase 0.
 
 ---
 
-## Fase 0 — Schema e contratos de oficina (fazer primeiro)
+## Fase 0 — Schema e contratos de oficina — **FECHADA** (B01–B09)
 
-Migration **aditiva**. Sem `DROP` de dados. Testar fora de produção. Atualizar tipos se o remoto mudar.
+Migration aditiva `20260829220000_phase_0_workshop_schema_contracts.sql` + mapper DAL/Zod. Sem `DROP` de dados. Aceite: check-in, orçamento, rejeição, progresso, cancelamento e 2ª entrega parcial.
 
-### Passo 0.1 — Liberar status da Fase 3 em `collections`
+### Passo 0.1 — Liberar status da Fase 3 em `collections` — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
 | **Onde** | `20260815090000_phase_1a_collection_core.sql` (CHECK `status` + `official_code`); Fase 3 só ampliou `collections_status_check` |
 | **Quebra** | `workshop_check_in` faz `status = 'in_workshop'` com `official_code` preenchido. Nenhum ramo do CHECK da 1A aceita. Entrada na oficina falha no `UPDATE`. |
+| **Correção** | Constraint `collections_issued_identity_check`: draft sem identidade; qualquer status emitido exige código/snapshot. |
 
-### Passo 0.2 — `check_in_signature_path` no lugar certo
+### Passo 0.2 — `check_in_signature_path` no lugar certo — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
 | **Onde** | `20260823000001_phase_3_rpcs_idempotency.sql` (~142–145); coluna criada em `service_orders` (`20260823000000_...`) |
 | **Quebra** | RPC faz `UPDATE collections SET check_in_signature_path = ...`. A coluna não existe em `collections`. Check-in quebra no UPDATE final (depois do upload). |
+| **Correção** | Coluna em `collections`; cópia para SO no budget; policy de Storage também lê o path da coleta. |
 
-### Passo 0.3 — Cancelar a partir de estados de oficina
+### Passo 0.3 — Cancelar a partir de estados de oficina — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
 | **Onde** | `previous_status_before_cancellation` CHECK só `'draft' \| 'collected'` |
 | **Quebra** | Cancelar `in_workshop` / `ready` / etc. viola o CHECK. |
+| **Correção** | CHECK ampliado para status emitidos de oficina (exceto `canceled` e `delivered`). |
 
-### Passo 0.4 — Rejeitar orçamento
+### Passo 0.4 — Rejeitar orçamento — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
 | **Onde** | `approve_technical_budget` grava `service_orders.status = 'rejected'`; tabela só permite `draft \| budgeted \| approved \| in_service \| ready \| canceled` |
 | **Quebra** | Recusar orçamento sempre falha. |
+| **Correção** | `service_orders_status_check` inclui `rejected`. |
 
-### Passo 0.5 — Progresso: id do item
+### Passo 0.5 — Progresso: id do item — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
 | **Onde** | `oficina/progresso/page.tsx` envia `collection_items.id`; `update_service_progress` busca `service_order_items.id` |
 | **Quebra** | `service_order_item_not_found`. Coleta nunca chega em `in_service` / `ready`. Preferir RPC por `collection_item_id` **ou** a UI enviar o id da linha de orçamento. |
+| **Correção** | RPC resolve por `service_order_items.collection_item_id` (contrato alinhado às demais RPCs). |
 
-### Passo 0.6 — Entregas parciais
+### Passo 0.6 — Entregas parciais — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
 | **Onde** | `delivery_terms` `unique (organization_id, collection_id)` |
 | **Quebra** | Segundo termo (parcial ou conclusão) falha. Produto permite várias entregas parciais. |
+| **Correção** | Unique por coleta removido; `UNIQUE (id, organization_id)` e índice por coleta permanecem. |
 
-### Passo 0.7 — `all_ready` no progresso
+### Passo 0.7 — `all_ready` no progresso — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
 | **Onde** | `update_service_progress`: `all_ready` só olha o payload |
 | **Quebra** | Um item `pronto` no request pode promover a coleta inteira a `ready` enquanto outros ficam `em_reparo`. |
+| **Correção** | Após UPDATEs, recalcula `all_ready`/`any_ready` em todos os `service_order_items` da coleta. |
 
-### Passo 0.8 — Cliente no detalhe após `collected`
+### Passo 0.8 — Cliente no detalhe após `collected` — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
 | **Onde** | `get_collection_detail` / `list_collections` — customer JSON só para `draft`, `collected`, `canceled` |
 | **Quebra** | Hub mostra “Cliente não informado” em toda a oficina. |
+| **Correção** | Snapshot do cliente para todo status ≠ `draft` quando `customer_snapshot` existe. |
 
-### Passo 0.9 — Confirmar no remoto (gate desta fase)
+### Passo 0.9 — Confirmar no remoto (gate desta fase) — **feito**
 
-Antes de fechar a Fase 0, comparar no projeto vinculado:
-
-- Corpo atual de `verify_collection_document` (status `collected \| canceled` vs status vivo).
-- Assinaturas de `workshop_check_in`, `create_technical_budget`, `deliver_to_customer` (camelCase vs `item_id`; `p_signature` vs intent; retorno com/sem `deliveryTermId`).
-- Se o Zod exigir `deliveryTermId` e o RPC não devolver, a entrega **grava e a action reporta falha**.
-
-Aceite da Fase 0: check-in, orçamento, rejeição, progresso, cancelamento e 2ª entrega parcial passam no SQL (teste isolado ou remoto sintético). Sem `db reset`.
-
+Remoto alinhado às migrations 3b locais; Zod público aceita status emitidos de oficina; mapper DAL envia `p_items` em snake_case. Aceite sintético: check-in → orçamento → rejeição; progresso parcial; cancel a partir de `in_workshop`; 2ª entrega parcial; `get_collection_detail` com customer em oficina.
 ---
 
 ## Fase 1 — Fatia de produto (primeira recomendada)
@@ -365,7 +366,7 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 
 | Fase | Gate mínimo |
 | :--- | :--- |
-| 0 | Check-in, orçamento, rejeição, progresso, cancelar oficina e 2ª entrega parcial no SQL; remoto confirmado (0.9) |
+| 0 | Check-in, orçamento, rejeição, progresso, cancelar oficina e 2ª entrega parcial no SQL; remoto confirmado (0.9) — **feito** 29/08/2026 |
 | 1 | Nova coleta: local obrigatório, URL/Back, finalize com número; fila classifica códigos; hub CTAs; PDF nasce após worker (ou estado “PDF pendente” honesto) |
 | 2 | Crash no sync + retry conclui; finalize online não mente; reconnect no banner |
 | 3 | Admin entra; não-admin sai; env documentado no deploy |
@@ -380,15 +381,15 @@ Validação de código (quando implementar): `npm run check` em `sistema-coleta`
 
 | ID | Fase.passo | Título curto |
 | :--- | :--- | :--- |
-| B01 | 0.1 | CHECK status + official_code bloqueia oficina |
-| B02 | 0.2 | `check_in_signature_path` na tabela errada |
-| B03 | 0.3 | CHECK previous_status no cancel |
-| B04 | 0.4 | `service_orders.status = rejected` |
-| B05 | 0.5 | Progresso: id de item errado |
-| B06 | 0.6 | Um `delivery_terms` por coleta |
-| B07 | 0.7 | `all_ready` prematuro |
-| B08 | 0.8 | Cliente some no detalhe |
-| B09 | 0.9 | Confirmar RPCs/QR no remoto |
+| B01 | 0.1 | CHECK status + official_code bloqueia oficina | **feito** |
+| B02 | 0.2 | `check_in_signature_path` na tabela errada | **feito** |
+| B03 | 0.3 | CHECK previous_status no cancel | **feito** |
+| B04 | 0.4 | `service_orders.status = rejected` | **feito** |
+| B05 | 0.5 | Progresso: id de item errado | **feito** |
+| B06 | 0.6 | Um `delivery_terms` por coleta | **feito** |
+| B07 | 0.7 | `all_ready` prematuro | **feito** |
+| B08 | 0.8 | Cliente some no detalhe | **feito** |
+| B09 | 0.9 | Confirmar RPCs/QR no remoto | **feito** |
 | B10 | 1.1 | Orçamento vazio |
 | B11 | 1.2 | Local da coleta |
 | B12 | 1.3 | URL / Back / initialStep |

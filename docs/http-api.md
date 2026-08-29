@@ -113,7 +113,7 @@ Recebem `expectedVersion`, `reason` e `Idempotency-Key`. São transações idemp
 
 `GET /api/collections` e `GET /api/collections/{id}/events` usam cursor opaco base64url contendo `{ createdAt, id }`. A ordenação é estável por `created_at` e `id`; o cliente não deve interpretar nem fabricar cursor.
 
-Detalhes de coletas finalizadas/canceladas usam o cliente congelado e o snapshot documental, incluindo evidências confirmadas. O cadastro atual do cliente não reescreve uma guia já emitida.
+Detalhes de coletas finalizadas/canceladas usam o cliente congelado e o snapshot documental, incluindo evidências confirmadas. O cadastro atual do cliente não reescreve uma guia já emitida. Detalhe e lista usam o snapshot do cliente em **todo** status emitido (oficina incluída), não só `collected|canceled`.
 
 Rascunhos podem existir sem cliente: `customer` no detalhe e `customerName`, `customerTaxId` e `customerPhone` na lista são nulos nesse caso. Evidências do detalhe aceitam o shape SQL (`contentType`/`byteSize`) e são normalizadas no DTO para `mimeType`/`sizeBytes`; `sha256` ausente é exposto como `null`. Caminhos privados nunca são retornados pela API.
 

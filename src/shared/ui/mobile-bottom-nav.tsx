@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 type IconComponent = (props: { className?: string }) => ReactNode;
 
@@ -63,7 +63,7 @@ export function MobileBottomNav() {
         const Icon = item.icon;
 
         return (
-          <Link
+          <PendingNavLink
             key={item.label}
             href={item.href}
             className={`flex h-[48px] min-w-[76px] flex-col items-center justify-center rounded-[12px] px-2 py-1 text-center transition-all ${
@@ -71,10 +71,12 @@ export function MobileBottomNav() {
                 ? "bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] font-semibold"
                 : "text-[var(--color-muted)] hover:text-[var(--color-text)] font-normal"
             }`}
+            contentClassName="flex h-full w-full flex-col items-center justify-center rounded-[12px]"
+            pendingClassName="bg-[var(--color-surface-neutral)] opacity-80 ring-2 ring-[var(--color-primary)]/40"
           >
             <Icon className="h-6 w-6" />
             <span className="mt-1 text-[11px] tracking-tight">{item.label}</span>
-          </Link>
+          </PendingNavLink>
         );
       })}
     </nav>
