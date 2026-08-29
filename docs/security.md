@@ -61,6 +61,8 @@ Login usa `auth_login` (5 tentativas / 15 min por IP+e-mail HMAC). Download publ
 
 Observabilidade (Chat 4 / ADR 0008): 500 disparam o mesmo `transaction_failure` allow-listed e, se `ERROR_ALERT_WEBHOOK_URL` for `https:`, um webhook fail-open. `onRequestError` nunca registra path/query/headers (tokens de `/d/` e `/verificar/`). Health nao usa service role nem SELECT em tabela de coleta.
 
+Login depende de `DOCUMENT_RATE_LIMIT_SECRET` (>=32), `SUPABASE_SECRET_KEY` e `SUPABASE_CONFIRM_PROJECT_REF` no servidor. A RPC `consume_document_rate_limit` precisa aceitar o scope `auth_login` (migration `20260829010000_phase_4_auth_login_rate_limit_scope.sql`); sem isso o login falha fechado com "Não foi possível concluir o login agora."
+
 ## Checklist operacional ainda humano
 
 - Ativar leaked-password protection no painel Auth (Fase 0, ainda aberto).
@@ -70,6 +72,6 @@ Observabilidade (Chat 4 / ADR 0008): 500 disparam o mesmo `transaction_failure` 
 
 ## Estado das migrations (remoto)
 
-Conferido em 28/08/2026 com `supabase migration list --linked`: as 11 migrations locais (fundacao ate `20260828120000_phase_4_chat3_security_acl.sql`) estao aplicadas no projeto remoto. Chat 4 nao criou migration. Nao ha push pendente.
+Conferido em 28/08/2026 com `supabase migration list --linked`: as migrations ate `20260828120000_phase_4_chat3_security_acl.sql` estavam aplicadas. Em 29/08/2026 foram aplicadas `20260829010000_phase_4_auth_login_rate_limit_scope.sql` (allowlist `auth_login` na RPC) e `20260829020000_phase_4_auth_login_rate_limit_scope_check.sql` (CHECK da tabela `private.document_rate_limit_windows`). Chat 4 (observabilidade) nao cria migration de schema de negocio.
 
 Fontes: [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/), [ASVS para desenvolvedores](https://devguide.owasp.org/en/03-requirements/05-asvs/) e [seguranca de dados Next.js](https://nextjs.org/docs/app/guides/data-security).

@@ -10,7 +10,7 @@ Autorizar o uso real em campo, incluindo operacao com internet instavel, recuper
 - Chat 2 (fila offline de rascunhos) concluido: IndexedDB `mjt-offline-v1`, wizard em `/coletas/nova`, fila serial com lock de aba reusando as actions existentes, `p_client_item_id` aditivo, painel de pendentes no `PwaShell` e `canReload` via snapshot. Ver ADR `docs/decisions/0006-offline-draft-queue.md`.
 - Chat 3 (revisao de seguranca) concluido: rate limit de login e download de share, ACL das RPCs de oficina, proxy de `/coletas`, HSTS em producao, erros de action sem vazamento e ator nos logs 500. Ver ADR `docs/decisions/0007-shared-rate-limit-login-download.md`. Migration `20260828120000_phase_4_chat3_security_acl.sql` aplicada no remoto. Os 4 gates remotos da Fase 1A permanecem adiados.
 - Chat 4 (observabilidade) concluido: `app/error.tsx` / `global-error.tsx` com digest seguro, alerta fail-open via `logTransactionFailure` + `ERROR_ALERT_WEBHOOK_URL`, `GET`/`HEAD /api/health` (app + Auth/REST). Sem migration. Ver ADR `docs/decisions/0008-observability-health-alerts.md`. Follow-up humano: monitor em `/api/health` e webhook opcional.
-- Migrations locais e remotas alinhadas (11/11 em 28/08/2026 via `supabase migration list --linked`).
+- Migrations locais e remotas alinhadas ate Chat 3 ACL; em 29/08/2026 aplicadas `20260829010000` + `20260829020000` (scope `auth_login` na RPC e no CHECK da tabela de rate limit — corrige login apos Chat 3).
 - Ainda faltam: backup/restore (Chat 5), testes de campo (Chat 6) e treino/go-live (Chat 7).
 - Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, storage privado, cleanup real) permanecem ADIADOS — ver `phase-1-collection-core.md`.
 

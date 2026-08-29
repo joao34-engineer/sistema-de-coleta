@@ -23,6 +23,7 @@ Antes de editar codigo, configuracao, migration ou infraestrutura:
 - Server Actions e Route Handlers sao endpoints publicos: validar entrada, autenticar e autorizar cada chamada no servidor.
 - Server Components sao o padrao. Adicionar `'use client'` somente na menor fronteira que realmente exige eventos, estado, efeitos ou APIs do navegador.
 - O aplicativo e App Router. Os arquivos em `app/` sao rotas finas; composicao e regra de negocio vivem em `src/` segundo FSD.
+- Acesso a dados e **somente DAL** (ADR 0009). Nao reabrir o catalogo de 3 abordagens do Next.js. Nao `fetch` da propria `/api` no servidor; nao query no JSX.
 - Nao criar `entities`, `features` ou `widgets` por antecipacao. Comecar em `src/_pages` e extrair somente apos reuso real e fronteira estavel.
 
 ## Arquitetura aprovada
@@ -30,7 +31,8 @@ Antes de editar codigo, configuracao, migration ou infraestrutura:
 - Next.js App Router + TypeScript em modo estrito + PWA.
 - Supabase: Auth, PostgreSQL, Storage privado e RLS.
 - FSD adaptado a Next: `app/` na raiz e `src/_app`, `src/_pages`, `src/shared`; demais camadas so quando justificadas.
-- Camada de acesso a dados no servidor, DTOs minimos na fronteira com o cliente e comandos idempotentes para mutacoes criticas.
+- **Data Access Layer unica (congelada, ADR 0009).** Leituras e mutacoes passam por modulos `server-only` (`src/_pages/<slice>/api/queries.ts` e `commands.ts` + `src/shared/auth`). Server Actions e Route Handlers so adaptam. Proibido: `fetch` da propria `/api` no servidor, `new Request("http://localhost/...")` interno, query no `page.tsx`/JSX, misturar as 3 abordagens do guia Next.js. Detalhe: `docs/design-patterns/architecture-improvement.md` (caixa no topo) e `docs/decisions/0009-data-access-layer.md`.
+- DTOs minimos na fronteira com o cliente e comandos idempotentes para mutacoes criticas.
 
 Consulte `docs/architecture/fsd.md`, `docs/supabase.md`, `docs/nextjs-pwa.md` e `docs/security.md` antes de decidir detalhes.
 
@@ -40,7 +42,8 @@ Consulte `docs/architecture/fsd.md`, `docs/supabase.md`, `docs/nextjs-pwa.md` e 
 | --- | --- | --- |
 | Tela, rota, Server/Client Component ou PWA | `docs/nextjs-pwa.md`, `docs/typescript.md`, `docs/architecture/fsd.md` | `$mjt-nextjs-pwa` |
 | Tabela, migration, Auth, RLS, Storage ou geracao de tipos | `docs/supabase.md`, `docs/security.md`, `docs/architecture/data-and-rules.md` | `$mjt-supabase` |
-| Nova regra de negocio ou organizacao de codigo | `docs/coding-standards.md`, `docs/architecture/fsd.md` | — |
+| Nova regra de negocio ou organizacao de codigo | `docs/coding-standards.md`, `docs/architecture/fsd.md`, `docs/decisions/0009-data-access-layer.md` | — |
+| Query, comando, Server Action ou Route Handler | ADR 0009 + caixa DAL em `docs/design-patterns/architecture-improvement.md` | `$mjt-nextjs-pwa` |
 | Documento, assinatura, QR ou compartilhamento | `docs/security.md`, `docs/architecture/data-and-rules.md`, fase 2 | — |
 | Testes ou CI | `docs/testing.md` e doc da capacidade alterada | — |
 | Deploy, backup, incidente, health ou acesso | `docs/security.md`, `docs/http-api.md` (§ saúde), fase 4 | — |

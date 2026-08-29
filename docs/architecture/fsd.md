@@ -62,6 +62,7 @@ Antes de extrair, verificar se as duas ocorrencias mudam sempre juntas. Se sim, 
 
 ## Fronteiras Next.js
 
+- Acesso a dados = **DAL unica** (congelada): `api/queries.ts` e `api/commands.ts` do slice, `server-only`. Ver [ADR 0009](../decisions/0009-data-access-layer.md).
 - `src/shared/db` e `index.server.ts` importam `server-only` e nunca sao exportados por um `index.ts` consumivel no cliente.
 - `index.ts` da slice nao pode levar codigo server-only ao grafo do cliente. Criar `index.server.ts` somente quando essa separacao for necessaria.
 - A diretiva `'use client'` fica no componente folha interativo, nunca no topo de uma pagina por comodidade.

@@ -11,7 +11,11 @@
 
 ## Camada de acesso a dados
 
-Centralizar queries e comandos server-only em `src/shared/db` ou modulo de dominio extraido. Cada operacao deve aplicar autorizacao proxima da fonte de dados e retornar um DTO minimo. A interface pode fazer verificacao otimista para UX, mas ela nunca substitui RLS nem verificacao segura no comando.
+**Abordagem unica (congelada):** Data Access Layer — [ADR 0009](decisions/0009-data-access-layer.md). Nao misturar com HTTP interno nem query no componente.
+
+Queries e comandos ficam em modulos `server-only` do slice (`src/_pages/<slice>/api/queries.ts`, `api/commands.ts`). Sessao e cliente Supabase em `src/shared/auth` / `src/shared/db`. Cada operacao aplica autorizacao proxima da fonte de dados e devolve um DTO minimo. Server Actions e Route Handlers so chamam o DAL; nao fazem `fetch` da propria `/api` e nao fabricam `Request` interno.
+
+A interface pode fazer verificacao otimista para UX, mas ela nunca substitui RLS nem verificacao segura no comando.
 
 ## PWA decidida
 

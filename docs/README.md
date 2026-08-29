@@ -31,7 +31,10 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | Contratos HTTP da Fase 1A | [http-api.md](http-api.md) |
 | Clean code e fronteiras | [coding-standards.md](coding-standards.md) |
 | Testes e validacao | [testing.md](testing.md) |
-| Decisoes de arquitetura | [decisions/](decisions/) |
+| Decisoes de arquitetura | [decisions/](decisions/) — DAL unica: [0009](decisions/0009-data-access-layer.md) (**congelada**) |
+| Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — decisao DAL normativa; fases A–H planned |
+| Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) |
+| Inventario de bugs (scan 29/08/2026) | [design-patterns/system-scan-for-bugs.md](design-patterns/system-scan-for-bugs.md) |
 
 Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS/Storage e `$mjt-nextjs-pwa` para App Router/PWA. Leia o `SKILL.md` somente quando o gatilho da tarefa se aplicar.
 

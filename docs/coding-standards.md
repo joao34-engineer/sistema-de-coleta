@@ -20,6 +20,7 @@ Deixar cada mudanca pequena, localizavel, testavel e segura para um sistema que 
 | Fronteira | Regra |
 | --- | --- |
 | Rota Next → FSD | Rota fina reexporta/delega; nao concentra negocio |
+| UI / Action / `route.ts` → dados | **DAL unica** (`queries.ts` / `commands.ts` + auth). Proibido `fetch` interno da `/api` e query no JSX. ADR 0009 |
 | Server → Client | Somente DTO serializavel e minimo necessario |
 | Cliente → servidor | Entrada nao confiavel; validar em runtime |
 | Aplicacao → Supabase | RLS e autorizacao por comando; sem client admin no navegador |
