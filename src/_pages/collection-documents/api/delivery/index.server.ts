@@ -6,5 +6,5 @@ export { queueDocumentShareEmail } from "./email.server";
 export { isWorkerRequestAuthorized, runDocumentWorkerBatch } from "./worker.server";
 export { deliveryErrorResponse, DocumentDeliveryError } from "./errors";
 export { emailShareSchema, revisionSchema, shareCreateSchema } from "./contracts";
-export { enforcePublicVerificationRateLimit, DocumentRateLimitExceededError, DocumentRateLimitUnavailableError } from "./rate-limit.server";
+export { enforcePublicVerificationRateLimit, enforceShareDownloadRateLimit, DocumentRateLimitExceededError, DocumentRateLimitUnavailableError } from "./rate-limit.server";
 export type { DocumentListDTO, ConsumedShare } from "./contracts";

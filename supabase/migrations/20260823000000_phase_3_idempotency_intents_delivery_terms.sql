@@ -11,7 +11,7 @@ alter table public.idempotency_requests
 alter table public.idempotency_requests
   add constraint idempotency_requests_operation_check
   check (operation in (
-    'finalize', 'cancel', 'reopen',
+    'finalize', 'cancel', 'reopen', 'revise',
     'workshop_check_in', 'save_technical_budget', 'budget_approval',
     'update_service_progress', 'register_invoice_reference', 'customer_delivery',
     'cancel_collection', 'reopen_collection'
@@ -67,6 +67,7 @@ create table if not exists public.delivery_terms (
   notes            text check (notes is null or length(trim(notes)) <= 1000),
   created_by       uuid not null references public.profiles(user_id) on delete restrict,
   created_at       timestamptz not null default now(),
+  unique (id, organization_id),
   unique (organization_id, collection_id),
   foreign key (collection_id, organization_id) references public.collections(id, organization_id) on delete restrict
 );
@@ -93,7 +94,8 @@ create index if not exists delivery_term_items_term_idx
 
 -- 5. Trigger de imutabilidade sobre delivery_terms (antes de UPDATE/DELETE)
 --    Reaproveita o helper private.prevent_immutable_record_mutation da 1a.
-create trigger if not exists delivery_terms_are_immutable
+drop trigger if exists delivery_terms_are_immutable on public.delivery_terms;
+create trigger delivery_terms_are_immutable
 before update or delete on public.delivery_terms
 for each row execute function private.prevent_immutable_record_mutation();
 
@@ -310,7 +312,7 @@ create or replace function public.prepare_delivery_signature_intent(
   p_byte_size       integer
 )
 returns jsonb
-language plpgsql
+language sql
 security definer
 set search_path = ''
 as $$
@@ -325,7 +327,7 @@ create or replace function public.commit_delivery_signature_intent(
   p_expected_version integer
 )
 returns jsonb
-language plpgsql
+language sql
 security definer
 set search_path = ''
 as $$
@@ -334,7 +336,7 @@ $$;
 
 create or replace function public.cancel_delivery_signature_intent(p_intent_id uuid)
 returns jsonb
-language plpgsql
+language sql
 security definer
 set search_path = ''
 as $$
@@ -363,13 +365,15 @@ $$;
 
 -- 8. RLS + Grants sobre as novas tabelas públicas
 alter table public.delivery_terms enable row level security;
-create policy if not exists delivery_terms_admin_all
+drop policy if exists delivery_terms_admin_all on public.delivery_terms;
+create policy delivery_terms_admin_all
 on public.delivery_terms for all to authenticated
 using (private.current_user_is_admin(organization_id))
 with check (private.current_user_is_admin(organization_id));
 
 alter table public.delivery_term_items enable row level security;
-create policy if not exists delivery_term_items_admin_all
+drop policy if exists delivery_term_items_admin_all on public.delivery_term_items;
+create policy delivery_term_items_admin_all
 on public.delivery_term_items for all to authenticated
 using (private.current_user_is_admin(organization_id))
 with check (private.current_user_is_admin(organization_id));
@@ -381,7 +385,8 @@ grant update (check_in_signature_path) on public.service_orders to authenticated
 -- 9. Storage policies para assinaturas de workshop/check-in e delivery_term
 --    READ: usa current_user_can_access_collection para resolver org a partir do collection_id
 --    embutido no storage_path (org_id/collection_uuid/intent_uuid.png).
-create policy if not exists collection_signatures_read_delivery_or_checkin
+drop policy if exists collection_signatures_read_delivery_or_checkin on storage.objects;
+create policy collection_signatures_read_delivery_or_checkin
 on storage.objects for select to authenticated
 using (
   bucket_id = 'collection-signatures'
@@ -417,7 +422,8 @@ using (
 );
 
 --    INSERT: só via intent pending (delivery_signature_intents ou collection_upload_intents)
-create policy if not exists collection_signatures_insert_delivery_intent
+drop policy if exists collection_signatures_insert_delivery_intent on storage.objects;
+create policy collection_signatures_insert_delivery_intent
 on storage.objects for insert to authenticated
 with check (
   bucket_id = 'collection-signatures'

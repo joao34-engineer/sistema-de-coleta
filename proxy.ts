@@ -2,9 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/shared/api/database.types";
 import { getPublicEnvironment, hasPublicEnvironment } from "@/shared/config/environment";
+import { protectedRoutePrefixes } from "@/shared/config/routes";
 
 function isProtectedPath(pathname: string): boolean {
-  return pathname === "/dashboard" || pathname.startsWith("/configuracoes/");
+  return protectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 function redirectWithRefreshedCookies(request: NextRequest, response: NextResponse, pathname: string): NextResponse {
@@ -39,4 +40,4 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/).*)"] };
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/|sw.js).*)"] };

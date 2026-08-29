@@ -3,7 +3,7 @@ import {
   documentRateLimitRules,
   hashDocumentRateLimitSubject,
   requestIpRateLimitSubject,
-} from "@/_pages/collection-documents/api/delivery/rate-limit.server";
+} from "@/shared/lib/rate-limit.server";
 
 const secret = "rate-limit-test-secret-with-at-least-thirty-two-characters";
 
@@ -13,6 +13,8 @@ describe("document rate limiting", () => {
     expect(documentRateLimitRules.shareCreate).toEqual({ scope: "document_share_create", limit: 30, windowSeconds: 3600 });
     expect(documentRateLimitRules.emailAdministrator).toEqual({ scope: "document_email_administrator", limit: 10, windowSeconds: 3600 });
     expect(documentRateLimitRules.emailOrganization).toEqual({ scope: "document_email_organization", limit: 50, windowSeconds: 86400 });
+    expect(documentRateLimitRules.shareDownload).toEqual({ scope: "document_share_download", limit: 30, windowSeconds: 300 });
+    expect(documentRateLimitRules.login).toEqual({ scope: "auth_login", limit: 5, windowSeconds: 900 });
   });
 
   it("pseudonymizes the client address and never returns the raw value to the backend", () => {

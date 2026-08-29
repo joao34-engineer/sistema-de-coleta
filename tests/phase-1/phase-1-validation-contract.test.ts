@@ -73,6 +73,10 @@ describe("Fase 1A validation contract", () => {
     expect(toLifecycleApiError({ code: "40001" })).toMatchObject({
       status: 409,
       code: "stale_version",
+      actorId: null,
     });
+    const tagged = Object.assign(new Error("unexpected_error"), { actorId: "00000000-0000-0000-0000-000000000001" });
+    expect(toLifecycleApiError(tagged).actorId).toBe("00000000-0000-0000-0000-000000000001");
+    expect(toLifecycleApiError(tagged).message).not.toContain("00000000-0000-0000-0000-000000000001");
   });
 });

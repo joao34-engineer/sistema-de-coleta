@@ -2,6 +2,7 @@
 
 import { getDraft, patchDraft, addItem, patchItem, removeItem } from "./drafts.server";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
+import { toSafeActionError } from "@/shared/lib/action-error";
 
 export type CreateDraftActionResult =
   | { ok: true; draftId: string }
@@ -23,17 +24,15 @@ export type UpdateResponsibleActionResult =
   | { ok: true; draft: DraftDTO }
   | { ok: false; error: string };
 
-export async function fetchDraftWithItemsAction(draftId: string): Promise<{
-  ok: boolean;
-  draft?: DraftDTO;
-  items?: readonly DraftItemDTO[];
-  error?: string;
-}> {
+export async function fetchDraftWithItemsAction(draftId: string): Promise<
+  | { ok: true; draft: DraftDTO; items: readonly DraftItemDTO[]; hasSignature: boolean }
+  | { ok: false; error: string }
+> {
   try {
     const res = await getDraft(draftId);
     const body = (await res.json()) as {
       ok: boolean;
-      data?: { draft: DraftDTO; items: DraftItemDTO[] };
+      data?: { draft: DraftDTO; items: DraftItemDTO[]; hasSignature?: boolean };
       code?: string;
     };
 
@@ -41,10 +40,14 @@ export async function fetchDraftWithItemsAction(draftId: string): Promise<{
       return { ok: false, error: body.code ?? "draft_not_found" };
     }
 
-    return { ok: true, draft: body.data.draft, items: body.data.items };
+    return {
+      ok: true,
+      draft: body.data.draft,
+      items: body.data.items,
+      hasSignature: body.data.hasSignature === true,
+    };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "fetch_draft_unexpected_error";
-    return { ok: false, error: message };
+    return toSafeActionError(error);
   }
 }
 
@@ -55,6 +58,7 @@ export async function addItemToDraftAction(payload: {
   quantity: number;
   condition?: string | null;
   notes?: string | null;
+  clientItemId?: string;
 }): Promise<AddItemActionResult> {
   try {
     const req = new Request(`http://localhost/api/collections/${payload.collectionId}/items`, {
@@ -66,6 +70,7 @@ export async function addItemToDraftAction(payload: {
         quantity: payload.quantity,
         condition: payload.condition ?? null,
         notes: payload.notes ?? null,
+        ...(payload.clientItemId === undefined ? {} : { clientItemId: payload.clientItemId }),
       }),
     });
 
@@ -87,8 +92,7 @@ export async function addItemToDraftAction(payload: {
       rowVersion: body.data.rowVersion,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "add_item_unexpected_error";
-    return { ok: false, error: message };
+    return toSafeActionError(error);
   }
 }
 
@@ -135,8 +139,7 @@ export async function updateItemInDraftAction(payload: {
       rowVersion: body.data.rowVersion,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "update_item_unexpected_error";
-    return { ok: false, error: message };
+    return toSafeActionError(error);
   }
 }
 
@@ -172,8 +175,48 @@ export async function removeItemFromDraftAction(payload: {
       rowVersion: body.data.rowVersion,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "remove_item_unexpected_error";
-    return { ok: false, error: message };
+    return toSafeActionError(error);
+  }
+}
+
+export type PatchDraftFieldsActionResult =
+  | { ok: true; draft: DraftDTO }
+  | { ok: false; error: string };
+
+export async function patchDraftFieldsAction(payload: {
+  collectionId: string;
+  expectedVersion: number;
+  customerId?: string | null;
+  collectionLocation?: string | null;
+  responsibleName?: string | null;
+  responsibleTaxId?: string | null;
+  collectedAt?: string | null;
+}): Promise<PatchDraftFieldsActionResult> {
+  try {
+    const bodyPayload: Record<string, unknown> = { expectedVersion: payload.expectedVersion };
+    if (payload.customerId !== undefined) bodyPayload["customerId"] = payload.customerId;
+    if (payload.collectionLocation !== undefined) bodyPayload["collectionLocation"] = payload.collectionLocation;
+    if (payload.responsibleName !== undefined) bodyPayload["responsibleName"] = payload.responsibleName;
+    if (payload.responsibleTaxId !== undefined) bodyPayload["responsibleTaxId"] = payload.responsibleTaxId;
+    if (payload.collectedAt !== undefined) bodyPayload["collectedAt"] = payload.collectedAt;
+
+    const req = new Request(`http://localhost/api/collections/${payload.collectionId}/draft`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bodyPayload),
+    });
+    const res = await patchDraft(req, payload.collectionId);
+    const body = (await res.json()) as {
+      ok: boolean;
+      data?: { draft: DraftDTO };
+      code?: string;
+    };
+    if (!res.ok || !body.ok || !body.data) {
+      return { ok: false, error: body.code ?? "patch_draft_failed" };
+    }
+    return { ok: true, draft: body.data.draft };
+  } catch (error: unknown) {
+    return toSafeActionError(error);
   }
 }
 
@@ -183,31 +226,11 @@ export async function updateDraftResponsibleAction(payload: {
   responsibleName: string;
   responsibleTaxId?: string | null;
 }): Promise<UpdateResponsibleActionResult> {
-  try {
-    const req = new Request(`http://localhost/api/collections/${payload.collectionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        expectedVersion: payload.expectedVersion,
-        responsibleName: payload.responsibleName,
-        responsibleTaxId: payload.responsibleTaxId ?? null,
-      }),
-    });
-
-    const res = await patchDraft(req, payload.collectionId);
-    const body = (await res.json()) as {
-      ok: boolean;
-      data?: { draft: DraftDTO };
-      code?: string;
-    };
-
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "update_responsible_failed" };
-    }
-
-    return { ok: true, draft: body.data.draft };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "update_responsible_unexpected_error";
-    return { ok: false, error: message };
-  }
+  const result = await patchDraftFieldsAction({
+    collectionId: payload.collectionId,
+    expectedVersion: payload.expectedVersion,
+    responsibleName: payload.responsibleName,
+    ...(payload.responsibleTaxId === undefined ? {} : { responsibleTaxId: payload.responsibleTaxId }),
+  });
+  return result;
 }

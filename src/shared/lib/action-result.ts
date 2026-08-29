@@ -1,6 +1,6 @@
 export type LoginActionState = Readonly<{
   status: "idle" | "error";
-  code: "validation_error" | "invalid_credentials" | "unexpected_error";
+  code: "validation_error" | "invalid_credentials" | "rate_limit_exceeded" | "temporarily_unavailable" | "unexpected_error";
   fieldErrors?: Readonly<{ email?: string; password?: string }>;
   message?: string;
 }>;

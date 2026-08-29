@@ -1,34 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { createDraftWithCustomerAction, searchCustomersAction, type CustomerView } from "@/app/actions/draft-flow.actions";
+import { searchCustomersAction, type CustomerView } from "@/app/actions/draft-flow.actions";
+import { isOfflineQuotaExceeded } from "@/shared/lib/offline";
+import type { CaptureActor } from "../model/capture-actor";
+import { createLocalDraft, isBrowserOnline, normalizeTaxId } from "../model/offline-capture";
+import { offlineCopy } from "../model/offline-copy";
+import { ensureOfflineDraftStore } from "../model/offline-port";
+import { SyncStatusChip } from "./sync-status-chip";
 
-export function NewCollectionPage() {
-  const router = useRouter();
+type Props = Readonly<{
+  actor: CaptureActor;
+  onCreated: (draftId: string) => void;
+}>;
+
+export function NewCollectionPage({ actor, onCreated }: Props) {
   const [tab, setTab] = useState<"new" | "search">("new");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<readonly CustomerView[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerView | null>(null);
-
-  // Form states matching Figma M02 (13:27)
   const [displayName, setDisplayName] = useState("");
   const [taxId, setTaxId] = useState("");
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
-
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const online = isBrowserOnline();
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
+    if (!online) {
+      setSearchResults([]);
+      return;
+    }
     if (query.trim().length < 2) {
       setSearchResults([]);
       return;
@@ -51,81 +62,79 @@ export function NewCollectionPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setErrorMsg(null);
-    setIsLoading(true);
 
+    if (tab === "search" && !online) {
+      setErrorMsg(offlineCopy.searchOffline);
+      return;
+    }
     if (tab === "search" && !selectedCustomer) {
       setErrorMsg("Selecione um cliente existente ou preencha os dados do novo cliente.");
-      setIsLoading(false);
       return;
     }
-
     if (!displayName.trim() || !taxId.trim() || !phone.trim()) {
       setErrorMsg("Preencha Nome/Razão Social, CPF/CNPJ e Telefone.");
+      return;
+    }
+    const normalizedTaxId = normalizeTaxId(taxId);
+    if (!/^\d{11}$|^\d{14}$/.test(normalizedTaxId)) {
+      setErrorMsg("Informe um CPF ou CNPJ válido.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const store = await ensureOfflineDraftStore();
+      const location = street.trim() || null;
+      const customer =
+        tab === "search" && selectedCustomer
+          ? {
+              mode: "existing" as const,
+              customerId: selectedCustomer.id,
+              displayName: selectedCustomer.displayName,
+              taxId: normalizeTaxId(selectedCustomer.taxId),
+              phone: selectedCustomer.phone,
+              street: location,
+            }
+          : {
+              mode: "new" as const,
+              displayName: displayName.trim(),
+              taxId: normalizedTaxId,
+              phone: phone.trim(),
+              street: location,
+            };
+      const draft = await createLocalDraft({ store, actor, customer, collectionLocation: location });
+      onCreated(draft.id);
+    } catch (error: unknown) {
+      setErrorMsg(isOfflineQuotaExceeded(error) ? offlineCopy.quotaExceeded : "Não foi possível guardar o rascunho neste aparelho.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    const payload: Parameters<typeof createDraftWithCustomerAction>[0] = {
-      existingCustomerId: tab === "search" && selectedCustomer ? selectedCustomer.id : null,
-      collectionLocation: street.trim() || null,
-    };
-
-    if (tab === "new") {
-      payload.newCustomer = {
-        displayName: displayName.trim(),
-        taxId: taxId.trim(),
-        phone: phone.trim(),
-        ...(street.trim() ? { address: { street: street.trim(), city: "São Paulo", stateCode: "SP" } } : {})
-      };
-    }
-
-    const res = await createDraftWithCustomerAction(payload);
-
-    setIsLoading(false);
-
-    if (!res.ok) {
-      if (res.error === "duplicate_tax_id") {
-        setErrorMsg("Já existe um cliente cadastrado com este CPF/CNPJ.");
-      } else {
-        setErrorMsg(`Erro ao criar coleta: ${res.error}`);
-      }
-      return;
-    }
-
-    router.push(`/coletas/${res.draftId}/itens` as Route);
   };
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-      <MobilePageHeader
-        title="Nova coleta"
-        subtitle="Etapa 1 de 3 · Cliente"
-        backHref={"/coletas" as Route}
-      />
+      <MobilePageHeader title="Nova coleta" subtitle="Etapa 1 de 3 · Cliente" backHref={"/coletas" as Route} />
 
-      {/* Progress Bar (M02 Node 13:27: 1 de 3 ativa) */}
       <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-2.5">
         <div className="flex items-center gap-1.5">
           <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
           <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
           <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
         </div>
-        <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">
-          1 de 3
-        </span>
+        <SyncStatusChip state={online ? "online" : "saved_locally"} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 px-6 pt-6">
+      <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6 px-6 pt-6">
         <div>
           <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">
             Quem está entregando os itens?
           </h2>
         </div>
 
-        {errorMsg && (
+        {errorMsg ? (
           <MobileStatePanel
             type="error"
             title="Não foi possível criar a coleta"
@@ -133,17 +142,14 @@ export function NewCollectionPage() {
             actionText="Tentar novamente"
             onAction={() => setErrorMsg(null)}
           />
-        )}
+        ) : null}
 
-        {/* Tab Toggle entre Cadastrar e Buscar */}
         <div className="grid grid-cols-2 rounded-[12px] bg-[var(--color-surface-neutral)] p-1">
           <button
             type="button"
             onClick={() => setTab("new")}
             className={`min-h-[40px] rounded-[10px] text-[12px] font-semibold transition-all ${
-              tab === "new"
-                ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-xs"
-                : "text-[var(--color-text-muted)]"
+              tab === "new" ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-xs" : "text-[var(--color-text-muted)]"
             }`}
           >
             Novo cliente
@@ -152,29 +158,27 @@ export function NewCollectionPage() {
             type="button"
             onClick={() => setTab("search")}
             className={`min-h-[40px] rounded-[10px] text-[12px] font-semibold transition-all ${
-              tab === "search"
-                ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-xs"
-                : "text-[var(--color-text-muted)]"
+              tab === "search" ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-xs" : "text-[var(--color-text-muted)]"
             }`}
           >
             Buscar existente
           </button>
         </div>
 
-        {tab === "search" && (
+        {tab === "search" ? (
           <div className="flex flex-col gap-3">
+            {!online ? (
+              <p className="rounded-[12px] bg-[#fff8ec] p-3 text-[12px] font-medium text-[#a36b2c]">{offlineCopy.searchOffline}</p>
+            ) : null}
             <Input
               label="Buscar cliente"
               placeholder="Digite o nome ou CPF/CNPJ..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(event) => void handleSearch(event.target.value)}
+              disabled={!online}
             />
-            {isSearching && (
-              <p className="py-2 text-center text-[12px] text-[var(--color-text-muted)]">
-                Buscando...
-              </p>
-            )}
-            {searchResults.length > 0 && (
+            {isSearching ? <p className="py-2 text-center text-[12px] text-[var(--color-text-muted)]">Buscando...</p> : null}
+            {searchResults.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {searchResults.map((cust) => (
                   <button
@@ -188,9 +192,7 @@ export function NewCollectionPage() {
                     }`}
                   >
                     <div>
-                      <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">
-                        {cust.displayName}
-                      </p>
+                      <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">{cust.displayName}</p>
                       <p className="text-[11px] text-[var(--color-text-muted)]">
                         {cust.taxId} · {cust.phone}
                       </p>
@@ -198,50 +200,18 @@ export function NewCollectionPage() {
                   </button>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        {/* Campos Fies ao Figma (Node 13:27) */}
         <div className="flex flex-col gap-4">
-          <Input
-            label="Nome ou razão social *"
-            placeholder="Digite o nome"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-          />
-
-          <Input
-            label="CPF/CNPJ *"
-            placeholder="Digite apenas números"
-            value={taxId}
-            onChange={(e) => setTaxId(e.target.value)}
-            required
-          />
-
-          <Input
-            label="Telefone *"
-            placeholder="(00) 00000-0000"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-
-          <Input
-            label="Endereço cadastral"
-            placeholder="Opcional"
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-          />
+          <Input label="Nome ou razão social *" placeholder="Digite o nome" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
+          <Input label="CPF/CNPJ *" placeholder="Digite apenas números" value={taxId} onChange={(event) => setTaxId(event.target.value)} required />
+          <Input label="Telefone *" placeholder="(00) 00000-0000" value={phone} onChange={(event) => setPhone(event.target.value)} required />
+          <Input label="Endereço cadastral" placeholder="Opcional" value={street} onChange={(event) => setStreet(event.target.value)} />
         </div>
 
-        <Button
-          type="submit"
-          variant="primary"
-          isLoading={isLoading}
-          className="mt-4 h-[52px] rounded-[12px] text-[14px] font-semibold"
-        >
+        <Button type="submit" variant="primary" isLoading={isLoading} className="mt-4 h-[52px] rounded-[12px] text-[14px] font-semibold">
           Continuar
         </Button>
       </form>
@@ -250,4 +220,3 @@ export function NewCollectionPage() {
     </main>
   );
 }
-

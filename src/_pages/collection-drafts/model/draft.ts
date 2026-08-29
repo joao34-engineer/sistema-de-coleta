@@ -12,7 +12,10 @@ export const draftPatchSchema = z.object({
 }).refine((value) => Object.keys(value).some((key) => key !== "expectedVersion"), "Informe ao menos um campo para salvar.");
 export const itemCreateSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1_000_000), condition: z.string().trim().max(500).nullable().optional(), notes: z.string().trim().max(2000).nullable().optional() });
 export const itemPatchSchema = itemCreateSchema.partial().refine((value) => Object.keys(value).length > 0, "Informe ao menos um campo para alterar.");
-export const itemCreateCommandSchema = itemCreateSchema.extend({ expectedVersion: z.number().int().positive() });
+export const itemCreateCommandSchema = itemCreateSchema.extend({
+  expectedVersion: z.number().int().positive(),
+  clientItemId: z.string().uuid().optional(),
+});
 export const itemPatchCommandSchema = itemPatchSchema.extend({ expectedVersion: z.number().int().positive() });
 export const itemIdSchema = z.string().uuid();
 export const expectedVersionSchema = z.object({ expectedVersion: z.number().int().positive() });

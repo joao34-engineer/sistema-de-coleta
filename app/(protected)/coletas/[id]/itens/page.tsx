@@ -1,21 +1,18 @@
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { DraftItemsPage } from "@/_pages/collection-drafts/ui/draft-items-page";
-import { fetchDraftWithItemsAction } from "@/_pages/collection-drafts/api/actions";
+import { CollectionCapturePage } from "@/_pages/collection-drafts/ui/collection-capture-page";
 
 type Props = Readonly<{
   params: Promise<{ id: string }>;
 }>;
 
 export default async function ColetaItensRoute({ params }: Props) {
-  await requireAuthenticatedAdministrator();
+  const administrator = await requireAuthenticatedAdministrator();
   const resolvedParams = await params;
-  const initial = await fetchDraftWithItemsAction(resolvedParams.id);
-
   return (
-    <DraftItemsPage
-      draftId={resolvedParams.id}
-      initialDraft={initial.draft}
-      initialItems={initial.items}
+    <CollectionCapturePage
+      actor={{ userId: administrator.userId, organizationId: administrator.organizationId }}
+      resumeDraftId={resolvedParams.id}
+      initialStep="itens"
     />
   );
 }

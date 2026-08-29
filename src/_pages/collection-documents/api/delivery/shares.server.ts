@@ -9,7 +9,7 @@ import { sha256Hex } from "../rendering/canonical-json";
 import { toSupabaseJson } from "../rendering/server-client";
 import { documentShareCreatedSchema, documentRevisionResultSchema, type ShareCreateInput, type RevisionInput } from "./contracts";
 import { matchesDocumentShareTokenHash } from "./share-token";
-import { documentRateLimitRules, enforceDocumentRateLimit } from "./rate-limit.server";
+import { documentRateLimitRules, enforceDocumentRateLimit } from "@/shared/lib/rate-limit.server";
 
 export const DOCUMENT_SHARE_MAX_DOWNLOADS = 20;
 export const DOCUMENT_SHARE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;

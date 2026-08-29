@@ -11,6 +11,7 @@ type TransactionFailure = Readonly<{
 }>;
 
 const requestIdPattern = /^[A-Za-z0-9._:-]{1,128}$/;
+const actorIdProperty = "actorId";
 
 export function getRequestId(request?: Request): string {
   const candidate = request?.headers.get("x-request-id")?.trim();
@@ -20,6 +21,19 @@ export function getRequestId(request?: Request): string {
 function pseudonymizeActor(actorId: string | null): string | null {
   if (!actorId) return null;
   return createHash("sha256").update(actorId).digest("hex").slice(0, 16);
+}
+
+export function attachActorId<T>(error: T, actorId: string): T {
+  if (typeof error === "object" && error !== null) {
+    Object.defineProperty(error, actorIdProperty, { value: actorId, enumerable: false, configurable: true });
+  }
+  return error;
+}
+
+export function actorIdFromUnknown(error: unknown): string | null {
+  if (typeof error !== "object" || error === null || !(actorIdProperty in error)) return null;
+  const actorId = (error as { actorId?: unknown }).actorId;
+  return typeof actorId === "string" && actorId.length > 0 ? actorId : null;
 }
 
 export function logTransactionFailure(event: TransactionFailure): void {
@@ -38,4 +52,3 @@ export function logTransactionFailure(event: TransactionFailure): void {
     // Logging is best-effort and must never change the API result.
   }
 }
-

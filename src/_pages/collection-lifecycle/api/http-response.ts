@@ -3,7 +3,6 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { logTransactionFailure } from "@/shared/lib/server-logger";
-import type { LifecycleApiError } from "./lifecycle-errors";
 
 const idempotencyKeySchema = z.uuid();
 
@@ -17,8 +16,14 @@ export function noStoreJson(body: unknown, init?: ResponseInit): NextResponse {
   return NextResponse.json(body, { ...init, headers: { ...init?.headers, "Cache-Control": "no-store" } });
 }
 
-export function apiErrorResponse(error: LifecycleApiError, requestId?: string, operation = "lifecycle_command"): NextResponse {
-  if (requestId && error.status >= 500) logTransactionFailure({ requestId, operation, code: error.code, actorId: null, status: error.status });
+export function apiErrorResponse(
+  error: Readonly<{ status: number; code: string; message: string; actorId?: string | null }>,
+  requestId?: string,
+  operation = "lifecycle_command",
+): NextResponse {
+  if (requestId && error.status >= 500) {
+    logTransactionFailure({ requestId, operation, code: error.code, actorId: error.actorId ?? null, status: error.status });
+  }
   return noStoreJson({ error: { code: error.code, message: error.message } }, { status: error.status });
 }
 

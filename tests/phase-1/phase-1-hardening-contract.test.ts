@@ -116,4 +116,44 @@ describe("Fase 1A hardening contract", () => {
     expect(deletionPolicy).not.toMatch(/staging/);
     expect(sql).toMatch(/create policy[\s\S]{0,300}on storage\.objects for delete[\s\S]{0,500}current_user_can_delete_upload_intent_path/i);
   });
+
+  it("revokes public execute on workshop and delivery-signature RPCs without DELETE policies", () => {
+    const sql = readRepositoryFile("supabase/migrations/20260828120000_phase_4_chat3_security_acl.sql").toLowerCase();
+    const proxy = readRepositoryFile("proxy.ts");
+    const routes = readRepositoryFile("src/shared/config/routes.ts");
+    const nextConfig = readRepositoryFile("next.config.ts");
+
+    for (const functionName of [
+      "workshop_check_in",
+      "create_technical_budget",
+      "approve_technical_budget",
+      "update_service_progress",
+      "register_invoice_reference",
+      "deliver_to_customer",
+      "cancel_or_reopen_collection",
+      "prepare_delivery_signature_intent",
+      "commit_delivery_signature_intent",
+      "cancel_delivery_signature_intent",
+    ]) {
+      expect(sql).toContain(`'${functionName}'`);
+    }
+    expect(sql).toMatch(/revoke execute on function/);
+    expect(sql).toMatch(/grant execute on function %s to authenticated/);
+    expect(sql).toMatch(/from public, anon, authenticated, service_role/);
+    expect(sql).not.toMatch(/for delete/);
+    expect(sql).toMatch(/for select to authenticated/);
+    expect(sql).toMatch(/for insert to authenticated/);
+    expect(sql).toMatch(/for update to authenticated/);
+    expect(routes).toContain('"/coletas"');
+    expect(proxy).toContain("protectedRoutePrefixes");
+    expect(nextConfig).toContain("Strict-Transport-Security");
+    expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).toContain("toSafeActionError");
+    expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).toContain("toSafeActionError");
+    expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).not.toMatch(/error instanceof Error \? error\.message/);
+    expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).not.toMatch(/error instanceof Error \? error\.message/);
+    expect(readRepositoryFile("src/_pages/collection-lifecycle/api/http-response.ts")).toMatch(/actorId:\s*error\.actorId/);
+    expect(readRepositoryFile(".env.example")).toContain("DOCUMENT_RATE_LIMIT_SECRET=");
+    expect(readRepositoryFile(".env.example")).toContain("DOCUMENT_WORKER_SECRET=");
+    expect(readRepositoryFile(".env.example")).not.toMatch(/sk_live|eyJ/);
+  });
 });

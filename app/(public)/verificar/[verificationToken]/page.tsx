@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { PublicVerificationRoute } from "@/_pages/collection-documents/index.server";
-import { enforcePublicVerificationRateLimit } from "@/_pages/collection-documents/api/delivery/rate-limit.server";
+import { enforcePublicVerificationRateLimit } from "@/shared/lib/rate-limit.server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

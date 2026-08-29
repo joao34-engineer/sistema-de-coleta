@@ -33,7 +33,7 @@ type StorageBucket = Readonly<{
   remove(paths: readonly string[]): Promise<Readonly<{ error: unknown }>>;
 }>;
 type PhaseOneClient = Readonly<{
-  from(table: "collections" | "collection_items" | "evidences" | "collection_events"): Query;
+  from(table: "collections" | "collection_items" | "evidences" | "collection_events" | "signatures"): Query;
   rpc(functionName: string, args: Readonly<Record<string, unknown>>): Promise<DatabaseResponse>;
   storage: Readonly<{ from(bucket: "collection-evidences"): StorageBucket }>;
 }>;
@@ -216,12 +216,17 @@ export async function getDraft(id: string, request?: Request): Promise<NextRespo
     if (!parsedId.success) return respond(400, { ok: false, code: "validation_error" });
     const administrator = await requireAuthenticatedAdministrator();
     const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
-    const [draftResult, itemResult] = await Promise.all([supabase.from("collections").select(draftColumns).eq("organization_id", administrator.organizationId).eq("id", parsedId.data).eq("status", "draft").maybeSingle(), supabase.from("collection_items").select(itemColumns).eq("organization_id", administrator.organizationId).eq("collection_id", parsedId.data).is("removed_at", null).order("created_at", { ascending: true })]);
+    const [draftResult, itemResult, signatureResult] = await Promise.all([
+      supabase.from("collections").select(draftColumns).eq("organization_id", administrator.organizationId).eq("id", parsedId.data).eq("status", "draft").maybeSingle(),
+      supabase.from("collection_items").select(itemColumns).eq("organization_id", administrator.organizationId).eq("collection_id", parsedId.data).is("removed_at", null).order("created_at", { ascending: true }),
+      supabase.from("signatures").select("id").eq("collection_id", parsedId.data).maybeSingle(),
+    ]);
     const draft = mapDraft(draftResult.data);
     if (draftResult.error) return failureResponse(request ?? new Request("http://localhost/api/collections"), "get_draft", "draft_query_failed", administrator.userId);
     if (!draft) return respond(404, { ok: false, code: "not_found" });
     const items = Array.isArray(itemResult.data) ? itemResult.data.map(mapItem).filter((value): value is DraftItemDTO => value !== null) : [];
-    return respond(200, { ok: true, data: { draft, items } });
+    const hasSignature = signatureResult.data !== null && signatureResult.data !== undefined && !signatureResult.error;
+    return respond(200, { ok: true, data: { draft, items, hasSignature } });
   } catch (error: unknown) {
     return errorResponse(error, request ?? new Request("http://localhost/api/collections"), "get_draft", null);
   }
@@ -261,9 +266,17 @@ export async function addItem(request: Request, collectionId: string): Promise<N
     if (!id.success || !input.success) return respond(400, { ok: false, code: "validation_error", issues: input.success ? undefined : input.error.flatten() });
     const administrator = await requireAuthenticatedAdministrator();
     const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
-    const { data, error } = await supabase.rpc("create_collection_item", { p_collection_id: id.data, p_expected_version: input.data.expectedVersion, p_description: input.data.description, p_quantity: input.data.quantity, p_condition_note: input.data.condition ?? null, p_observation: input.data.notes ?? null });
+    const { data, error } = await supabase.rpc("create_collection_item", {
+      p_collection_id: id.data,
+      p_expected_version: input.data.expectedVersion,
+      p_description: input.data.description,
+      p_quantity: input.data.quantity,
+      p_condition_note: input.data.condition ?? null,
+      p_observation: input.data.notes ?? null,
+      p_client_item_id: input.data.clientItemId ?? null,
+    });
     if (error) return rpcErrorResponse(error, request, "item_create", administrator.userId);
-    const itemId = mutationItemId(data);
+    const itemId = mutationItemId(data) ?? input.data.clientItemId ?? null;
     const created = itemId ? await loadItem(supabase, id.data, itemId) : null;
     const draft = await loadDraft(supabase, id.data);
     if (!created || !draft || mutationRowVersion(data) !== draft.rowVersion) return failureResponse(request, "add_item", "item_create_contract_invalid", administrator.userId);

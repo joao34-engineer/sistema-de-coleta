@@ -61,7 +61,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
     Tables: GeneratedDatabase["public"]["Tables"] & PhaseOneTables & PhaseTwoTables;
     Functions: GeneratedDatabase["public"]["Functions"] & {
       update_collection_draft: { Args: { p_collection_id: string; p_expected_version: number; p_patch: Json }; Returns: Json };
-      create_collection_item: { Args: { p_collection_id: string; p_expected_version: number; p_description: string; p_quantity: number; p_condition_note?: string | null; p_observation?: string | null; p_position?: number }; Returns: Json };
+      create_collection_item: { Args: { p_collection_id: string; p_expected_version: number; p_description: string; p_quantity: number; p_condition_note?: string | null; p_observation?: string | null; p_position?: number; p_client_item_id?: string | null }; Returns: Json };
       update_collection_item: { Args: { p_collection_id: string; p_item_id: string; p_expected_version: number; p_patch: Json }; Returns: Json };
       remove_collection_item: { Args: { p_collection_id: string; p_item_id: string; p_expected_version: number }; Returns: Json };
       prepare_collection_upload: { Args: { p_collection_id: string; p_expected_version: number; p_kind: string; p_item_id: string | null; p_content_type: string; p_byte_size: number; p_sha256: string; p_extension?: string | null; p_signer_name?: string | null; p_signer_tax_id?: string | null; p_acceptance_text?: string | null }; Returns: Json };

@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { logTransactionFailure } from "@/shared/lib/server-logger";
+import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
 import { createLifecycleSupabaseClient } from "./lifecycle-supabase";
 import { lifecycleCommandResultSchema, signatureCommandResultSchema, type SignatureInput } from "../model/contracts";
 
@@ -131,24 +131,28 @@ export async function saveCollectionSignature(collectionId: string, input: Signa
     if (!commitSucceeded && intentId && storagePath) await compensateSignatureUpload(supabase, intentId, storagePath).then((value) => { compensation = value; });
     if (compensation === "failed" && requestId) logTransactionFailure({ requestId, operation: "save_collection_signature_compensation", code: "signature_compensation_failed", actorId: administrator.userId, status: 500 });
     if (requestId) logTransactionFailure({ requestId, operation: commitSucceeded ? "save_collection_signature_post_commit_response" : "save_collection_signature", code: commitSucceeded ? "signature_post_commit_response_failed" : "signature_upload_or_commit_failed", actorId: administrator.userId, status: 500 });
-    throw error;
+    throw attachActorId(error, administrator.userId);
   }
 }
 
 async function executeLifecycleCommand(functionName: "finalize_collection" | "cancel_collection" | "reopen_collection", collectionId: string, expectedVersion: number, idempotencyKey: string, reason?: string) {
-  await requireAuthenticatedAdministrator();
-  const supabase = await createLifecycleSupabaseClient();
-  const requestHash = await digestLifecycleRequest(functionName, collectionId, expectedVersion, reason);
-  const baseArgs = { p_collection_id: collectionId, p_expected_version: expectedVersion, p_idempotency_key: idempotencyKey, p_request_hash: requestHash };
-  const { data, error } = functionName === "finalize_collection"
-    ? await supabase.rpc("finalize_collection", baseArgs)
-    : functionName === "cancel_collection"
-      ? await supabase.rpc("cancel_collection", { ...baseArgs, p_reason: reason ?? "" })
-      : await supabase.rpc("reopen_collection", { ...baseArgs, p_reason: reason ?? "" });
-  if (error) throw error;
-  const parsed = lifecycleCommandResultSchema.safeParse(data);
-  if (!parsed.success) throw new Error("lifecycle_command_contract_invalid");
-  return parsed.data;
+  const administrator = await requireAuthenticatedAdministrator();
+  try {
+    const supabase = await createLifecycleSupabaseClient();
+    const requestHash = await digestLifecycleRequest(functionName, collectionId, expectedVersion, reason);
+    const baseArgs = { p_collection_id: collectionId, p_expected_version: expectedVersion, p_idempotency_key: idempotencyKey, p_request_hash: requestHash };
+    const { data, error } = functionName === "finalize_collection"
+      ? await supabase.rpc("finalize_collection", baseArgs)
+      : functionName === "cancel_collection"
+        ? await supabase.rpc("cancel_collection", { ...baseArgs, p_reason: reason ?? "" })
+        : await supabase.rpc("reopen_collection", { ...baseArgs, p_reason: reason ?? "" });
+    if (error) throw error;
+    const parsed = lifecycleCommandResultSchema.safeParse(data);
+    if (!parsed.success) throw new Error("lifecycle_command_contract_invalid");
+    return parsed.data;
+  } catch (error: unknown) {
+    throw attachActorId(error, administrator.userId);
+  }
 }
 
 export function finalizeCollection(collectionId: string, expectedVersion: number, idempotencyKey: string) { return executeLifecycleCommand("finalize_collection", collectionId, expectedVersion, idempotencyKey); }

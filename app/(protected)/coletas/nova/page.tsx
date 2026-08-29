@@ -1,7 +1,17 @@
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { NewCollectionPage } from "@/_pages/collection-drafts/ui/new-collection-page";
+import { CollectionCapturePage } from "@/_pages/collection-drafts/ui/collection-capture-page";
 
-export default async function NovaColetaRoute() {
-  await requireAuthenticatedAdministrator();
-  return <NewCollectionPage />;
+type Props = Readonly<{
+  searchParams: Promise<{ rascunho?: string }>;
+}>;
+
+export default async function NovaColetaRoute({ searchParams }: Props) {
+  const administrator = await requireAuthenticatedAdministrator();
+  const params = await searchParams;
+  return (
+    <CollectionCapturePage
+      actor={{ userId: administrator.userId, organizationId: administrator.organizationId }}
+      {...(params.rascunho === undefined ? {} : { resumeDraftId: params.rascunho })}
+    />
+  );
 }

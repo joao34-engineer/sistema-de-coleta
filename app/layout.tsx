@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AppPwaShell } from "@/_app/pwa";
 import "@/_app/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -9,8 +10,15 @@ export const metadata: Metadata = {
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#175cd3" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#4c916f" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-BR"><body>{children}</body></html>;
+  return (
+    <html lang="pt-BR">
+      <body>
+        <AppPwaShell />
+        {children}
+      </body>
+    </html>
+  );
 }

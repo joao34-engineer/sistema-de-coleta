@@ -9,7 +9,7 @@ import {
 import type { EmailShareInput } from "./contracts";
 import { getPublicEnvironment } from "@/shared/config/environment";
 import { buildDocumentShareUrl } from "./share-token";
-import { documentRateLimitRules, enforceDocumentRateLimit } from "./rate-limit.server";
+import { documentRateLimitRules, enforceDocumentRateLimit } from "@/shared/lib/rate-limit.server";
 
 function maskEmail(email: string): string {
   const [local = "", domain = ""] = email.split("@");

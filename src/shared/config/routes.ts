@@ -5,4 +5,4 @@ export const routes = {
   companySettings: "/configuracoes/empresa",
 } as const;
 
-export const protectedRoutePrefixes = [routes.dashboard, "/configuracoes"] as const;
+export const protectedRoutePrefixes = [routes.dashboard, "/configuracoes", "/coletas"] as const;

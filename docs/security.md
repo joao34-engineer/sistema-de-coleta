@@ -42,4 +42,26 @@ Coletar somente o necessario para a coleta e vinculo comercial, documentar final
 
 Revisar permissao por papel, migration/RLS, Storage, env, CSP/cabecalhos, rate limit, upload, logs, cache, backup/restore e cenario de usuario malicioso. OWASP ASVS e referencia de verificacao, nao uma checklist copiada sem contexto.
 
+## Matriz por comando (Chat 3)
+
+| Superficie | Auth no comando | RLS/RPC | Rate limit | Log 500 |
+| --- | --- | --- | --- | --- |
+| Clientes, rascunho, itens, evidencias, settings | `requireAuthenticatedAdministrator` | sessao + org | n/a | sim, sem PII |
+| Finalize / cancel / reopen | idem | RPC 1A | n/a | ator quando conhecido |
+| Oficina (7 RPCs + 3 intents de assinatura) | idem | apos revoke Chat 3 | n/a | ator quando conhecido |
+| Shares / e-mail / revisao | idem | Fase 2 | ja existe | ator quando conhecido |
+| `GET /api/public/collections/[token]` | anon | `verify_collection_document` | ja existe | 404 generico |
+| `GET /d/{token}/download` | token | `consume_document_share` | HTTP 429 | 404 generico |
+| `signInAction` | n/a | Auth | estado da action, nao 429 | sem payload |
+| Worker interno | secret 32+ timing-safe | service_role | n/a | sem segredo |
+
+Login usa `auth_login` (5 tentativas / 15 min por IP+e-mail HMAC). Download publico de share usa `document_share_download` (30 / 5 min por IP), o mesmo RPC `consume_document_rate_limit`. A pagina `/d/{token}` nao consome quota. `/verificar` ja era limitado e nao foi duplicado.
+
+## Checklist operacional ainda humano
+
+- Ativar leaked-password protection no painel Auth (Fase 0, ainda aberto).
+- MFA continua adiado (administrador unico).
+- Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, Storage privado, cleanup real) permanecem adiados ate existir projeto isolado.
+- Aplicar a migration `20260828120000_phase_4_chat3_security_acl.sql` no remoto so apos `supabase db push --dry-run` e confirmacao humana.
+
 Fontes: [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/), [ASVS para desenvolvedores](https://devguide.owasp.org/en/03-requirements/05-asvs/) e [seguranca de dados Next.js](https://nextjs.org/docs/app/guides/data-security).

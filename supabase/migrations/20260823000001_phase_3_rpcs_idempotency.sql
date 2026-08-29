@@ -4,6 +4,16 @@
 -- idempotency_requests idêntico ao padrão de finalize_collection (1a).
 -- Não apaga nem reseta dados. A tabela idempotency_requests.operation CHECK foi ampliada
 -- na migration 20260823000000 para aceitar as novas operações.
+-- DROP das assinaturas 3a ANTES do CREATE 3b: CREATE OR REPLACE com args novos
+-- cria overload, não substituição. Sem estes DROPs o GRANT sem lista de args falha.
+
+drop function if exists public.workshop_check_in(uuid, integer, text, text, jsonb, text);
+drop function if exists public.create_technical_budget(uuid, integer, jsonb, text);
+drop function if exists public.approve_technical_budget(uuid, integer, boolean, text, text, text);
+drop function if exists public.update_service_progress(uuid, integer, jsonb);
+drop function if exists public.register_invoice_reference(uuid, integer, text, text, date, numeric, text);
+drop function if exists public.deliver_to_customer(uuid, integer, uuid[], text, text, text, text);
+drop function if exists public.cancel_or_reopen_collection(uuid, integer, text, text);
 
 -- 5a. workshop_check_in — collected -> in_workshop
 --     ASSINATURA agora via intent (não mais p_signature text).

@@ -1,8 +1,9 @@
 import "server-only";
 
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
+import { actorIdFromUnknown } from "@/shared/lib/server-logger";
 
-export type LifecycleApiError = Readonly<{ status: number; code: string; message: string }>;
+export type LifecycleApiError = Readonly<{ status: number; code: string; message: string; actorId: string | null }>;
 
 type SupabaseError = Readonly<{ code?: unknown; message?: unknown }>;
 
@@ -10,7 +11,7 @@ function isSupabaseError(value: unknown): value is SupabaseError {
   return typeof value === "object" && value !== null;
 }
 
-export function toLifecycleApiError(error: unknown): LifecycleApiError {
+function mapLifecycleApiError(error: unknown): Omit<LifecycleApiError, "actorId"> {
   if (error instanceof AuthenticationRequiredError) return { status: 401, code: "authentication_required", message: "Autenticação obrigatória." };
   if (error instanceof AdministratorAccessDeniedError) return { status: 403, code: "administrator_access_denied", message: "Você não tem permissão para esta operação." };
   if (isSupabaseError(error) && typeof error.code === "string") {
@@ -26,4 +27,8 @@ export function toLifecycleApiError(error: unknown): LifecycleApiError {
   if (error instanceof Error && error.message === "invalid_signature_file") return { status: 422, code: "validation_error", message: "A assinatura enviada não é um PNG válido." };
   if (error instanceof Error && error.message === "signature_contract_invalid") return { status: 500, code: "signature_contract_invalid", message: "Não foi possível confirmar a assinatura." };
   return { status: 500, code: "unexpected_error", message: "Não foi possível concluir a operação." };
+}
+
+export function toLifecycleApiError(error: unknown): LifecycleApiError {
+  return { ...mapLifecycleApiError(error), actorId: actorIdFromUnknown(error) };
 }

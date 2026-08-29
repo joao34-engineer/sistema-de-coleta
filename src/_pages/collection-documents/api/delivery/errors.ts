@@ -1,7 +1,7 @@
 import "server-only";
 
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
-import { DocumentRateLimitExceededError, DocumentRateLimitUnavailableError } from "./rate-limit.server";
+import { DocumentRateLimitExceededError, DocumentRateLimitUnavailableError } from "@/shared/lib/rate-limit.server";
 
 export class DocumentDeliveryError extends Error {
   readonly code: string;

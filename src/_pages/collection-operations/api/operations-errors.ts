@@ -1,8 +1,9 @@
 import "server-only";
 
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
+import { actorIdFromUnknown } from "@/shared/lib/server-logger";
 
-export type OperationsApiError = Readonly<{ status: number; code: string; message: string }>;
+export type OperationsApiError = Readonly<{ status: number; code: string; message: string; actorId: string | null }>;
 
 type SupabaseError = Readonly<{ code?: unknown; message?: unknown }>;
 
@@ -10,7 +11,7 @@ function isSupabaseError(value: unknown): value is SupabaseError {
   return typeof value === "object" && value !== null;
 }
 
-export function toOperationsApiError(error: unknown): OperationsApiError {
+function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorId"> {
   if (error instanceof AuthenticationRequiredError) return { status: 401, code: "authentication_required", message: "Autenticação obrigatória." };
   if (error instanceof AdministratorAccessDeniedError) return { status: 403, code: "administrator_access_denied", message: "Você não tem permissão para esta operação." };
   if (isSupabaseError(error) && typeof error.code === "string") {
@@ -55,4 +56,8 @@ export function toOperationsApiError(error: unknown): OperationsApiError {
   if (error instanceof Error && error.message === "lifecycle_command_contract_invalid") return { status: 500, code: "command_contract_invalid", message: "Não foi possível concluir a operação." };
   if (error instanceof Error && error.message === "operations_command_contract_invalid") return { status: 500, code: "command_contract_invalid", message: "Não foi possível concluir a operação." };
   return { status: 500, code: "unexpected_error", message: "Não foi possível concluir a operação." };
+}
+
+export function toOperationsApiError(error: unknown): OperationsApiError {
+  return { ...mapOperationsApiError(error), actorId: actorIdFromUnknown(error) };
 }

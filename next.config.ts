@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob:",
       `connect-src 'self' ${supabaseOrigin} ${isProduction ? "" : "ws://localhost:* ws://127.0.0.1:*"}`,
       "font-src 'self' data:",
+      "worker-src 'self'",
       ...(isProduction ? ["upgrade-insecure-requests"] : []),
     ].join("; ");
     return [
@@ -31,6 +32,20 @@ const nextConfig: NextConfig = {
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "Cache-Control", value: "private, no-store" },
+          ...(isProduction
+            ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }]
+            : []),
+        ],
+      },
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; script-src 'self'; connect-src 'self'; worker-src 'self'",
+          },
         ],
       },
       {

@@ -130,6 +130,8 @@ Rascunhos podem existir sem cliente: `customer` no detalhe e `customerName`, `cu
 | 409 | `stale_version` | Escrita perdeu a comparação otimista |
 | 409 | `idempotency_conflict` | Chave reutilizada com payload diferente |
 | 422 | `business_rule_violation` | Pré-condição do fluxo não atendida |
+| 429 | `rate_limit_exceeded` | Quota pública de verificação ou download de share |
+| 503 | `temporarily_unavailable` | Limitador indisponível (fail-closed) |
 | 500 | `*_failed` / `unexpected_error` | Falha interna registrada sem PII |
 
 ## Documentos, compartilhamento e entrega (Fase 2)
@@ -165,6 +167,14 @@ As rotas aninhadas `/api/collections/{id}/documents/{documentId}/download`, `/sh
 ### `GET /d/{shareToken}` e `GET /d/{shareToken}/download`
 
 A página não consome o contador: exibe apenas a ação genérica de download. O endpoint `/download` chama `consume_document_share` somente no clique, respeitando expiração, revogação e limite atômico de downloads, e então redireciona com URL assinada curta. Token inválido, expirado, revogado ou sem PDF recebe `404` genérico, `no-store` e `Referrer-Policy: no-referrer`.
+
+Abuso do download é limitado por `document_share_download` (30 requisições / 5 minutos por IP HMAC). Excesso responde `429 { error: { code: "rate_limit_exceeded" } }` com `Retry-After`. Segredo ou RPC indisponível responde `503 { error: { code: "temporarily_unavailable" } }`. A página `/d/{token}` não consome essa quota.
+
+## Login (Server Action)
+
+`signInAction` não é rota HTTP. Códigos estáveis do estado: `validation_error`, `invalid_credentials`, `rate_limit_exceeded`, `temporarily_unavailable`, `unexpected_error`. Rate limit (`auth_login`, 5 / 15 min por IP+e-mail HMAC) ocorre antes de `signInWithPassword`. Não há HTTP 429 no login. Credencial inválida não revela se o e-mail existe.
+
+## Worker interno
 
 ### `POST /api/internal/document-generation/run` (alias `/api/internal/document-jobs/run`)
 

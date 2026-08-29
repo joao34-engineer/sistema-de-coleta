@@ -1,5 +1,5 @@
 begin;
-select plan(48);
+select plan(52);
 
 -- 1. Tabelas novas existem
 select has_table('public', 'service_orders', 'service_orders table exists');
@@ -92,21 +92,21 @@ select is((
     and pg_get_triggerdef(oid) like '%prevent_immutable_record_mutation%'
 ), 1, 'collection_events has immutability trigger');
 
--- 12. Policies de RLS replicadas (admin-only via current_user_is_admin)
+-- 12. Policies de RLS: SELECT/INSERT/UPDATE via current_user_is_admin, sem ALL/DELETE
 select is((
   select count(*)::integer
   from pg_policies
   where schemaname = 'public' and tablename = 'service_orders'
-    and policyname = 'service_orders_admin_all'
-    and pgpolicies_using ~ 'current_user_is_admin'
-), 1, 'service_orders admin policy uses current_user_is_admin');
+    and policyname in ('service_orders_admin_select', 'service_orders_admin_insert', 'service_orders_admin_update')
+    and (qual ~ 'current_user_is_admin' or with_check ~ 'current_user_is_admin')
+), 3, 'service_orders admin policies use current_user_is_admin without ALL');
 select is((
   select count(*)::integer
   from pg_policies
   where schemaname = 'public' and tablename = 'invoice_references'
-    and policyname = 'invoice_references_admin_all'
-    and pgpolicies_using ~ 'current_user_is_admin'
-), 1, 'invoice_references admin policy uses current_user_is_admin');
+    and policyname in ('invoice_references_admin_select', 'invoice_references_admin_insert', 'invoice_references_admin_update')
+    and (qual ~ 'current_user_is_admin' or with_check ~ 'current_user_is_admin')
+), 3, 'invoice_references admin policies use current_user_is_admin without ALL');
 
 -- 13. Grants minimos: authenticated recebe apenas select/insert/update (sem delete)
 select is(has_table_privilege('authenticated', 'public.service_orders', 'select'), true, 'authenticated can read service_orders');
@@ -125,6 +125,66 @@ select is(has_function_privilege('authenticated', 'public.deliver_to_customer(uu
 --     Idempotencia via ledger e intents privados para assinatura ficam como
 --     backlog de refinamento (Sessao 3b+), preservando compatibilidade com 1A.
 select is(has_table('public', 'idempotency_requests'), true, 'idempotency ledger retained from phase 1');
+
+-- 16. Chat 3: EXECUTE revogado de anon; GRANT so authenticated; policies sem ALL/DELETE
+select is((
+  select bool_and(not has_function_privilege('anon', p.oid, 'execute'))
+  from pg_proc as p
+  join pg_namespace as n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname in (
+      'workshop_check_in',
+      'create_technical_budget',
+      'approve_technical_budget',
+      'update_service_progress',
+      'register_invoice_reference',
+      'deliver_to_customer',
+      'cancel_or_reopen_collection',
+      'prepare_delivery_signature_intent',
+      'commit_delivery_signature_intent',
+      'cancel_delivery_signature_intent'
+    )
+), true, 'anon cannot execute workshop or delivery-signature RPCs');
+select is((
+  select bool_and(has_function_privilege('authenticated', p.oid, 'execute'))
+  from pg_proc as p
+  join pg_namespace as n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname in (
+      'workshop_check_in',
+      'create_technical_budget',
+      'approve_technical_budget',
+      'update_service_progress',
+      'register_invoice_reference',
+      'deliver_to_customer',
+      'cancel_or_reopen_collection',
+      'prepare_delivery_signature_intent',
+      'commit_delivery_signature_intent',
+      'cancel_delivery_signature_intent'
+    )
+), true, 'authenticated can execute workshop and delivery-signature RPCs');
+select is((
+  select count(*)::integer
+  from pg_policies
+  where schemaname = 'public'
+    and tablename in (
+      'service_orders', 'invoice_references', 'delivery_items',
+      'service_order_items', 'workshop_checkin_items',
+      'delivery_terms', 'delivery_term_items'
+    )
+    and cmd = '*'
+), 0, 'workshop tables have no FOR ALL policies');
+select is((
+  select count(*)::integer
+  from pg_policies
+  where schemaname = 'public'
+    and tablename in (
+      'service_orders', 'invoice_references', 'delivery_items',
+      'service_order_items', 'workshop_checkin_items',
+      'delivery_terms', 'delivery_term_items'
+    )
+    and cmd = 'DELETE'
+), 0, 'workshop tables have no DELETE policies');
 
 select * from finish();
 rollback;

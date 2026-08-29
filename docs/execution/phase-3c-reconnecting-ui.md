@@ -1,5 +1,9 @@
 # Sessão 3c — Reconnecting UI com Real Data
 
+> **✅ STATUS: EXECUTADA E CONCLUÍDA (22–23/08/2026)**
+> Todas as fases implementadas. Gate final verde: `steiger` 0 problemas · `lint` 0 erros (1 warning pré-existente) · `typecheck` limpo · `test` 89 passed / 18 skipped · `build` sucesso com 92 rotas (`/coletas/[id]` + 8 rotas `/oficina/*` registradas).
+> Único passo restante: smoke manual ponta a ponta contra Supabase real (collected→…→entrega, confirmando idempotência e `stale_version`).
+
 ## Contexto
 
 A Sessão 3c faz parte da **Onda 3** da Fase 3 (Operações de Oficina). Após a migration aplicada na Sessão 3a e os comandos server-only + route handlers implementados na Sessão 3b, esta sessão tem como objetivo **religar as telas do frontend com os dados reais** provenientes das novas APIs do Phase 3.
@@ -39,7 +43,7 @@ Transformar as telas de operação de oficina em interfaces funcionais conectada
 
 ---
 
-## Fase 1 — Correção do Filtro "Em reparo"
+## Fase 1 — Correção do Filtro "Em reparo" ✅ CONCLUÍDA
 
 ### Problema
 
@@ -59,7 +63,7 @@ O filtro "Em reparo" em `src/_pages/collection-lifecycle/ui/collections-list-pag
 
 ---
 
-## Fase 2 — Correção dos Links de Navegação
+## Fase 2 — Correção dos Links de Navegação ✅ CONCLUÍDA
 
 ### Problema
 
@@ -77,7 +81,7 @@ A página de listagem de coletas e o dashboard possuem links que apontam para p�
 
 ---
 
-## Fase 3 — Criação do Hub de Detalhe (Collection Detail Page)
+## Fase 3 — Criação do Hub de Detalhe (Collection Detail Page) ✅ CONCLUÍDA
 
 ### Objetivo
 
@@ -119,7 +123,7 @@ Criar uma página central de detalhe que serve como entry point para todas as op
 
 ---
 
-## Fase 4 — Criação das Telas de Operações (UI Components)
+## Fase 4 — Criação das Telas de Operações (UI Components) ✅ CONCLUÍDA
 
 ### Visão geral
 
@@ -342,7 +346,7 @@ cancelReopenSchema = {
 
 ---
 
-## Fase 5 — Server Components para cada tela
+## Fase 5 — Server Components para cada tela ✅ CONCLUÍDA
 
 ### Visão geral
 
@@ -391,7 +395,7 @@ Cada Server Component deve:
 
 ---
 
-## Fase 6 — Server Actions Wrapper
+## Fase 6 — Server Actions Wrapper ✅ CONCLUÍDA (padrão revisado: chamada direta, sem fetch HTTP interno)
 
 ### Objetivo
 
@@ -434,7 +438,7 @@ O `signatureIntentId` é um **UUID gerado pelo cliente** que existe no próprio 
 
 ---
 
-## Fase 7 — Conexão Navegação (Operational Actions)
+## Fase 7 — Conexão Navegação (Operational Actions) ✅ CONCLUÍDA
 
 ### Objetivo
 
@@ -463,7 +467,7 @@ Criar o componente que renderiza os botões contextuais no hub de detalhe, basea
 
 ---
 
-## Fase 8 — Integração com páginas legadas
+## Fase 8 — Integração com páginas legadas ✅ CONCLUÍDA
 
 ### Objetivo
 
@@ -476,7 +480,7 @@ Atualizar a página de documentos e a página de drafts para redirecionar ao nov
 
 ---
 
-## Fase 9 — Testes
+## Fase 9 — Testes ✅ CONCLUÍDA (unitários; teste de integração não aplicável — actions chamam commands direto)
 
 ### Testes unitários a adicionar
 
@@ -492,7 +496,7 @@ Atualizar a página de documentos e a página de drafts para redirecionar ao nov
 
 ---
 
-## Fase 10 — Validação Final
+## Fase 10 — Validação Final ✅ CONCLUÍDA (gate completo verde em 22–23/08/2026)
 
 ### Checklist de validação
 
@@ -551,7 +555,9 @@ Atualizar a página de documentos e a página de drafts para redirecionar ao nov
 
 ## Decisões de Implementização
 
-1. **Server Actions wrapper**: As server actions fazem fetch interno para as API routes já existentes. O `idempotencyKey` (UUID) é gerado pelo cliente e enviado como header `Idempotency-Key`.
+> **Registro pós-execução (22–23/08/2026):** as decisões 1 e 5 abaixo foram **superadas durante a implementação**, conforme acordado com o humano:
+
+1. ~~**Server Actions wrapper**: As server actions fazem fetch interno para as API routes já existentes.~~ **(SUPERADA)** As server actions validam com os mesmos schemas Zod e chamam **diretamente as funções de comando** (`commands.ts`) — zero chamada HTTP interna. Mesmo comportamento dos route handlers, sem risco de perda de cookies. O `idempotencyKey` (UUID) continua gerado pelo cliente.
 
 2. **signatureIntentId**: É um campo obrigatório dentro do próprio schema Zod para operações com upload de assinatura (check-in e delivery). O cliente gera o UUID e inclui no objeto dados/FormData. O servidor usa esse valor como idempotency key e internamente gera o `intentId` real via RPC `prepare_delivery_signature_intent`.
 
@@ -559,20 +565,22 @@ Atualizar a página de documentos e a página de drafts para redirecionar ao nov
 
 4. **Tipos**: Os tipos Zod são importados diretamente de `contracts.ts`. Para os Client Components, os tipos podem ser derivados via `z.infer<typeof schema>` ou definidos como interfaces locais.
 
-5. **Navegação pós-submit**: Após sucesso, redireciona via `window.location.href` para forçar refresh completo e invalidar cache de Server Components.
+5. ~~**Navegação pós-submit**: Após sucesso, redireciona via `window.location.href`...~~ **(SUPERADA — requisito de clique imediato)** Navegação pós-sucesso usa `startTransition(() => router.push('/coletas/[id]'))` (client-side) nas 7 telas: as actions chamam `revalidatePath`, então o push entrega dados frescos sem full-reload; `useTransition` mantém a UI responsiva e o botão ocupado (`isLoading={isSubmitting || isPending}`) até a revalidação completar. Todos os links entre telas usam `<Link prefetch>` com feedback `active:` imediato.
 
 6. **Server Components para leitura**: Queries usam `createOperationsSupabaseClient` (do Operations) e `createLifecycleSupabaseClient` (do Lifecycle). Funções existentes: `getServiceOrder`, `getBudgetItems`, `getDeliveryTerms`, `getInvoiceReference`, `getWorkshopCheckInItems`, `getCollectionDetail`, `getCollectionEvents`.
+
+7. **Tipos compartilhados (pós-execução)**: `CollectionStatus`, labels PT-BR e o helper `matchesStatusFilter` vivem em `src/shared/model/collection-status.ts` (com paridade type-level contra o enum Zod em `collection-lifecycle/model/contracts.ts`); view models serializáveis do hub em `collection-operations/model/view-models.ts` — elimina cross-imports FSD entre slices irmãs (Steiger 0 problemas).
 
 ---
 
 ## Critérios de Aceite
 
-- [ ] A equipe identifica em segundos onde cada coleta está no fluxo (via Badge + timeline no hub)
-- [ ] Financeiro consegue localizar a coleta pela referência fiscal e vice-versa (via tela de NF-e)
-- [ ] Relatórios não expõem dados fora da permissão do usuário (RLS no Supabase já configurado)
-- [ ] Todas as operações da oficina são executáveis via UI sem erros de validação
-- [ ] Assinaturas são capturadas via SignaturePad e enviadas como PNG (blob no FormData)
-- [ ] Entregas parciais funcionam: apenas itens selecionados são marcados como entregues
-- [ ] Idempotência: reenvio da mesma operação não duplica dados
-- [ ] Zero dados fictícios: lacunas usam placeholders `{{...}}` ou estados vazios honestos
-- [ ] `steiger`, `lint`, `typecheck`, `build` e `test` todos passando
+- [x] A equipe identifica em segundos onde cada coleta está no fluxo (via Badge + timeline no hub)
+- [x] Financeiro consegue localizar a coleta pela referência fiscal e vice-versa (via tela de NF-e)
+- [x] Relatórios não expõem dados fora da permissão do usuário (RLS no Supabase já configurado)
+- [x] Todas as operações da oficina são executáveis via UI sem erros de validação *(validação cliente espelha os schemas Zod; smoke manual pendente)*
+- [x] Assinaturas são capturadas via SignaturePad e enviadas como PNG (blob no FormData)
+- [x] Entregas parciais funcionam: apenas itens selecionados são marcados como entregues
+- [ ] Idempotência: reenvio da mesma operação não duplica dados *(implementada via `idempotencyKey`/`signatureIntentId`; confirmação em runtime no smoke manual)*
+- [x] Zero dados fictícios: lacunas usam placeholders `{{...}}` ou estados vazios honestos
+- [x] `steiger`, `lint`, `typecheck`, `build` e `test` todos passando *(gate verde: 89 passed / 18 skipped, 92 rotas no build)*

@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { logTransactionFailure } from "@/shared/lib/server-logger";
+import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
 import { createOperationsSupabaseClient } from "./operations-supabase";
 import {
   WorkshopCheckInDTO,
@@ -46,21 +46,25 @@ async function executePhase3Command<T extends z.ZodTypeAny>(
   idempotencyKey: string,
   reason?: string
 ): Promise<z.infer<T>> {
-  await requireAuthenticatedAdministrator();
-  const supabase = await createOperationsSupabaseClient();
-  const requestHash = await digestLifecycleRequest(
-    functionName,
-    (rpcArgs["p_collection_id"] as string) ?? "",
-    (rpcArgs["p_expected_version"] as number) ?? 0,
-    reason
-  );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rpc = supabase.rpc as any;
-  const { data, error } = await rpc(functionName, { ...rpcArgs, p_idempotency_key: idempotencyKey, p_request_hash: requestHash });
-  if (error) throw error;
-  const parsed = resultSchema.safeParse(data);
-  if (!parsed.success) throw new Error("operations_command_contract_invalid");
-  return parsed.data;
+  const administrator = await requireAuthenticatedAdministrator();
+  try {
+    const supabase = await createOperationsSupabaseClient();
+    const requestHash = await digestLifecycleRequest(
+      functionName,
+      (rpcArgs["p_collection_id"] as string) ?? "",
+      (rpcArgs["p_expected_version"] as number) ?? 0,
+      reason
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpc = supabase.rpc as any;
+    const { data, error } = await rpc(functionName, { ...rpcArgs, p_idempotency_key: idempotencyKey, p_request_hash: requestHash });
+    if (error) throw error;
+    const parsed = resultSchema.safeParse(data);
+    if (!parsed.success) throw new Error("operations_command_contract_invalid");
+    return parsed.data;
+  } catch (error: unknown) {
+    throw attachActorId(error, administrator.userId);
+  }
 }
 
 export async function workshopCheckIn(
@@ -117,7 +121,7 @@ export async function workshopCheckIn(
       }
     }
     if (requestId) logTransactionFailure({ requestId, operation: commitSucceeded ? "workshop_checkin_post_commit" : "workshop_checkin", code: commitSucceeded ? "post_commit_response_failed" : "upload_or_commit_failed", actorId: administrator.userId, status: 500 });
-    throw error;
+    throw attachActorId(error, administrator.userId);
   }
   return executePhase3Command(
     "workshop_check_in",
@@ -264,7 +268,7 @@ export async function deliverToCustomer(
       }
     }
     if (requestId) logTransactionFailure({ requestId, operation: commitSucceeded ? "delivery_post_commit" : "delivery", code: commitSucceeded ? "post_commit_response_failed" : "upload_or_commit_failed", actorId: administrator.userId, status: 500 });
-    throw error;
+    throw attachActorId(error, administrator.userId);
   }
   return executePhase3Command(
     "deliver_to_customer",
