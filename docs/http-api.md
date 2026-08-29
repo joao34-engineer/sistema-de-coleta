@@ -172,7 +172,29 @@ Abuso do download é limitado por `document_share_download` (30 requisições / 
 
 ## Login (Server Action)
 
-`signInAction` não é rota HTTP. Códigos estáveis do estado: `validation_error`, `invalid_credentials`, `rate_limit_exceeded`, `temporarily_unavailable`, `unexpected_error`. Rate limit (`auth_login`, 5 / 15 min por IP+e-mail HMAC) ocorre antes de `signInWithPassword`. Não há HTTP 429 no login. Credencial inválida não revela se o e-mail existe.
+`signInAction` não é rota HTTP. Códigos estáveis do estado: `validation_error`, `invalid_credentials`, `rate_limit_exceeded`, `temporarily_unavailable`, `unexpected_error`. Rate limit (`auth_login`, 5 / 15 min por IP+e-mail HMAC) ocorre antes de `signInWithPassword`. Não há HTTP 429 no login. Credencial inválida não revela se o e-mail existe. Falha inesperada no `catch` registra `logTransactionFailure` (`operation: sign_in`, `status: 500`) sem PII.
+
+## Saúde (Fase 4 Chat 4)
+
+### `GET /api/health` e `HEAD /api/health`
+
+Probe público, sem sessão e sem rate limit. `Cache-Control: no-store`. O proxy faz early-return (não chama `getClaims`).
+
+Checks em paralelo (publishable key, timeout curto): processo da aplicação; Supabase Auth (`/auth/v1/health`) e PostgREST (`/rest/v1/`). Corpos upstream são descartados.
+
+Resposta `200`:
+
+```json
+{ "ok": true, "status": "ok", "checks": { "app": "ok", "supabase": "ok" } }
+```
+
+Resposta `503` (env ausente, timeout ou check Supabase falhou):
+
+```json
+{ "ok": false, "status": "degraded", "checks": { "app": "ok", "supabase": "fail" } }
+```
+
+`HEAD` devolve o mesmo status e cabeçalhos, sem corpo. Não há segredo, URL interna, versão GoTrue nem stack na resposta.
 
 ## Worker interno
 

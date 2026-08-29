@@ -16,6 +16,10 @@ function redirectWithRefreshedCookies(request: NextRequest, response: NextRespon
 }
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  // Public probe — skip Auth so uptime checks never spend getClaims or cookies.
+  if (pathname === "/api/health") return NextResponse.next();
+
   if (!hasPublicEnvironment()) return NextResponse.next();
 
   const environment = getPublicEnvironment();
@@ -33,7 +37,6 @@ export async function proxy(request: NextRequest) {
 
   const { data: claimsData } = await supabase.auth.getClaims();
   const hasIdentity = typeof claimsData?.claims?.sub === "string";
-  const pathname = request.nextUrl.pathname;
 
   if (!hasIdentity && isProtectedPath(pathname)) return redirectWithRefreshedCookies(request, response, pathname);
   if (hasIdentity && pathname === "/login") return redirectWithRefreshedCookies(request, response, pathname);

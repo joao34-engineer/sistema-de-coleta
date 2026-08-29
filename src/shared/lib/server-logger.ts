@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { sendErrorAlert } from "@/shared/lib/error-alert.server";
 
 type TransactionFailure = Readonly<{
   requestId: string;
@@ -39,16 +40,19 @@ export function actorIdFromUnknown(error: unknown): string | null {
 export function logTransactionFailure(event: TransactionFailure): void {
   // Deliberately build an allow-listed payload. Never pass the original error or request body here.
   const safeEvent = {
-    event: "transaction_failure",
+    event: "transaction_failure" as const,
     requestId: event.requestId,
     operation: event.operation,
     code: event.code,
     status: event.status,
     actor: pseudonymizeActor(event.actorId),
-  } as const;
+  };
   try {
     console.error(JSON.stringify(safeEvent));
   } catch {
     // Logging is best-effort and must never change the API result.
+  }
+  if (event.status >= 500) {
+    void sendErrorAlert(safeEvent);
   }
 }

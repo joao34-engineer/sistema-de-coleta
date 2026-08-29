@@ -57,6 +57,7 @@
     "tests/**/*.ts",
     "tests/**/*.tsx",
     "proxy.ts",
+    "instrumentation.ts",
     "next.config.ts",
     "playwright.config.ts",
     "steiger.config.ts",

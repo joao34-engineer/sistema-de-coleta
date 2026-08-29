@@ -9,6 +9,7 @@ import {
   DocumentRateLimitExceededError,
   enforceLoginRateLimit,
 } from "@/shared/lib/rate-limit.server";
+import { getRequestId, logTransactionFailure } from "@/shared/lib/server-logger";
 import { loginSchema } from "../model/schema";
 
 export async function signInAction(_previousState: LoginActionState, formData: FormData): Promise<LoginActionState> {
@@ -39,6 +40,13 @@ export async function signInAction(_previousState: LoginActionState, formData: F
     });
     if (error) return { status: "error", code: "invalid_credentials", message: "E-mail ou senha inválidos." };
   } catch {
+    logTransactionFailure({
+      requestId: getRequestId(),
+      operation: "sign_in",
+      code: "unexpected_error",
+      actorId: null,
+      status: 500,
+    });
     return { status: "error", code: "unexpected_error", message: "Não foi possível concluir o login agora." };
   }
 

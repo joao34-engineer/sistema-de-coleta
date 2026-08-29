@@ -21,7 +21,7 @@ Antes de uma mudanca que alcance o banco remoto:
 5. Validar RLS, Auth e Storage com usuarios e dados sinteticos autorizados.
 6. Registrar o resultado e manter o projeto pronto para a revisao de backup/restauracao da Fase 4.
 
-Na validacao de 14/08/2026, migrations da fundacao e da auditoria de `updated_by` estavam aplicadas no projeto remoto. O advisor de seguranca ainda reportava `auth_leaked_password_protection`; essa opcao deve ser ativada manualmente em Auth > Password Security antes do gate final da Fase 0. O advisor de performance reportava somente indices sem uso em um banco ainda pequeno; eles permanecem porque suportam consultas previstas e nao devem ser removidos prematuramente.
+Na validacao de 28/08/2026 (`supabase migration list --linked`), as 11 migrations locais estavam aplicadas no remoto, inclusive Fase 1A–3, Chat 2 (`p_client_item_id`) e Chat 3 (`phase_4_chat3_security_acl`). Chat 4 (observabilidade) nao altera schema. O advisor de seguranca ainda pode reportar `auth_leaked_password_protection`; essa opcao deve ser ativada manualmente em Auth > Password Security antes do gate final da Fase 0. Indices sem uso em banco pequeno permanecem se suportam consultas previstas.
 
 O Supabase CLI fica fixado no lockfile (`2.114.0`). O estado global da CLI nao e versionado. Quando o perfil global do Windows estiver ausente, a sessao pode usar um `SUPABASE_HOME` local ignorado pelo Git:
 

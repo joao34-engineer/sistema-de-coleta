@@ -52,16 +52,24 @@ Revisar permissao por papel, migration/RLS, Storage, env, CSP/cabecalhos, rate l
 | Shares / e-mail / revisao | idem | Fase 2 | ja existe | ator quando conhecido |
 | `GET /api/public/collections/[token]` | anon | `verify_collection_document` | ja existe | 404 generico |
 | `GET /d/{token}/download` | token | `consume_document_share` | HTTP 429 | 404 generico |
-| `signInAction` | n/a | Auth | estado da action, nao 429 | sem payload |
+| `signInAction` | n/a | Auth | estado da action, nao 429 | `unexpected_error` via logger |
+| `GET`/`HEAD /api/health` | anon | n/a (Auth+REST probe) | nenhum | n/a; corpo minimo |
+| `onRequestError` | n/a | n/a | n/a | so `routePath` template |
 | Worker interno | secret 32+ timing-safe | service_role | n/a | sem segredo |
 
 Login usa `auth_login` (5 tentativas / 15 min por IP+e-mail HMAC). Download publico de share usa `document_share_download` (30 / 5 min por IP), o mesmo RPC `consume_document_rate_limit`. A pagina `/d/{token}` nao consome quota. `/verificar` ja era limitado e nao foi duplicado.
+
+Observabilidade (Chat 4 / ADR 0008): 500 disparam o mesmo `transaction_failure` allow-listed e, se `ERROR_ALERT_WEBHOOK_URL` for `https:`, um webhook fail-open. `onRequestError` nunca registra path/query/headers (tokens de `/d/` e `/verificar/`). Health nao usa service role nem SELECT em tabela de coleta.
 
 ## Checklist operacional ainda humano
 
 - Ativar leaked-password protection no painel Auth (Fase 0, ainda aberto).
 - MFA continua adiado (administrador unico).
 - Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, Storage privado, cleanup real) permanecem adiados ate existir projeto isolado.
-- Aplicar a migration `20260828120000_phase_4_chat3_security_acl.sql` no remoto so apos `supabase db push --dry-run` e confirmacao humana.
+- Chat 4: apontar monitor de uptime para `GET /api/health` e, se quiser alerta ativo, configurar `ERROR_ALERT_WEBHOOK_URL` (somente `https:`) no deploy.
+
+## Estado das migrations (remoto)
+
+Conferido em 28/08/2026 com `supabase migration list --linked`: as 11 migrations locais (fundacao ate `20260828120000_phase_4_chat3_security_acl.sql`) estao aplicadas no projeto remoto. Chat 4 nao criou migration. Nao ha push pendente.
 
 Fontes: [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/), [ASVS para desenvolvedores](https://devguide.owasp.org/en/03-requirements/05-asvs/) e [seguranca de dados Next.js](https://nextjs.org/docs/app/guides/data-security).

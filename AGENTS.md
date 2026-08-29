@@ -43,7 +43,7 @@ Consulte `docs/architecture/fsd.md`, `docs/supabase.md`, `docs/nextjs-pwa.md` e 
 | Nova regra de negocio ou organizacao de codigo | `docs/coding-standards.md`, `docs/architecture/fsd.md` | — |
 | Documento, assinatura, QR ou compartilhamento | `docs/security.md`, `docs/architecture/data-and-rules.md`, fase 2 | — |
 | Testes ou CI | `docs/testing.md` e doc da capacidade alterada | — |
-| Deploy, backup, incidente ou acesso | `docs/security.md`, fase 4 | — |
+| Deploy, backup, incidente, health ou acesso | `docs/security.md`, `docs/http-api.md` (§ saúde), fase 4 | — |
 
 ## Validacao minima
 

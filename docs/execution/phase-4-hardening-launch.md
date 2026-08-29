@@ -4,12 +4,14 @@
 
 Autorizar o uso real em campo, incluindo operacao com internet instavel, recuperacao e seguranca. Ate esta fase, a producao remota do MVP permanece em validacao controlada.
 
-## Estado real (27/08/2026)
+## Estado real (28/08/2026)
 
 - Chat 1 (casca PWA) concluido: manifest (`app/manifest.ts`, `display: standalone`, icones/maskable nas cores MJT), service worker estatico de shell (`public/sw.js`, cache `mjt-shell-v1` so para `/_next/static/` e `/icons/`), `Cache-Control` no SW, prompt de instalacao e banner de atualizacao com confirmacao do usuario.
 - Chat 2 (fila offline de rascunhos) concluido: IndexedDB `mjt-offline-v1`, wizard em `/coletas/nova`, fila serial com lock de aba reusando as actions existentes, `p_client_item_id` aditivo, painel de pendentes no `PwaShell` e `canReload` via snapshot. Ver ADR `docs/decisions/0006-offline-draft-queue.md`.
-- Chat 3 (revisao de seguranca) concluido: rate limit de login e download de share, ACL das RPCs de oficina, proxy de `/coletas`, HSTS em producao, erros de action sem vazamento e ator nos logs 500. Ver ADR `docs/decisions/0007-shared-rate-limit-login-download.md`. Os 4 gates remotos da Fase 1A permanecem adiados.
-- Ainda faltam: observabilidade (Chat 4), backup/restore (Chat 5), testes de campo (Chat 6) e treino/go-live (Chat 7).
+- Chat 3 (revisao de seguranca) concluido: rate limit de login e download de share, ACL das RPCs de oficina, proxy de `/coletas`, HSTS em producao, erros de action sem vazamento e ator nos logs 500. Ver ADR `docs/decisions/0007-shared-rate-limit-login-download.md`. Migration `20260828120000_phase_4_chat3_security_acl.sql` aplicada no remoto. Os 4 gates remotos da Fase 1A permanecem adiados.
+- Chat 4 (observabilidade) concluido: `app/error.tsx` / `global-error.tsx` com digest seguro, alerta fail-open via `logTransactionFailure` + `ERROR_ALERT_WEBHOOK_URL`, `GET`/`HEAD /api/health` (app + Auth/REST). Sem migration. Ver ADR `docs/decisions/0008-observability-health-alerts.md`. Follow-up humano: monitor em `/api/health` e webhook opcional.
+- Migrations locais e remotas alinhadas (11/11 em 28/08/2026 via `supabase migration list --linked`).
+- Ainda faltam: backup/restore (Chat 5), testes de campo (Chat 6) e treino/go-live (Chat 7).
 - Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, storage privado, cleanup real) permanecem ADIADOS — ver `phase-1-collection-core.md`.
 
 Organizacao em chats (26/08/2026): os 10 passos abaixo **nao** se executam num unico chat. Ver [Disciplina de chat](#disciplina-de-chat).
@@ -73,6 +75,8 @@ Proibido no mesmo chat: instalacao + fila; fila + auditoria de RLS; observabilid
 **Faz:** alerta de erros, verificacao de disponibilidade / healthcheck.
 
 **Nao faz:** backup, PWA, go-live.
+
+**Aceite:** operador ve erro seguro com digest e retry; 500 vira log JSON e (se env) webhook; `/api/health` responde 200/503 sem vazar interno. **Gate deste chat:** `npm run check` em `sistema-coleta` + ADR 0008. Humano aponta o monitor de uptime e, se quiser, cola o webhook https.
 
 ## Chat 5 — Backup e restore
 

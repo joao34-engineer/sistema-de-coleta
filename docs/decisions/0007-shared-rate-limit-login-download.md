@@ -23,6 +23,10 @@ O rate limit da Fase 2 vive em `_pages/collection-documents`. Login e download p
 - Login e share passam pelo mesmo backend de janela, testavel localmente sem projeto isolado.
 - A casca autenticada de `/coletas` fica no proxy; a autorizacao continua no comando + RLS.
 
-## Fora do escopo
+## Fora do escopo (na epoca do Chat 3)
 
-Aplicacao remota da migration de ACL, MFA, observabilidade, backup e os 4 gates remotos da Fase 1A.
+MFA, observabilidade, backup e os 4 gates remotos da Fase 1A.
+
+## Atualizacao (28/08/2026)
+
+A migration `20260828120000_phase_4_chat3_security_acl.sql` foi aplicada no remoto (`migration list --linked` alinhado). Observabilidade ficou no Chat 4 (ADR 0008).

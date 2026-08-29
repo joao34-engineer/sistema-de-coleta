@@ -44,6 +44,6 @@ Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS
 | 1 | [Coleta principal](execution/phase-1-collection-core.md) | Cadastro, itens, assinatura e numero oficial |
 | 2 | [Documento e compartilhamento](execution/phase-2-documents-sharing.md) | PDF, QR, consulta e envio |
 | 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |
-| 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Offline, seguranca, backup e entrada em producao |
+| 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Chats 1–4 verdes (PWA, offline, seguranca, observabilidade); faltam backup, campo e go-live |
 
 Nenhum documento de execucao deve ultrapassar 500 linhas. Novas decisoes devem ser registradas em `decisions/` ou no documento tematico correspondente, nao diluidas em prompts ou codigo.
