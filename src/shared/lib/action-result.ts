@@ -1,3 +1,5 @@
+import type { CompanySettingsDTO, IssuerPublicationStatus } from "@/shared/api/company-settings";
+
 export type LoginActionState = Readonly<{
   status: "idle" | "error";
   code: "validation_error" | "invalid_credentials" | "rate_limit_exceeded" | "temporarily_unavailable" | "unexpected_error";
@@ -10,6 +12,8 @@ export type CompanySettingsActionState = Readonly<{
   code: "success" | "validation_error" | "forbidden" | "unexpected_error" | "upload_error";
   fieldErrors?: Readonly<Record<string, string>>;
   message?: string;
+  persistedSettings?: CompanySettingsDTO;
+  publicationStatus?: IssuerPublicationStatus;
 }>;
 
 export const initialLoginActionState: LoginActionState = { status: "idle", code: "validation_error" };

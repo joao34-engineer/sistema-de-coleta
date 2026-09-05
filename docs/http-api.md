@@ -172,13 +172,49 @@ Recebe `{ email }` e exige `Idempotency-Key` UUID. A chave é consultada no hist
 
 Exige `Idempotency-Key` UUID e recebe `{ sourceDocumentId, expectedVersion, typedDocumentPatch, revisionType, reason }`. O patch aceita somente `customer`, `collection` e `items` nos campos documentados pelo contrato SQL. A rota chama `revise_collection_document`, que valida a versão atual, cria novo snapshot/versionamento, registra a revisão, agenda `render_pdf` e retorna o `jobId`. Depois do RPC com sucesso o adaptador agenda o kick in-process de PDF/QR. Retry com a mesma chave e payload devolve a mesma resposta.
 
-As rotas aninhadas `/api/collections/{id}/documents/{documentId}/download`, `/shares`, `/shares/email` e `/revisions` são aliases finos dos mesmos comandos, para clientes que mantêm o contexto da coleta na URL. Não há divergência de autorização ou DTO. `/retry` responde `document_retry_not_available`: retries de geração são controlados pelo lease do worker.
+As rotas aninhadas `/api/collections/{id}/documents/{documentId}/download`, `/shares`, `/shares/email`, `/revisions` e `/retry` são aliases finos dos mesmos comandos, para clientes que mantêm o contexto da coleta na URL. Não há divergência de autorização ou DTO.
+
+### `POST /api/collections/{id}/documents/{documentId}/retry`
+
+Reenfileira manualmente o job `render_pdf` quando o artefato ainda não existe. Exige administrador autenticado na organização da coleta. Chama `retry_document_job` via DAL (sessão do usuário, sem service role). Respostas:
+
+| HTTP | Corpo |
+| --- | --- |
+| 200 | `{ data: { jobId, documentId, jobType, status: "queued" \| "succeeded", alreadyReady: boolean } }` |
+| 401 | `{ error: { code: "authentication_required" } }` |
+| 403 | `{ error: { code: "forbidden" } }` |
+| 404 | `{ error: { code: "not_found" \| "document_job_not_found" } }` — documento fora da coleta ou job inexistente |
+| 422 | `{ error: { code: "document_job_in_progress" } }` — lease ativo; não rouba o worker |
+| 422 | `{ error: { code: "validation_error" } }` — UUID inválido |
+
+Quando `alreadyReady` é `false` e o job volta a `queued`, o adaptador agenda o kick in-process de PDF/QR (`after()`). Quando o PDF já existe, retorna `alreadyReady: true` sem re-renderizar. Job `failed` é resetado para `queued` com `attempt_count = 0` na mesma linha `(document_id, job_type)`.
+
+## Verificação pública
+
+Consulta de autenticidade de guia emitida. Rotas `no-store`; nunca expõem token bruto, IP, PII ou caminhos privados.
+
+### `GET /verificar/{token}`
+
+Página HTML (Server Component). O token na rota deve ser hexadecimal minúsculo de 64 caracteres (`/^[0-9a-f]{64}$/`). Formato inválido responde com a mesma UI genérica **Registro não encontrado** sem consumir quota do limitador.
+
+Abuso da consulta é limitado por `public_verification` (30 requisições / 5 minutos por IP HMAC). Excesso **não** propaga erro 500: a página renderiza um card de espera (HTTP 200) com **Aguarde antes de consultar novamente.** Segredo ou RPC do limitador indisponível renderiza **Consulta temporariamente indisponível.** Server Components não definem status HTTP 429/503 na página HTML.
+
+### `GET /api/public/collections/{verificationToken}`
+
+Contrato JSON espelhando a mesma validação e limitador. Respostas:
+
+| HTTP | Corpo |
+| --- | --- |
+| 200 | DTO público mínimo (`authentic`, `officialCode`, `issuedAt`, `status`, `organization`, `documentVersion`) |
+| 404 | `{ error: { code: "not_found", message: "Registro não encontrado." } }` — token inválido ou registro inexistente |
+| 429 | `{ error: { code: "rate_limit_exceeded", message: "Aguarde antes de consultar novamente." } }` + cabeçalho `Retry-After` |
+| 503 | `{ error: { code: "temporarily_unavailable", message: "Consulta temporariamente indisponível." } }` |
 
 ### `GET /d/{shareToken}` e `GET /d/{shareToken}/download`
 
-A página não consome o contador: exibe apenas a ação genérica de download. O endpoint `/download` chama `consume_document_share` somente no clique, respeitando expiração, revogação e limite atômico de downloads, e então redireciona com URL assinada curta. Token inválido, expirado, revogado ou sem PDF recebe `404` genérico, `no-store` e `Referrer-Policy: no-referrer`.
+A página não consome o contador: exibe apenas a ação genérica de download. O endpoint `/download` inspeciona o share (`inspect_document_share`, sem incrementar o contador), gera a URL assinada curta e só então consome o slot (`consume_document_share`) antes do redirect `302`. Falha na geração da URL assinada não queima quota. Token inválido, expirado, revogado, tipo não-PDF ou sem PDF recebe `404` genérico, `no-store` e `Referrer-Policy: no-referrer`.
 
-Abuso do download é limitado por `document_share_download` (30 requisições / 5 minutos por IP HMAC). Excesso responde `429 { error: { code: "rate_limit_exceeded" } }` com `Retry-After`. Segredo ou RPC indisponível responde `503 { error: { code: "temporarily_unavailable" } }`. A página `/d/{token}` não consome essa quota.
+Abuso do download é limitado por `document_share_download` (30 requisições / 5 minutos por IP HMAC). Excesso responde `429 { error: { code: "rate_limit_exceeded" } }` com `Retry-After` (JSON para clientes API; HTML mínimo para navegação com `Sec-Fetch-Dest: document` ou `Accept: text/html`). Segredo ou RPC indisponível responde `503` no mesmo formato. A página `/d/{token}` não consome essa quota.
 
 ## Login (Server Action)
 

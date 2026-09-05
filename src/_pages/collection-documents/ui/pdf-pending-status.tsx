@@ -2,28 +2,45 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
+import type { DocumentJobStatus } from "../api/delivery/contracts";
 
 const REFRESH_MS = 3000;
 const MAX_REFRESHES = 20;
 
 type Props = Readonly<{
-  pending: boolean;
+  collectionId: string;
+  documentId: string;
+  hasPdf: boolean;
+  pdfJobStatus?: DocumentJobStatus;
   refreshMs?: number;
   maxRefreshes?: number;
 }>;
 
-/** Reloads Documentos while the PDF artifact is still missing after finalize. */
-export function PdfPendingStatus({ pending, refreshMs = REFRESH_MS, maxRefreshes = MAX_REFRESHES }: Props) {
+/** Shows PDF progress, honest failure, or retry while the artifact is missing. */
+export function PdfPendingStatus({
+  collectionId,
+  documentId,
+  hasPdf,
+  pdfJobStatus,
+  refreshMs = REFRESH_MS,
+  maxRefreshes = MAX_REFRESHES,
+}: Props) {
   const router = useRouter();
   const [exhausted, setExhausted] = useState(false);
+  const [retryBusy, setRetryBusy] = useState(false);
+  const [retryMessage, setRetryMessage] = useState<string | null>(null);
+  const failed = !hasPdf && pdfJobStatus === "failed";
+  const pending = !hasPdf && !failed;
 
   useEffect(() => {
     if (!pending) {
-      setExhausted(false);
       return;
     }
     let ticks = 0;
-    setExhausted(false);
+    const resetTimer = window.setTimeout(() => {
+      setExhausted(false);
+    }, 0);
     const timer = window.setInterval(() => {
       ticks += 1;
       router.refresh();
@@ -33,12 +50,47 @@ export function PdfPendingStatus({ pending, refreshMs = REFRESH_MS, maxRefreshes
       }
     }, refreshMs);
     return () => {
+      window.clearTimeout(resetTimer);
       window.clearInterval(timer);
     };
   }, [pending, router, refreshMs, maxRefreshes]);
 
-  if (!pending) {
+  async function handleRetry(): Promise<void> {
+    setRetryBusy(true);
+    setRetryMessage(null);
+    try {
+      const response = await fetch(`/api/collections/${collectionId}/documents/${documentId}/retry`, { method: "POST" });
+      if (!response.ok) throw new Error("document_retry_failed");
+      router.refresh();
+    } catch {
+      setRetryMessage("Não foi possível tentar de novo.");
+    } finally {
+      setRetryBusy(false);
+    }
+  }
+
+  if (hasPdf) {
     return null;
+  }
+
+  if (failed) {
+    return (
+      <div
+        role="status"
+        className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[12px] font-medium text-[var(--color-text-primary)]"
+      >
+        <p>Não foi possível gerar o PDF desta guia. Tente de novo ou aguarde alguns minutos.</p>
+        <button
+          type="button"
+          onClick={() => void handleRetry()}
+          disabled={retryBusy}
+          className="mt-2 text-[13px] font-semibold text-[var(--color-primary)] disabled:opacity-60"
+        >
+          {retryBusy ? offlineCopy.retryBusy : offlineCopy.retry}
+        </button>
+        {retryMessage ? <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">{retryMessage}</p> : null}
+      </div>
+    );
   }
 
   return (

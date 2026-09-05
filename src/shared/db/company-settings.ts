@@ -10,7 +10,7 @@ const organizationSettingsColumns = "organization_id,legal_name,tax_id,phone,str
 
 type CompanySettingsDatabaseRow = Pick<OrganizationSettingsRow, "organization_id" | "legal_name" | "tax_id" | "phone" | "street" | "street_number" | "address_complement" | "district" | "city" | "state_code" | "postal_code" | "receipt_legal_text" | "signer_name" | "signer_title" | "logo_path" | "setup_complete" | "updated_at">;
 
-function mapRow(row: CompanySettingsDatabaseRow, displayName: string): CompanySettingsDTO {
+function mapRow(row: CompanySettingsDatabaseRow, displayName: string, hasActiveIssuerProfile: boolean): CompanySettingsDTO {
   return {
     organizationId: row.organization_id,
     displayName,
@@ -30,7 +30,7 @@ function mapRow(row: CompanySettingsDatabaseRow, displayName: string): CompanySe
     signerName: row.signer_name,
     signerTitle: row.signer_title,
     logoPath: row.logo_path,
-    setupStatus: row.setup_complete ? "complete" : "pending",
+    setupStatus: row.setup_complete && hasActiveIssuerProfile ? "complete" : "pending",
     updatedAt: row.updated_at,
   };
 }
@@ -42,18 +42,19 @@ export async function getCompanySettings(): Promise<CompanySettingsDTO> {
 
 export async function getCompanySettingsForAdministrator(administrator: AuthenticatedAdministrator): Promise<CompanySettingsDTO> {
   const supabase = await createServerSupabaseClient();
-  const [{ data: settings, error: settingsError }, { data: organization, error: organizationError }] = await Promise.all([
+  const [{ data: settings, error: settingsError }, { data: organization, error: organizationError }, { data: activeProfile, error: profileError }] = await Promise.all([
     supabase.from("organization_settings").select(organizationSettingsColumns).eq("organization_id", administrator.organizationId).single(),
     supabase.from("organizations").select("display_name").eq("id", administrator.organizationId).single(),
+    supabase.from("document_issuer_profiles").select("id").eq("organization_id", administrator.organizationId).eq("status", "active").limit(1).maybeSingle(),
   ]);
 
-  if (settingsError || organizationError || !settings || !organization) {
+  if (settingsError || organizationError || profileError || !settings || !organization) {
     throw new Error("Não foi possível carregar as configurações institucionais.");
   }
 
-  return mapRow(settings, organization.display_name);
+  return mapRow(settings, organization.display_name, activeProfile !== null);
 }
 
-export function mapCompanySettingsRow(row: OrganizationSettingsRow, displayName: string): CompanySettingsDTO {
-  return mapRow(row, displayName);
+export function mapCompanySettingsRow(row: OrganizationSettingsRow, displayName: string, hasActiveIssuerProfile = false): CompanySettingsDTO {
+  return mapRow(row, displayName, hasActiveIssuerProfile);
 }

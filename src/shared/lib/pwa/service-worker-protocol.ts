@@ -1,4 +1,5 @@
 export const SERVICE_WORKER_URL = "/sw.js" as const;
+export const SHELL_CACHE_PREFIX = "mjt-shell-v" as const;
 export const SHELL_CACHE_NAME = "mjt-shell-v1" as const;
 export const SKIP_WAITING_MESSAGE_TYPE = "SKIP_WAITING" as const;
 

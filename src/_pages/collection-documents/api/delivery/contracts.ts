@@ -30,6 +30,22 @@ export const documentShareCreatedSchema = z.object({
   downloadCount: z.number().int().min(0).max(20),
 }).strict();
 
+export const inspectedShareSchema = z.discriminatedUnion("valid", [
+  z.object({ valid: z.literal(false), code: z.string().min(1).max(80) }).strict(),
+  z.object({
+    valid: z.literal(true),
+    shareId: uuidSchema,
+    shareType: z.enum(["pdf", "verification"]),
+    documentId: uuidSchema,
+    organizationId: z.number().int().positive(),
+    collectionId: uuidSchema,
+    documentVersion: z.number().int().positive(),
+    issuedAt: z.iso.datetime({ offset: true }),
+    maxDownloads: z.number().int().min(1).max(20),
+    downloadCount: z.number().int().min(0).max(20),
+  }).strict(),
+]);
+
 export const consumedShareSchema = z.discriminatedUnion("valid", [
   z.object({ valid: z.literal(false), code: z.string().min(1).max(80) }).strict(),
   z.object({
@@ -46,12 +62,22 @@ export const consumedShareSchema = z.discriminatedUnion("valid", [
   }).strict(),
 ]);
 
+export const documentJobStatusSchema = z.enum(["queued", "running", "succeeded", "failed"]);
+
+export const documentJobRowSchema = z.object({
+  document_id: uuidSchema,
+  status: documentJobStatusSchema,
+}).strict();
+
+export type DocumentJobStatus = z.output<typeof documentJobStatusSchema>;
+
 export type DocumentListDTO = Readonly<{
   id: string;
   collectionId: string;
   version: number;
   status: string;
   issuedAt: string;
+  pdfJobStatus?: DocumentJobStatus;
   artifacts: ReadonlyArray<Readonly<{
     id: string;
     type: "pdf" | "qr";
@@ -61,6 +87,7 @@ export type DocumentListDTO = Readonly<{
   }>>;
 }>;
 
+export type InspectedShare = z.output<typeof inspectedShareSchema>;
 export type ConsumedShare = z.output<typeof consumedShareSchema>;
 
 /** Public callers cannot shorten/extend a recipient link or raise its quota. */

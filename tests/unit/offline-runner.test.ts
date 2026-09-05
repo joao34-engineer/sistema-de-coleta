@@ -373,4 +373,65 @@ describe("offline drain runner", () => {
     expect(drained.officialKept).toBe(true);
     expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
   });
+
+  it("marks validation_error when a mutation payload fails schema validation", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord());
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "create_customer",
+      payload: { displayName: "", taxId: "not-a-tax-id", phone: "1" },
+    });
+    const createCustomer = vi.fn();
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ createCustomer }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "failed", officialKept: false });
+    expect(createCustomer).not.toHaveBeenCalled();
+    const updated = await store.getDraft(collectionId, actor.userId);
+    expect(updated?.syncStatus).toBe("failed");
+    expect(updated?.lastError).toBe("validation_error");
+    const mutations = await store.listMutations(collectionId, actor.userId);
+    const first = mutations[0];
+    expect(first?.status).toBe("failed");
+    expect(first?.lastError).toBe("validation_error");
+  });
+
+  it("marks the draft failed when leftover pending mutations remain without in_flight rows", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId, syncStatus: "syncing", lastError: null }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "add_item",
+      payload: { itemId, description: "Motor", quantity: 1, condition: "Usado", notes: null },
+    });
+    const originalListMutations = store.listMutations.bind(store);
+    let listCalls = 0;
+    const listSpy = vi.spyOn(store, "listMutations").mockImplementation(async (cid, uid) => {
+      const rows = await originalListMutations(cid, uid);
+      listCalls += 1;
+      if (listCalls === 1) {
+        return [];
+      }
+      return rows;
+    });
+    const addItem = vi.fn(async () => ({ ok: true as const, item: sampleItem, rowVersion: 3 }));
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ addItem }),
+      actor,
+      collectionId,
+    });
+    listSpy.mockRestore();
+    expect(result).toEqual({ status: "failed", officialKept: false });
+    expect(addItem).not.toHaveBeenCalled();
+    const updated = await store.getDraft(collectionId, actor.userId);
+    expect(updated?.syncStatus).toBe("failed");
+    expect(updated?.lastError).toBe("validation_error");
+  });
 });

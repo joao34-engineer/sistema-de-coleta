@@ -1,5 +1,7 @@
 import type { OrganizationSettingsRow } from "./database.types";
 
+export type IssuerPublicationStatus = "published" | "incomplete" | "failed";
+
 export type CompanySettingsDTO = Readonly<{
   organizationId: number;
   displayName: string;

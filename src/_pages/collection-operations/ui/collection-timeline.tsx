@@ -1,5 +1,6 @@
 import type { CollectionEventSummary } from "../model/view-models";
 import { collectionStatusLabel } from "@/shared/model/collection-status";
+import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 
 type Props = Readonly<{ events: ReadonlyArray<CollectionEventSummary> }>;
 
@@ -17,7 +18,7 @@ const eventTypeLabels: Readonly<Record<string, string>> = {
 };
 
 function formatEventDate(value: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  return formatDateTimePtBr(value);
 }
 
 function describeTransition(event: CollectionEventSummary): string | null {

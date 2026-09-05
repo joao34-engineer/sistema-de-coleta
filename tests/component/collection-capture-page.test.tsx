@@ -7,8 +7,9 @@ import { offlineDatabaseSchema, type OfflineDraftRecord } from "@/_pages/collect
 import { ensureOfflineDraftStore, resetOfflinePortForTests, setOfflinePortForTests } from "@/_pages/collection-drafts/model/offline-port";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 
-const { fetchDraftWithItemsAction, getCustomerAction, runAuthenticatedDrain } = vi.hoisted(() => ({
+const { fetchDraftWithItemsAction, collectionExistsAction, getCustomerAction, runAuthenticatedDrain } = vi.hoisted(() => ({
   fetchDraftWithItemsAction: vi.fn(),
+  collectionExistsAction: vi.fn(async () => false),
   getCustomerAction: vi.fn(),
   runAuthenticatedDrain: vi.fn(async () => ({ officialKept: false })),
 }));
@@ -54,6 +55,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/_pages/collection-drafts/api/actions", () => ({
   fetchDraftWithItemsAction,
+  collectionExistsAction,
 }));
 
 vi.mock("@/app/actions/draft-flow.actions", () => ({

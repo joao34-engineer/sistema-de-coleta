@@ -5,12 +5,16 @@ export type FinalizeSyncPresentation = "open_collection" | "queued_local" | "onl
 export function presentFinalizeSync(input: {
   wasOnline: boolean;
   leftover: OfflineDraftRecord | null;
+  serverRowExists: boolean;
 }): FinalizeSyncPresentation {
   if (!input.wasOnline) {
     return "queued_local";
   }
-  if (input.leftover === null) {
+  if (input.leftover !== null) {
+    return "online_failed";
+  }
+  if (input.serverRowExists) {
     return "open_collection";
   }
-  return "online_failed";
+  return "queued_local";
 }

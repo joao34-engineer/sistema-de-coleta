@@ -35,6 +35,7 @@ describe("CollectionDocumentsPage", () => {
       version: 1,
       status: "snapshot_ready",
       issuedAt: "2026-08-20T15:30:00.000Z",
+      pdfJobStatus: "queued",
       artifacts: [],
     }]} />);
 
@@ -43,6 +44,22 @@ describe("CollectionDocumentsPage", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF da guia/i);
     expect(screen.getByRole("status")).toHaveTextContent(/WhatsApp/i);
     expect(screen.queryByRole("button", { name: "Criar link seguro" })).not.toBeInTheDocument();
+  });
+
+  it("shows failed status and retry instead of generating copy when the PDF job failed", () => {
+    render(<CollectionDocumentsPage collectionId="11111111-1111-4111-8111-111111111111" officialCode="MJT-2026-000001" documents={[{
+      id: "22222222-2222-4222-8222-222222222222",
+      collectionId: "11111111-1111-4111-8111-111111111111",
+      version: 1,
+      status: "snapshot_ready",
+      issuedAt: "2026-08-20T15:30:00.000Z",
+      pdfJobStatus: "failed",
+      artifacts: [],
+    }]} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/Não foi possível gerar o PDF/i);
+    expect(screen.queryByText(/Gerando o PDF da guia/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
   });
 
   it("explains when a collection has no generated document", () => {

@@ -5,7 +5,7 @@ import { patchDraftFieldsAction } from "@/_pages/collection-drafts/api/actions";
 import { saveCollectionSignature, finalizeCollection } from "@/_pages/collection-lifecycle/index.server";
 import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
 import { listCustomers, createCustomer, loadCustomerDto } from "@/_pages/customers/index.server";
-import { toActionFailureCode } from "@/shared/lib/action-failure-code";
+import { toActionFailureCode, toFinalizeActionFailureCode } from "@/shared/lib/action-failure-code";
 import { toSafeActionError } from "@/shared/lib/action-error";
 import { getRequestId } from "@/shared/lib/server-logger";
 
@@ -243,7 +243,7 @@ export async function finalizeCollectionAction(payload: {
       ...(documentUrl ? { documentUrl } : {}),
     };
   } catch (error: unknown) {
-    return { ok: false, error: toActionFailureCode(error) };
+    return { ok: false, error: toFinalizeActionFailureCode(error) };
   }
 }
 

@@ -16,6 +16,7 @@ import {
 const STALE_RETRY_ONCE = "stale_version";
 const AUTH_ERROR = "authentication_required";
 const SYNC_INTERRUPTED = "sync_interrupted";
+const VALIDATION_ERROR = "validation_error";
 
 export type DrainLock = {
   request(name: string, callback: () => Promise<void>): Promise<void>;
@@ -189,6 +190,21 @@ export async function drainCollectionQueue(input: {
       lastError: SYNC_INTERRUPTED,
       updatedAt: store.nowIso(),
     });
+  } else if (latest && leftover.length > 0) {
+    const mutationError = leftover.find(
+      (row) => row.lastError !== null && row.lastError !== undefined && row.lastError.trim() !== "",
+    )?.lastError;
+    const draftError =
+      latest.lastError !== null && latest.lastError !== undefined && latest.lastError.trim() !== ""
+        ? latest.lastError
+        : null;
+    const lastError = draftError ?? mutationError ?? VALIDATION_ERROR;
+    await store.putDraft({
+      ...latest,
+      syncStatus: "failed",
+      lastError,
+      updatedAt: store.nowIso(),
+    });
   }
   return leftover.length === 0
     ? { status: "completed", officialKept: false }
@@ -219,7 +235,11 @@ async function replayMutation(
   const expectedVersion = draft.serverRowVersion ?? 1;
 
   if (mutation.kind === "create_customer") {
-    const payload = createCustomerPayloadSchema.parse(mutation.payload);
+    const parsed = createCustomerPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const result = await commands.createCustomer({
       displayName: payload.displayName,
       taxId: payload.taxId,
@@ -246,7 +266,11 @@ async function replayMutation(
   }
 
   if (mutation.kind === "create_draft") {
-    const payload = createDraftPayloadSchema.parse(mutation.payload);
+    const parsed = createDraftPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const customerId = draft.serverCustomerId ?? (draft.customer.mode === "existing" ? draft.customer.customerId : null);
     if (customerId === null) {
       return { kind: "error", error: "customer_required" };
@@ -259,7 +283,11 @@ async function replayMutation(
   }
 
   if (mutation.kind === "patch_draft") {
-    const payload = patchDraftPayloadSchema.parse(mutation.payload);
+    const parsed = patchDraftPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const result = await commands.patchDraft({
       collectionId: draft.id,
       expectedVersion,
@@ -276,7 +304,11 @@ async function replayMutation(
   }
 
   if (mutation.kind === "add_item") {
-    const payload = itemPayloadSchema.parse(mutation.payload);
+    const parsed = itemPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     if (payload.description === undefined || payload.quantity === undefined) {
       return { kind: "error", error: "item_payload_invalid" };
     }
@@ -296,7 +328,11 @@ async function replayMutation(
   }
 
   if (mutation.kind === "patch_item") {
-    const payload = itemPayloadSchema.parse(mutation.payload);
+    const parsed = itemPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const result = await commands.patchItem({
       collectionId: draft.id,
       itemId: payload.itemId,
@@ -313,7 +349,11 @@ async function replayMutation(
   }
 
   if (mutation.kind === "remove_item") {
-    const payload = itemPayloadSchema.parse(mutation.payload);
+    const parsed = itemPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const result = await commands.removeItem({
       collectionId: draft.id,
       itemId: payload.itemId,
@@ -333,7 +373,11 @@ async function replayMutation(
     if (isSuccess(fetched) && fetched.hasSignature) {
       return { kind: "ok", draft: { ...draft, hasServerSignature: true, serverRowVersion: fetched.draft.rowVersion } };
     }
-    const payload = saveSignaturePayloadSchema.parse(mutation.payload);
+    const parsed = saveSignaturePayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const blob = await store.getSignature(draft.id, draft.userId);
     if (blob === null) {
       return { kind: "error", error: "signature_missing" };
@@ -353,7 +397,10 @@ async function replayMutation(
   }
 
   if (mutation.kind === "discard_draft") {
-    discardDraftPayloadSchema.parse(mutation.payload);
+    const parsed = discardDraftPayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
     if (draft.serverRowVersion === null) {
       return { kind: "purged" };
     }
@@ -371,7 +418,11 @@ async function replayMutation(
   }
 
   if (mutation.kind === "finalize") {
-    const payload = finalizePayloadSchema.parse(mutation.payload);
+    const parsed = finalizePayloadSchema.safeParse(mutation.payload);
+    if (!parsed.success) {
+      return { kind: "error", error: VALIDATION_ERROR };
+    }
+    const payload = parsed.data;
     const result = await commands.finalize({
       collectionId: draft.id,
       expectedVersion,

@@ -89,4 +89,38 @@ describe("transaction failure logger", () => {
     const requestId = getRequestId(request);
     expect(requestId).toMatch(/^[0-9a-f-]{36}$/);
   });
+
+  it("includes a valid SQLSTATE in the allow-listed payload", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    logTransactionFailure({
+      requestId: "qa-request-sqlstate",
+      operation: "publish_company_issuer_profile",
+      code: "issuer_publish_failed",
+      actorId: null,
+      status: 500,
+      databaseCode: "42702",
+    });
+    const line = consoleSpy.mock.calls[0]?.[0];
+    expect(typeof line).toBe("string");
+    if (typeof line !== "string") return;
+    const parsed = JSON.parse(line) as Readonly<Record<string, unknown>>;
+    expect(parsed["databaseCode"]).toBe("42702");
+  });
+
+  it("omits malformed database codes from the payload", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    logTransactionFailure({
+      requestId: "qa-request-bad-code",
+      operation: "publish_company_issuer_profile",
+      code: "issuer_publish_failed",
+      actorId: null,
+      status: 500,
+      databaseCode: "ambiguous column reference",
+    });
+    const line = consoleSpy.mock.calls[0]?.[0];
+    expect(typeof line).toBe("string");
+    if (typeof line !== "string") return;
+    const parsed = JSON.parse(line) as Readonly<Record<string, unknown>>;
+    expect(Object.keys(parsed).sort()).toEqual(["actor", "code", "event", "operation", "requestId", "status"]);
+  });
 });

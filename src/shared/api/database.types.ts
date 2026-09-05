@@ -83,6 +83,8 @@ type PhaseFunctionOverlays = {
   create_document_share: { Args: { p_document_id: string; p_share_type?: string; p_expires_at?: string | null; p_max_downloads?: number }; Returns: Json };
   revoke_document_share: { Args: { p_share_id: string }; Returns: Json };
   consume_document_share: { Args: { p_token: string }; Returns: Json };
+  inspect_document_share: { Args: { p_token: string }; Returns: Json };
+  retry_document_job: { Args: { p_collection_id: string; p_document_id: string; p_job_type?: string }; Returns: Json };
   reserve_document_share_email_delivery: { Args: { p_share_id: string; p_idempotency_hash: string; p_lease_seconds?: number }; Returns: Json };
   complete_document_share_email_delivery: { Args: { p_reservation_id: string; p_reservation_token: string; p_result: string; p_recipient_masked?: string | null; p_provider_reference?: string | null; p_error_code?: string | null }; Returns: Json };
   revise_collection_document: { Args: { p_source_document_id: string; p_expected_version: number; p_typed_document_patch: Json; p_revision_type: string; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };

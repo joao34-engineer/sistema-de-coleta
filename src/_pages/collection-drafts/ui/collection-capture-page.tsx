@@ -24,7 +24,7 @@ import { presentFinalizeSync } from "../model/present-finalize-sync";
 import { runAuthenticatedDrain } from "../model/run-authenticated-drain";
 import type { OfflineDraftRecord, OfflineItemRecord } from "../model/offline-records";
 import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
-import { fetchDraftWithItemsAction } from "../api/actions";
+import { collectionExistsAction, fetchDraftWithItemsAction } from "../api/actions";
 import { getCustomerAction } from "@/app/actions/draft-flow.actions";
 import { canFinalizeCollection } from "../model/can-finalize-collection";
 import { isValidCpfOrCnpj } from "@/shared/lib/cpf";
@@ -37,6 +37,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
+import { useOnlineStatus } from "@/shared/lib/use-online-status";
 import { EditItemModal } from "./edit-item-modal";
 import type { DraftItemDTO } from "../model/draft";
 
@@ -66,7 +67,7 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
   const [items, setItems] = useState<readonly OfflineItemRecord[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hydrateStatus, setHydrateStatus] = useState<HydrateStatus>(resumeDraftId ? "pending" : "ready");
-  const [online, setOnline] = useState(isBrowserOnline());
+  const online = useOnlineStatus();
   const [queuedDone, setQueuedDone] = useState(false);
   const [onlineFinalizeError, setOnlineFinalizeError] = useState<string | null>(null);
 
@@ -158,18 +159,16 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
   }, [actor, reload]);
 
   useEffect(() => {
-    const onOnline = () => {
-      setOnline(true);
+    if (!online) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
       void drainIfOnline(draftId ?? undefined);
-    };
-    const onOffline = () => setOnline(false);
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
+    }, 0);
     return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
+      window.clearTimeout(timer);
     };
-  }, [draftId, drainIfOnline]);
+  }, [online, draftId, drainIfOnline]);
 
   useEffect(() => {
     void (async () => {
@@ -256,6 +255,7 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
       onOnlineFinalizeFailed={(error) => setOnlineFinalizeError(error)}
       onClearOnlineFinalizeError={() => setOnlineFinalizeError(null)}
       onOpenCollection={() => router.push(`/coletas/${draftId}` as Route)}
+      onOpenCollectionList={() => router.push("/coletas" as Route)}
     />
   );
 }
@@ -276,6 +276,7 @@ type StepsProps = Readonly<{
   onOnlineFinalizeFailed: (error: string) => void;
   onClearOnlineFinalizeError: () => void;
   onOpenCollection: () => void;
+  onOpenCollectionList: () => void;
 }>;
 
 function CaptureSteps({
@@ -294,6 +295,7 @@ function CaptureSteps({
   onOnlineFinalizeFailed,
   onClearOnlineFinalizeError,
   onOpenCollection,
+  onOpenCollectionList,
 }: StepsProps) {
   const [editingItem, setEditingItem] = useState<DraftItemDTO | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -340,13 +342,22 @@ function CaptureSteps({
           actionText={offlineCopy.retry}
           onAction={() => {
             void (async () => {
-              await runAuthenticatedDrain(actor);
               const store = await ensureOfflineDraftStore();
+              await runAuthenticatedDrain(actor);
               const leftover = await store.getDraft(draftId, actor.userId);
-              const next = presentFinalizeSync({ wasOnline: true, leftover });
+              const next = presentFinalizeSync({
+                wasOnline: true,
+                leftover,
+                serverRowExists: leftover === null ? await collectionExistsAction(draftId) : false,
+              });
               if (next === "open_collection") {
                 onClearOnlineFinalizeError();
                 onOpenCollection();
+                return;
+              }
+              if (next === "queued_local") {
+                onClearOnlineFinalizeError();
+                onOpenCollectionList();
                 return;
               }
               onOnlineFinalizeFailed(messageForQueueError(leftover?.lastError) || offlineCopy.onlineFinalizeFailed);
@@ -368,7 +379,7 @@ function CaptureSteps({
           title="Salvo neste aparelho"
           subtitle={offlineCopy.queuedFinalize}
           actionText="Ver coletas"
-          onAction={onOpenCollection}
+          onAction={onOpenCollectionList}
         />
         <MobileBottomNav />
       </main>
@@ -573,7 +584,11 @@ function CaptureSteps({
                   await runAuthenticatedDrain(actor);
                 }
                 const leftover = await store.getDraft(draftId, actor.userId);
-                const outcome = presentFinalizeSync({ wasOnline, leftover });
+                const outcome = presentFinalizeSync({
+                  wasOnline,
+                  leftover,
+                  serverRowExists: leftover === null ? await collectionExistsAction(draftId) : false,
+                });
                 if (outcome === "open_collection") {
                   onOpenCollection();
                   return;

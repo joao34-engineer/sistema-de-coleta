@@ -165,4 +165,69 @@ describe("OfflinePendingBanner online drain", () => {
     });
     expect(screen.queryByRole("button", { name: offlineCopy.discard })).not.toBeInTheDocument();
   });
+
+  it("shows busy retry label and maps the same issuer error after a fast failed retry", async () => {
+    const issuerDraft = { ...draft, lastError: "issuer_profile_incomplete" };
+    refreshDrafts
+      .mockResolvedValueOnce([issuerDraft])
+      .mockResolvedValueOnce([issuerDraft])
+      .mockResolvedValue([issuerDraft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.retry })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
+    expect(screen.getByRole("button", { name: offlineCopy.retryBusy })).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.getByText("Os dados do emissor da guia estão incompletos. Ajuste nas configurações.")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: offlineCopy.retry })).not.toBeDisabled();
+  });
+
+  it("shows Falha ao sincronizar when retry leaves the draft without a lastError", async () => {
+    refreshDrafts.mockResolvedValue([draft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.retry })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
+    await waitFor(() => {
+      expect(screen.getByText(offlineCopy.failed)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Oficina Norte/)).toBeInTheDocument();
+  });
+
+  it("hides the blocking panel on Fechar and keeps the draft", async () => {
+    refreshDrafts.mockResolvedValue([draft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.closePanel })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.closePanel }));
+    expect(screen.queryByText(offlineCopy.pendingTitle)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: offlineCopy.showPending })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: offlineCopy.discard })).not.toBeInTheDocument();
+  });
+
+  it("shows sync complete when the queue clears after retry", async () => {
+    let clearQueue = false;
+    refreshDrafts.mockImplementation(async () => (clearQueue ? [] : [draft]));
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.retry })).toBeInTheDocument();
+    });
+    clearQueue = true;
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
+    await waitFor(() => {
+      expect(screen.getByText(offlineCopy.syncComplete)).toBeInTheDocument();
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { getCollectionDetail, getCollectionEvents } from "@/_pages/collection-lifecycle/api/queries";
 import { getServiceOrder, getBudgetItems } from "@/_pages/collection-operations/api/queries";
@@ -19,7 +19,7 @@ export default async function CollectionDetailRoute({ params }: Readonly<{ param
     getBudgetItems(id).catch(() => []),
   ]);
 
-  if (!collection) notFound();
+  if (!collection) redirect(`/coletas/${id}/itens`);
 
   const hubView = {
     id: collection.id,

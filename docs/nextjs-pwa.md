@@ -19,7 +19,7 @@ A interface pode fazer verificacao otimista para UX, mas ela nunca substitui RLS
 
 ## PWA decidida
 
-O sistema e online-first com continuidade de campo. O manifest define nome, icones, `display: standalone`, cores e `start_url`. O service worker armazena somente os recursos do aplicativo e dados explicitamente seguros para cache.
+O sistema e online-first com continuidade de campo. O manifest define nome, icones, `display: standalone`, cores e `start_url`. O service worker armazena somente os recursos do aplicativo e dados explicitamente seguros para cache. Em desenvolvimento (`npm run dev`), o service worker **nao e registrado** — um script inline no `<head>` do layout remove workers e caches de shell legados **antes** dos chunks Next.js, com reload guardado por `sessionStorage`; em producao o registro segue ADR 0005.
 
 - Rascunhos locais podem conter dados de coleta pendente; proteger o dispositivo e excluir apos sincronizacao confirmada.
 - Codigo oficial, PDF, evento de finalizacao e compartilhamento nascem somente no servidor apos sincronizacao. Depois do finalize confirmado, o mesmo processo Next agenda o render via `after()` + DAL (`processQueuedDocumentRenders`); o aparelho nao gera PDF, nao guarda worker secret e so espera/poll na tela Documentos. O service worker nao cacheia PDF. Cron/curl interno e so retry.

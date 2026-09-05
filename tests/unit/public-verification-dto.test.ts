@@ -53,5 +53,63 @@ describe("public verification DTO", () => {
     expect(mapPublicVerificationRow({ official_code: "MJT-2026-000123" })).toBeNull();
     expect(mapPublicVerificationRow(null)).toBeNull();
   });
+
+  it("maps in_service workshop status as authentic public data", () => {
+    expect(mapPublicVerificationRow({
+      is_authentic: true,
+      official_code: "MJT-2026-000125",
+      issued_at: "2026-08-20T15:30:00.000Z",
+      collection_status: "in_service",
+      organization_name: "MJT Oficina",
+      document_version: 1,
+    })).toEqual({
+      authentic: true,
+      officialCode: "MJT-2026-000125",
+      issuedAt: "2026-08-20T15:30:00.000Z",
+      status: "in_service",
+      organization: { name: "MJT Oficina" },
+      documentVersion: 1,
+    });
+  });
+
+  it("maps canceled status without dropping the public record", () => {
+    expect(mapPublicVerificationRow({
+      is_authentic: false,
+      official_code: "MJT-2026-000126",
+      issued_at: "2026-08-20T15:30:00.000Z",
+      collection_status: "canceled",
+      organization_name: "MJT Oficina",
+      document_version: 1,
+    })).toEqual({
+      authentic: false,
+      officialCode: "MJT-2026-000126",
+      issuedAt: "2026-08-20T15:30:00.000Z",
+      status: "canceled",
+      organization: { name: "MJT Oficina" },
+      documentVersion: 1,
+    });
+  });
+
+  it("rejects draft status because it is not an issued public status", () => {
+    expect(mapPublicVerificationRow({
+      is_authentic: true,
+      official_code: "MJT-2026-000127",
+      issued_at: "2026-08-20T15:30:00.000Z",
+      collection_status: "draft",
+      organization_name: "MJT Oficina",
+      document_version: 1,
+    })).toBeNull();
+  });
+
+  it("rejects unknown collection statuses", () => {
+    expect(mapPublicVerificationRow({
+      is_authentic: true,
+      official_code: "MJT-2026-000128",
+      issued_at: "2026-08-20T15:30:00.000Z",
+      collection_status: "mystery_status",
+      organization_name: "MJT Oficina",
+      document_version: 1,
+    })).toBeNull();
+  });
 });
 

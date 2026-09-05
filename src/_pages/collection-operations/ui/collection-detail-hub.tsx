@@ -9,6 +9,7 @@ import { Card } from "@/shared/ui/card";
 import { CollectionStatusBadge } from "./collection-status-badge";
 import { CollectionTimeline } from "./collection-timeline";
 import { OperationalActions } from "./operational-actions";
+import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 
 export type CollectionDetailHubProps = Readonly<{
   collection: CollectionHubView;
@@ -23,7 +24,7 @@ function formatBrl(value: number): string {
 
 function formatDate(value: string | null): string | null {
   if (!value) return null;
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  return formatDateTimePtBr(value);
 }
 
 export function CollectionDetailHub({ collection, events, serviceOrder, budgetItems }: CollectionDetailHubProps) {

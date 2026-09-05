@@ -12,7 +12,8 @@ import { isOfflineQuotaExceeded } from "@/shared/lib/offline";
 import type { CaptureActor } from "../model/capture-actor";
 import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
 import { cadastralAddressForSync, isIncompleteCadastral } from "../model/cadastral-address-for-sync";
-import { createLocalDraft, isBrowserOnline, normalizeTaxId } from "../model/offline-capture";
+import { createLocalDraft, normalizeTaxId } from "../model/offline-capture";
+import { useOnlineStatus } from "@/shared/lib/use-online-status";
 import { offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { SyncStatusChip } from "./sync-status-chip";
@@ -42,7 +43,7 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
   const [collectionLocation, setCollectionLocation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const online = isBrowserOnline();
+  const online = useOnlineStatus();
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);

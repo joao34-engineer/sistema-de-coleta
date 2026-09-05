@@ -36,5 +36,5 @@ Uma coleta finalizada é evidência operacional imutável. O sistema precisa pro
 
 ## Fora do escopo
 
-Aplicação remota de migrations, envio real de e-mail por padrão (continua dry-run até flag explícita), alteração de documentos emitidos, exclusão de evidências e cache público de PDFs/links. Consumo de share antes da URL assinada (B28) permanece na Fase 4.
+Aplicação remota de migrations, envio real de e-mail por padrão (continua dry-run até flag explícita), alteração de documentos emitidos, exclusão de evidências e cache público de PDFs/links. Consumo de share antes da URL assinada (B28) foi corrigido com fluxo inspect-then-consume: `inspect_document_share` (leitura) → URL assinada → `consume_document_share` (incremento atômico).
 

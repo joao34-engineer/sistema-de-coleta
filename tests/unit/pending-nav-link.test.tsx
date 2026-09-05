@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import type { Route } from "next";
 
 vi.mock("next/link", async () => {
@@ -60,5 +61,18 @@ describe("PendingNavLink", () => {
     expect(marker.className).toContain("is-opening");
     expect(marker.className).toContain("inner");
     expect(Link).toBeDefined();
+  });
+
+  it("keeps pending markers idle during SSR even if the router reports pending", () => {
+    vi.mocked(useLinkStatus).mockReturnValue({ pending: true });
+    const html = renderToString(
+      <PendingNavLink href={"/dashboard" as Route} pendingClassName="is-opening">
+        Início
+      </PendingNavLink>,
+    );
+
+    expect(html).toContain('data-pending="false"');
+    expect(html).toContain('aria-busy="false"');
+    expect(html).not.toContain("is-opening");
   });
 });

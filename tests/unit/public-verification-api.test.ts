@@ -9,6 +9,12 @@ const testState = vi.hoisted(() => {
       this.retryAfterSeconds = retryAfterSeconds;
     }
   }
+  class TestRateLimitUnavailableError extends Error {
+    constructor() {
+      super("document_rate_limit_unavailable");
+      this.name = "DocumentRateLimitUnavailableError";
+    }
+  }
 
   return {
     verification: {
@@ -20,7 +26,9 @@ const testState = vi.hoisted(() => {
       documentVersion: 1,
     },
     rateFailure: false,
+    rateUnavailable: false,
     TestRateLimitExceededError,
+    TestRateLimitUnavailableError,
   };
 });
 
@@ -30,8 +38,9 @@ vi.mock("@/_pages/collection-documents/index.server", () => ({
 
 vi.mock("@/_pages/collection-documents/api/delivery/index.server", () => ({
   DocumentRateLimitExceededError: testState.TestRateLimitExceededError,
-  DocumentRateLimitUnavailableError: class TestRateLimitUnavailableError extends Error {},
+  DocumentRateLimitUnavailableError: testState.TestRateLimitUnavailableError,
   enforcePublicVerificationRateLimit: async () => {
+    if (testState.rateUnavailable) throw new testState.TestRateLimitUnavailableError();
     if (testState.rateFailure) throw new testState.TestRateLimitExceededError(42);
   },
 }));
@@ -59,6 +68,15 @@ describe("public verification API", () => {
     expect(response.headers.get("Retry-After")).toBe("42");
     await expect(response.json()).resolves.toEqual({ error: { code: "rate_limit_exceeded", message: "Aguarde antes de consultar novamente." } });
     testState.rateFailure = false;
+  });
+
+  it("responds with a safe 503 when the limiter is unavailable", async () => {
+    testState.rateUnavailable = true;
+    const response = await GET(new Request(`https://mjt.example/api/public/collections/${verificationToken}`, { headers: { "x-forwarded-for": "198.51.100.19" } }), routeContext);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({ error: { code: "temporarily_unavailable", message: "Consulta temporariamente indisponível." } });
+    testState.rateUnavailable = false;
   });
 
   it("uses the same generic response for an invalid route token", async () => {

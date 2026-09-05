@@ -9,7 +9,15 @@ export async function GET(request: Request, context: RouteContext<"/api/collecti
   const { id } = await context.params;
   if (!z.uuid().safeParse(id).success) return validationErrorResponse();
   try {
-    return noStoreJson(await getCollectionDetail(id));
+    const collection = await getCollectionDetail(id);
+    if (collection === null) {
+      return apiErrorResponse(
+        { status: 404, code: "collection_not_found", message: "Coleta não encontrada." },
+        getRequestId(request),
+        "get_collection_detail",
+      );
+    }
+    return noStoreJson(collection);
   } catch (error: unknown) {
     return apiErrorResponse(toLifecycleApiError(error), getRequestId(request), "get_collection_detail");
   }

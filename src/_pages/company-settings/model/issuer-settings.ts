@@ -24,14 +24,14 @@ export type IssuerSettingsRpcInput = Readonly<{
 export function toIssuerSettingsRpcInput(settings: CompanySettingsInput, logoAssetId: string | null): IssuerSettingsRpcInput | null {
   if (
     !settings.legalName ||
-    !settings.taxId ||
-    !settings.phone ||
+    !settings.taxId || !/^\d{14}$/.test(settings.taxId) ||
+    !settings.phone || settings.phone.trim().length < 10 || settings.phone.trim().length > 30 ||
     !settings.street ||
     !settings.streetNumber ||
     !settings.district ||
     !settings.city ||
-    !settings.stateCode ||
-    !settings.postalCode ||
+    !settings.stateCode || !/^[A-Z]{2}$/.test(settings.stateCode) ||
+    !settings.postalCode || !/^\d{8}$/.test(settings.postalCode) ||
     !settings.receiptLegalText ||
     !settings.signerName ||
     !settings.signerTitle ||

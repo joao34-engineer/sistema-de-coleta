@@ -7,6 +7,10 @@ export const offlineCopy = {
   pendingTitle: "Coletas pendentes de sincronizar",
   pendingEmpty: "Nenhuma coleta pendente neste aparelho.",
   retry: "Tentar de novo",
+  retryBusy: "Tentando novamente…",
+  syncComplete: "Sincronização concluída.",
+  closePanel: "Fechar",
+  showPending: "Ver pendentes",
   resume: "Continuar",
   discard: "Descartar rascunho",
   discardConfirm: "Descartar este rascunho salvo neste aparelho? A guia oficial não é apagada.",
@@ -42,6 +46,7 @@ const queueErrorMessages: Readonly<Record<string, string>> = {
   administrator_access_denied: "Você não tem permissão para esta operação.",
   forbidden: "Você não tem permissão para esta operação.",
   operation_failed: offlineCopy.failed,
+  finalize_failed: offlineCopy.onlineFinalizeFailed,
   sync_interrupted: "A sincronização foi interrompida. Tente de novo.",
 };
 

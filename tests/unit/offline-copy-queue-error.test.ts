@@ -11,6 +11,10 @@ describe("messageForQueueError", () => {
     expect(messageForQueueError("stale_version")).not.toBe("stale_version");
   });
 
+  it("maps finalize_failed to onlineFinalizeFailed", () => {
+    expect(messageForQueueError("finalize_failed")).toBe(offlineCopy.onlineFinalizeFailed);
+  });
+
   it("maps other known codes to Portuguese", () => {
     expect(messageForQueueError("idempotency_conflict")).toMatch(/já foi enviada/i);
     expect(messageForQueueError("invalid_signature_file")).toMatch(/PNG/i);

@@ -1,19 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { CaptureActor } from "./capture-actor";
 import { isBrowserOnline } from "./offline-capture";
 import type { OfflineDraftRecord } from "./offline-records";
 import { ensureOfflineDraftStore } from "./offline-port";
 import { runAuthenticatedDrain } from "./run-authenticated-drain";
 import type { DrainPendingResult } from "./offline-runner";
+import { useOnlineStatus } from "@/shared/lib/use-online-status";
 
 export function useOfflineQueueSync(actor: CaptureActor): {
   online: boolean;
   drain: () => Promise<DrainPendingResult>;
   refreshDrafts: () => Promise<readonly OfflineDraftRecord[]>;
 } {
-  const [online, setOnline] = useState(isBrowserOnline);
+  const online = useOnlineStatus();
 
   const drain = useCallback(async (): Promise<DrainPendingResult> => {
     if (!isBrowserOnline()) {
@@ -31,20 +32,6 @@ export function useOfflineQueueSync(actor: CaptureActor): {
       .slice()
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }, [actor.userId]);
-
-  useEffect(() => {
-    const onOnline = () => {
-      setOnline(true);
-      void drain();
-    };
-    const onOffline = () => setOnline(false);
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, [drain]);
 
   return { online, drain, refreshDrafts };
 }

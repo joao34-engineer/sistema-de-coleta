@@ -9,8 +9,10 @@ type Props = Readonly<{
   busy: boolean;
   notice?: string | null;
   bannerError?: string | null;
+  retryResult?: string | null;
   onRetry: () => void;
   onDiscard: (draftId: string) => void;
+  onClose?: () => void;
 }>;
 
 const stepLabel: Readonly<Record<OfflineDraftRecord["currentStep"], string>> = {
@@ -25,14 +27,18 @@ export function OfflinePendingPanel({
   busy,
   notice = null,
   bannerError = null,
+  retryResult = null,
   onRetry,
   onDiscard,
+  onClose,
 }: Props) {
   const ordered = [...drafts].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   const first = ordered[0];
-  if (first === undefined && notice === null && bannerError === null) {
+  if (first === undefined && notice === null && bannerError === null && retryResult === null) {
     return null;
   }
+
+  const retryLabel = busy ? offlineCopy.retryBusy : offlineCopy.retry;
 
   return (
     <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md p-3">
@@ -41,13 +47,25 @@ export function OfflinePendingPanel({
         className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-surface)]"
         role="status"
       >
-        <h2 id="offline-pending-title" className="text-[15px] font-semibold text-[var(--color-text)]">
-          {first === undefined && notice !== null ? notice : offlineCopy.pendingTitle}
-        </h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 id="offline-pending-title" className="text-[15px] font-semibold text-[var(--color-text)]">
+            {first === undefined && notice !== null ? notice : offlineCopy.pendingTitle}
+          </h2>
+          {onClose ? (
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+              {offlineCopy.closePanel}
+            </Button>
+          ) : null}
+        </div>
         {notice !== null && first !== undefined ? (
           <p className="mt-2 text-[12px] font-medium text-[var(--color-text)]">{notice}</p>
         ) : null}
         {bannerError ? <p className="mt-2 text-[12px] font-medium text-[#ba5b52]">{bannerError}</p> : null}
+        {retryResult ? (
+          <p id="offline-pending-retry-result" className="mt-2 text-[12px] font-medium text-[var(--color-text)]">
+            {retryResult}
+          </p>
+        ) : null}
         {ordered.length > 0 ? (
           <ul className="mt-3 flex flex-col gap-2">
             {ordered.map((draft) => {
@@ -79,8 +97,8 @@ export function OfflinePendingPanel({
         ) : null}
         {ordered.length > 0 ? (
           <div className="mt-3 flex flex-col gap-2">
-            <Button type="button" variant="primary" isLoading={busy} onClick={onRetry}>
-              {offlineCopy.retry}
+            <Button type="button" variant="primary" isLoading={busy} disabled={busy} onClick={onRetry}>
+              {retryLabel}
             </Button>
           </div>
         ) : null}

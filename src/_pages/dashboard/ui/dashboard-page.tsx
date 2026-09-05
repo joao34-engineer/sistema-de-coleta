@@ -37,13 +37,10 @@ type Props = Readonly<{
   settings: CompanySettingsDTO;
   activities: ReadonlyArray<DashboardActivityItem>;
   loadFailed?: boolean;
+  todayLabel: string;
 }>;
 
-function formatToday(): string {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "full" }).format(new Date());
-}
-
-export function DashboardPage({ administrator, settings, activities, loadFailed = false }: Props) {
+export function DashboardPage({ administrator, settings, activities, loadFailed = false, todayLabel }: Props) {
   const router = useRouter();
   const firstName = (administrator.fullName || administrator.email).split(" ")[0] ?? administrator.email;
   const isSetupComplete = settings.setupStatus === "complete";
@@ -68,7 +65,7 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
       />
 
       <div className="flex flex-col gap-4 px-4 pt-4">
-        <p className="text-[12px] font-normal capitalize text-[var(--color-text-muted)]">{formatToday()}</p>
+        <p className="text-[12px] font-normal capitalize text-[var(--color-text-muted)]">{todayLabel}</p>
 
         {/* Headline do Figma Node 13:2 */}
         <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">

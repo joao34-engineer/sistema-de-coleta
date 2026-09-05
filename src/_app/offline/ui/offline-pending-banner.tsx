@@ -9,6 +9,7 @@ import { discardLocalDraft } from "@/_pages/collection-drafts/model/discard-loca
 import { ensureOfflineDraftStore } from "@/_pages/collection-drafts/model/offline-port";
 import { shouldEnqueueServerDiscard } from "@/_pages/collection-drafts/model/should-enqueue-server-discard";
 import { useOfflineQueueSync } from "@/_pages/collection-drafts/model/use-offline-queue-sync";
+import { Button } from "@/shared/ui/button";
 import { OfflinePendingPanel } from "./offline-pending-panel";
 
 type Props = Readonly<{
@@ -19,7 +20,9 @@ export function OfflinePendingBanner({ actor }: Props) {
   const [drafts, setDrafts] = useState<readonly OfflineDraftRecord[]>([]);
   const [busy, setBusy] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
+  const [retryResult, setRetryResult] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
   const { drain, refreshDrafts } = useOfflineQueueSync(actor);
 
   const reloadPanel = useCallback(async () => {
@@ -54,17 +57,46 @@ export function OfflinePendingBanner({ actor }: Props) {
     };
   }, [drainAndReload]);
 
+  if (collapsed && drafts.length > 0) {
+    return (
+      <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md p-3">
+        <Button type="button" variant="secondary" onClick={() => setCollapsed(false)}>
+          {offlineCopy.showPending}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <OfflinePendingPanel
       drafts={drafts}
       busy={busy}
       notice={notice}
       bannerError={bannerError}
+      retryResult={retryResult}
+      onClose={() => setCollapsed(true)}
       onRetry={() => {
+        if (busy) {
+          return;
+        }
         void (async () => {
           setBusy(true);
-          await drainAndReload();
-          setBusy(false);
+          setBannerError(null);
+          setRetryResult(null);
+          try {
+            await drainAndReload();
+            const nextDrafts = await refreshDrafts();
+            setDrafts(nextDrafts);
+            if (nextDrafts.length === 0) {
+              setRetryResult(offlineCopy.syncComplete);
+              return;
+            }
+            setRetryResult(messageForQueueError(nextDrafts[0]?.lastError));
+          } catch {
+            setBannerError(offlineCopy.failed);
+          } finally {
+            setBusy(false);
+          }
         })();
       }}
       onDiscard={(draftId) => {

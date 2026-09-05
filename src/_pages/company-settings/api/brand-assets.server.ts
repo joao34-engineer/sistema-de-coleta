@@ -7,6 +7,7 @@ import { getServiceEnvironment } from "@/shared/config/environment";
 type BrandAsset = Readonly<{ id: string; storage_path: string }>;
 
 type CreateOrReuseLogoAssetInput = Readonly<{
+  storageClient: SupabaseClient<Database>;
   organizationId: number;
   actorUserId: string;
   file: File;
@@ -49,31 +50,32 @@ async function linkLogoAsset(client: SupabaseClient<Database>, organizationId: n
 }
 
 /**
- * The caller has already authenticated an administrator. This narrow
- * service-role adapter is required because Phase 2 intentionally prohibits
- * browser writes to immutable asset metadata. It never exposes the client or
- * its secret outside this server-only module.
+ * User-provided logo bytes are uploaded with the authenticated administrator
+ * session. This narrow service-role adapter is used only for immutable asset
+ * metadata lookup/insert, linking the asset to organization_settings, and
+ * compensating deletion of an unconfirmed UUID path when a hash race occurs.
+ * It never exposes the client or its secret outside this server-only module.
  */
 export async function createOrReuseLogoAsset(input: CreateOrReuseLogoAssetInput): Promise<CreateOrReuseLogoAssetResult> {
-  const client = createCompanySettingsServiceClient();
-  const existing = await findExistingLogoAsset(client, input.organizationId, input.sha256);
+  const metadataClient = createCompanySettingsServiceClient();
+  const existing = await findExistingLogoAsset(metadataClient, input.organizationId, input.sha256);
   if (existing === "error") return { ok: false, code: "asset_lookup_failed" };
 
   if (existing) {
-    const linked = await linkLogoAsset(client, input.organizationId, input.actorUserId, existing);
+    const linked = await linkLogoAsset(metadataClient, input.organizationId, input.actorUserId, existing);
     return linked
       ? { ok: true, assetId: existing.id, storagePath: existing.storage_path, reused: true }
       : { ok: false, code: "asset_link_failed" };
   }
 
   const storagePath = `${input.organizationId}/company-logo/${crypto.randomUUID()}.${input.extension}`;
-  const { error: uploadError } = await client.storage.from("organization-assets").upload(storagePath, input.file, {
+  const { error: uploadError } = await input.storageClient.storage.from("organization-assets").upload(storagePath, input.file, {
     contentType: input.contentType,
     upsert: false,
   });
   if (uploadError) return { ok: false, code: "asset_upload_failed" };
 
-  const { data: inserted, error: insertError } = await client
+  const { data: inserted, error: insertError } = await metadataClient
     .from("organization_brand_assets")
     .insert({
       organization_id: input.organizationId,
@@ -89,18 +91,18 @@ export async function createOrReuseLogoAsset(input: CreateOrReuseLogoAssetInput)
 
   if (insertError || !inserted) {
     // The only expected insert race is the immutable hash uniqueness rule.
-    // Remove solely our unconfirmed UUID path, then reuse the winner if one
-    // exists. Confirmed assets are never removed.
-    await client.storage.from("organization-assets").remove([storagePath]);
-    const winner = await findExistingLogoAsset(client, input.organizationId, input.sha256);
+    // Remove solely our unconfirmed UUID path with the narrow administrative
+    // adapter because authenticated delete is not granted on this bucket.
+    await metadataClient.storage.from("organization-assets").remove([storagePath]);
+    const winner = await findExistingLogoAsset(metadataClient, input.organizationId, input.sha256);
     if (winner === "error" || !winner) return { ok: false, code: "asset_persist_failed" };
-    const linked = await linkLogoAsset(client, input.organizationId, input.actorUserId, winner);
+    const linked = await linkLogoAsset(metadataClient, input.organizationId, input.actorUserId, winner);
     return linked
       ? { ok: true, assetId: winner.id, storagePath: winner.storage_path, reused: true }
       : { ok: false, code: "asset_link_failed" };
   }
 
-  const linked = await linkLogoAsset(client, input.organizationId, input.actorUserId, inserted);
+  const linked = await linkLogoAsset(metadataClient, input.organizationId, input.actorUserId, inserted);
   if (!linked) {
     // The metadata row is immutable once inserted. Keep it for a safe retry
     // instead of deleting evidence that may have been observed concurrently.

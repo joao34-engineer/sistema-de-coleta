@@ -10,8 +10,20 @@ type Props = Readonly<{
   loadFailed: boolean;
 }>;
 
+function formatTodayLabel(): string {
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeZone: "America/Sao_Paulo" }).format(new Date());
+}
+
 export async function DashboardRoute({ activities, loadFailed }: Props) {
   const administrator = await requireAuthenticatedAdministrator();
   const settings = await getCompanySettingsForAdministrator(administrator);
-  return <DashboardPage administrator={administrator} settings={settings} activities={activities} loadFailed={loadFailed} />;
+  return (
+    <DashboardPage
+      administrator={administrator}
+      settings={settings}
+      activities={activities}
+      loadFailed={loadFailed}
+      todayLabel={formatTodayLabel()}
+    />
+  );
 }

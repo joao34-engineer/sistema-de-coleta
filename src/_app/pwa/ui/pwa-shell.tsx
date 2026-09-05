@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SKIP_WAITING_MESSAGE } from "@/shared/lib/pwa/service-worker-protocol";
-import { shouldReloadOnControllerChange, type PwaShellProps } from "../model/pwa-shell";
+import {
+  DEV_SW_CLEARED_SESSION_KEY,
+  shouldReloadAfterDevServiceWorkerCleanup,
+  shouldReloadOnControllerChange,
+  type PwaShellProps,
+} from "../model/pwa-shell";
 import { listenForWaitingWorker, registerColetaServiceWorker } from "../model/service-worker-registration";
 import { PwaBannerHost } from "./pwa-banner";
 import { InstallPrompt } from "./install-prompt";
@@ -49,6 +54,15 @@ export function PwaShell({ canReload, hasPendingWork = false }: PwaShellProps) {
     navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
     void registerColetaServiceWorker().then((registration) => {
+      if (process.env.NODE_ENV !== "production") {
+        const alreadyCleared = sessionStorage.getItem(DEV_SW_CLEARED_SESSION_KEY) !== null;
+        if (shouldReloadAfterDevServiceWorkerCleanup(navigator.serviceWorker.controller, alreadyCleared)) {
+          sessionStorage.setItem(DEV_SW_CLEARED_SESSION_KEY, "1");
+          window.location.reload();
+          return;
+        }
+      }
+
       if (registration === null) {
         return;
       }

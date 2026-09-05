@@ -25,6 +25,7 @@ const KNOWN_ACTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   "signature_contract_invalid",
   "signature_upload_failed",
   "operation_failed",
+  "finalize_failed",
 ]);
 
 type CodedFailure = Readonly<{ code?: unknown; message?: unknown }>;
@@ -82,4 +83,13 @@ export function toActionFailureCode(error: unknown): string {
   }
 
   return "operation_failed";
+}
+
+/** Finalize-only remap: unknown failures become `finalize_failed`, not generic `operation_failed`. */
+export function toFinalizeActionFailureCode(error: unknown): string {
+  const code = toActionFailureCode(error);
+  if (code === "operation_failed") {
+    return "finalize_failed";
+  }
+  return code;
 }

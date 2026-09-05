@@ -1,8 +1,18 @@
 "use server";
 
 import { getDraft, patchDraft, addItem, patchItem, removeItem } from "./drafts.server";
+import { getCollectionDetail } from "@/_pages/collection-lifecycle/api/queries";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
 import { toSafeActionError } from "@/shared/lib/action-error";
+
+export async function collectionExistsAction(collectionId: string): Promise<boolean> {
+  try {
+    const detail = await getCollectionDetail(collectionId);
+    return detail !== null;
+  } catch {
+    return false;
+  }
+}
 
 export type CreateDraftActionResult =
   | { ok: true; draftId: string }

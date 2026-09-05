@@ -53,12 +53,13 @@ export async function listCollections(query: CollectionListQuery) {
   }
 }
 
-export async function getCollectionDetail(collectionId: string): Promise<CollectionDetailDTO> {
+export async function getCollectionDetail(collectionId: string): Promise<CollectionDetailDTO | null> {
   const administrator = await requireAuthenticatedAdministrator();
   try {
     const supabase = await createLifecycleSupabaseClient();
     const { data, error } = await supabase.rpc("get_collection_detail", { p_collection_id: collectionId });
     if (error) throw error;
+    if (data == null) return null;
     const parsed = collectionDetailSchema.safeParse(normalizeLifecyclePayload(data));
     if (!parsed.success) throw new Error("collection_detail_contract_invalid");
     return parsed.data;

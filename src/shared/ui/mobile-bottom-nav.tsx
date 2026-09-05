@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
+import { useHydrated } from "@/shared/lib/use-hydrated";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 type IconComponent = (props: { className?: string }) => ReactNode;
@@ -55,11 +56,12 @@ const navItems: ReadonlyArray<NavItem> = [
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const hydrated = useHydrated();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex h-[84px] w-full max-w-md items-center justify-around rounded-t-[18px] border-t border-[var(--color-border)] bg-[var(--color-surface)] px-2 shadow-lg">
       {navItems.map((item) => {
-        const isActive = (pathname ?? "").startsWith(item.matchPrefix);
+        const isActive = hydrated && (pathname ?? "").startsWith(item.matchPrefix);
         const Icon = item.icon;
 
         return (

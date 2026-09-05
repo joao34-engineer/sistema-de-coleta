@@ -4,15 +4,18 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { PdfPendingStatus } from "./pdf-pending-status";
+import type { DocumentJobStatus } from "../api/delivery/contracts";
 
 type Props = Readonly<{
   collectionId: string;
   documentId: string;
   hasPdf: boolean;
+  pdfJobStatus?: DocumentJobStatus;
 }>;
 
-export function DocumentViewerPage({ collectionId, documentId, hasPdf }: Props) {
+export function DocumentViewerPage({ collectionId, documentId, hasPdf, pdfJobStatus }: Props) {
   const pdfDownloadUrl = `/api/documents/${documentId}/download?artifact=pdf`;
+  const failed = !hasPdf && pdfJobStatus === "failed";
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6 flex flex-col">
@@ -48,7 +51,9 @@ export function DocumentViewerPage({ collectionId, documentId, hasPdf }: Props) 
                 ID do Documento: {documentId}
               </p>
             </div>
-            <Badge status={hasPdf ? "ready" : "draft"}>{hasPdf ? "Integridade Preservada" : "Gerando PDF"}</Badge>
+            <Badge status={hasPdf ? "ready" : failed ? "rejected" : "draft"}>
+              {hasPdf ? "Integridade Preservada" : failed ? "Falha na geração" : "Gerando PDF"}
+            </Badge>
           </div>
         </CardHeader>
 
@@ -61,7 +66,12 @@ export function DocumentViewerPage({ collectionId, documentId, hasPdf }: Props) 
             />
           ) : (
             <div className="flex flex-1 items-center justify-center p-4">
-              <PdfPendingStatus pending />
+              <PdfPendingStatus
+                collectionId={collectionId}
+                documentId={documentId}
+                hasPdf={hasPdf}
+                pdfJobStatus={pdfJobStatus}
+              />
             </div>
           )}
         </CardContent>

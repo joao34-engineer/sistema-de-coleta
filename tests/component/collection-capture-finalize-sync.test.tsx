@@ -30,6 +30,7 @@ vi.mock("@/_pages/collection-drafts/model/run-authenticated-drain", () => ({
 
 vi.mock("@/_pages/collection-drafts/api/actions", () => ({
   fetchDraftWithItemsAction: vi.fn(),
+  collectionExistsAction: vi.fn(async () => false),
 }));
 
 vi.mock("@/app/actions/draft-flow.actions", () => ({

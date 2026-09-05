@@ -6,6 +6,7 @@ import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { DocumentDeliveryActions } from "./document-delivery-actions";
 import { PdfPendingStatus } from "./pdf-pending-status";
+import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 
 type Props = Readonly<{
   collectionId: string;
@@ -14,7 +15,7 @@ type Props = Readonly<{
 }>;
 
 function formatIssuedAt(value: string): string {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  return formatDateTimePtBr(value);
 }
 
 export function CollectionDocumentsPage({ collectionId, documents, officialCode }: Props) {
@@ -76,7 +77,12 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
                       </>
                     ) : null}
                   </div>
-                  <PdfPendingStatus pending={!hasPdf} />
+                  <PdfPendingStatus
+                    collectionId={collectionId}
+                    documentId={doc.id}
+                    hasPdf={hasPdf}
+                    pdfJobStatus={doc.pdfJobStatus}
+                  />
                 </div>
 
                 {hasPdf ? (

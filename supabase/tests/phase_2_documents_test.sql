@@ -1,5 +1,5 @@
 begin;
-select plan(130);
+select plan(154);
 
 select has_table('public', 'organization_brand_assets', 'brand assets table exists');
 select has_table('public', 'document_issuer_profiles', 'issuer profiles table exists');
@@ -136,6 +136,199 @@ select is((select coalesce(prosrc, '') like '%organization_memberships%' and coa
 select is((select coalesce(prosrc, '') like '%organization_brand_assets%' and coalesce(prosrc, '') like '%organization_settings%' and coalesce(prosrc, '') like '%storage_path%' and coalesce(prosrc, '') like '%return public.save_company_issuer_settings%' from pg_proc where oid = 'public.save_company_issuer_settings(text, text, text, text, text, text, text, text, text, text, text, text, uuid)'::regprocedure), true, 'initial issuer settings RPC resolves prerequisites and delegates to the full contract');
 select is((select coalesce(prosrc, '') like '%on conflict (scope, subject_hash, window_seconds, window_started_at)%' and coalesce(prosrc, '') like '%request_count < p_limit%' from pg_proc where oid = 'public.consume_document_rate_limit(text, text, integer, integer)'::regprocedure), true, 'rate-limit consumption atomically increments only below the configured limit');
 select is((select coalesce(prosrc, '') like '%for update skip locked%' and coalesce(prosrc, '') like '%limit 100%' and coalesce(prosrc, '') like '%subject_hash !~ ''^[0-9a-f]{64}$''%' from pg_proc where oid = 'public.consume_document_rate_limit(text, text, integer, integer)'::regprocedure), true, 'rate-limit cleanup is bounded and accepts only pseudonymous subject hashes');
+
+select has_function('public', 'retry_document_job', array['uuid', 'uuid', 'text'], 'document retry RPC exists');
+select is(has_function_privilege('anon', 'public.retry_document_job(uuid, uuid, text)', 'execute'), false, 'anon cannot retry document jobs');
+select is(has_function_privilege('authenticated', 'public.retry_document_job(uuid, uuid, text)', 'execute'), true, 'authenticated can retry document jobs through RPC');
+select is(has_function_privilege('service_role', 'public.retry_document_job(uuid, uuid, text)', 'execute'), true, 'service role can retry document jobs');
+select is((select prosecdef from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC is security definer');
+select is((select coalesce(proconfig::text, '') like '%search_path=%' from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC pins search path');
+select is((select coalesce(prosrc, '') like '%private.current_user_is_admin%' from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC verifies administrator access');
+select is((select coalesce(prosrc, '') like '%attempt_count = 0%' and coalesce(prosrc, '') like '%status = ''failed''%' from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC resets failed jobs to queued with attempt_count zero');
+select is((select coalesce(prosrc, '') like '%document_job_in_progress%' and coalesce(prosrc, '') like '%leased_until > now()%' from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC refuses live leases without stealing them');
+select is((select coalesce(prosrc, '') like '%alreadyReady%' and coalesce(prosrc, '') like '%document_artifacts%' from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC short-circuits when the artifact already exists');
+select is((select coalesce(prosrc, '') not like '%insert into public.document_jobs%' from pg_proc where oid = 'public.retry_document_job(uuid, uuid, text)'::regprocedure), true, 'document retry RPC never inserts a second job row');
+
+savepoint retry_document_job_fixture;
+
+create temp table retry_fixture_scratch (result jsonb not null);
+
+set local role service_role;
+
+do $$
+declare
+  v_org_id bigint;
+  v_user_id uuid := 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  v_collection_id uuid := 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  v_document_id uuid := 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  v_job_id uuid := 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+begin
+  select id into v_org_id from public.organizations where code = 'mjt' limit 1;
+  if v_org_id is null then
+    raise exception 'retry_fixture_org_missing';
+  end if;
+
+  insert into public.profiles (user_id, full_name, status)
+  values (v_user_id, 'Retry Fixture Admin', 'active')
+  on conflict (user_id) do update set status = 'active';
+
+  insert into public.organization_memberships (organization_id, user_id, role_code, status)
+  values (v_org_id, v_user_id, 'administrator', 'active')
+  on conflict (organization_id, user_id) do update set role_code = 'administrator', status = 'active';
+
+  insert into public.collections (
+    id, organization_id, status, official_code, issued_year, sequence_number, row_version, created_by
+  ) values (
+    v_collection_id, v_org_id, 'collected', 'MJT-RETRY-000001', 2026, 990001, 1, v_user_id
+  ) on conflict (id) do nothing;
+
+  insert into public.documents (
+    id, organization_id, collection_id, version, status, snapshot, snapshot_hash, verification_token, created_by, issued_at
+  ) values (
+    v_document_id,
+    v_org_id,
+    v_collection_id,
+    1,
+    'snapshot_ready',
+    '{"collection":{"id":"' || v_collection_id || '"}}'::jsonb,
+    repeat('a', 64),
+    repeat('b', 64),
+    v_user_id,
+    now()
+  ) on conflict (id) do nothing;
+
+  insert into public.document_jobs (
+    id, organization_id, document_id, job_type, status, idempotency_key, attempt_count, max_attempts,
+    available_at, last_error_code, last_error_message, completed_at, requested_by
+  ) values (
+    v_job_id,
+    v_org_id,
+    v_document_id,
+    'render_pdf',
+    'failed',
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    5,
+    5,
+    now(),
+    'render_failed',
+    'Render failed permanently.',
+    now(),
+    v_user_id
+  ) on conflict (document_id, job_type) do update
+    set status = 'failed',
+        attempt_count = 5,
+        available_at = now(),
+        last_error_code = 'render_failed',
+        last_error_message = 'Render failed permanently.',
+        completed_at = now(),
+        lease_token = null,
+        leased_until = null,
+        claimed_at = null,
+        claimed_by = null;
+end $$;
+
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
+
+insert into retry_fixture_scratch
+select public.retry_document_job(
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+  'render_pdf'
+);
+
+select is((select result->>'status' from retry_fixture_scratch), 'queued', 'retry requeues a failed job to queued');
+select is((select result->>'alreadyReady' from retry_fixture_scratch), 'false', 'retry on a missing artifact is not already ready');
+
+set local role service_role;
+
+select is((select status from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 'queued', 'retry persists queued status on the job row');
+select is((select attempt_count from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 0, 'retry resets attempt_count to zero');
+select is((select available_at <= now() from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), true, 'retry makes the job immediately available');
+select is((select lease_token is null and leased_until is null and completed_at is null from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), true, 'retry clears lease and completion columns');
+select is((select count(*)::integer from public.document_jobs where document_id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' and job_type = 'render_pdf'), 1, 'retry keeps the unique job row unchanged');
+
+update public.document_jobs
+set status = 'running',
+    attempt_count = 1,
+    lease_token = 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+    leased_until = now() + interval '5 minutes',
+    claimed_at = now(),
+    claimed_by = 'fixture-worker',
+    completed_at = null,
+    last_error_code = null,
+    last_error_message = null
+where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
+
+select throws_ok(
+  $$select public.retry_document_job(
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+      'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+      'render_pdf'
+    )$$,
+  'P0001',
+  'document_job_in_progress',
+  'retry refuses a live lease without stealing it'
+);
+
+set local role service_role;
+
+select is((select lease_token::text from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 'ffffffff-ffff-4fff-8fff-ffffffffffff', 'retry leaves the live lease token untouched');
+select is((select status from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), 'running', 'retry leaves a live running job untouched');
+select is((select leased_until > now() from public.document_jobs where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), true, 'retry leaves the live lease expiry untouched');
+
+update public.document_jobs
+set status = 'queued',
+    attempt_count = 0,
+    lease_token = null,
+    leased_until = null,
+    claimed_at = null,
+    claimed_by = null,
+    completed_at = null,
+    last_error_code = null,
+    last_error_message = null,
+    available_at = now()
+where id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+insert into public.document_artifacts (
+  id, organization_id, document_id, artifact_type, storage_path, content_type, byte_size, sha256, created_by
+)
+select
+  '99999999-9999-4999-8999-999999999999',
+  document_row.organization_id,
+  document_row.id,
+  'pdf',
+  document_row.organization_id::text || '/' || document_row.id::text || '/99999999-9999-4999-8999-999999999999.pdf',
+  'application/pdf',
+  128,
+  repeat('c', 64),
+  document_row.created_by
+from public.documents as document_row
+where document_row.id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+on conflict (document_id, artifact_type) do nothing;
+
+truncate retry_fixture_scratch;
+
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
+
+insert into retry_fixture_scratch
+select public.retry_document_job(
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
+  'render_pdf'
+);
+
+select is((select result->>'status' from retry_fixture_scratch), 'succeeded', 'retry returns succeeded when the PDF artifact already exists');
+select is((select result->>'alreadyReady' from retry_fixture_scratch), 'true', 'retry reports alreadyReady when the PDF artifact already exists');
+
+rollback to savepoint retry_document_job_fixture;
 
 select * from finish();
 rollback;

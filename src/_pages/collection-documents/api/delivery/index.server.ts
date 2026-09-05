@@ -1,6 +1,7 @@
 import "server-only";
 
-export { listCollectionDocuments, createDocumentArtifactDownload, consumeDocumentShare, createConsumedShareDownload } from "./queries.server";
+export { listCollectionDocuments, createDocumentArtifactDownload, inspectDocumentShare, consumeDocumentShare, createConsumedShareDownload } from "./queries.server";
+export { retryDocumentJob } from "./retry.server";
 export { createDocumentShare, revokeDocumentShare, reviseCollectionDocument, createDocumentRevision } from "./shares.server";
 export { queueDocumentShareEmail } from "./email.server";
 export { isWorkerRequestAuthorized, runDocumentWorkerBatch, processQueuedDocumentRenders } from "./worker.server";

@@ -48,6 +48,38 @@ describe("OfflinePendingPanel", () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
+  it("closes the panel without discarding when Fechar is pressed", () => {
+    const onRetry = vi.fn();
+    const onDiscard = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <OfflinePendingPanel drafts={[draft]} busy={false} onRetry={onRetry} onDiscard={onDiscard} onClose={onClose} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.closePanel }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onRetry).not.toHaveBeenCalled();
+    expect(onDiscard).not.toHaveBeenCalled();
+  });
+
+  it("shows the busy retry label and disables the button", () => {
+    render(<OfflinePendingPanel drafts={[draft]} busy={true} onRetry={() => undefined} onDiscard={() => undefined} />);
+    const retryButton = screen.getByRole("button", { name: offlineCopy.retryBusy });
+    expect(retryButton).toBeDisabled();
+  });
+
+  it("shows a retry result after a failed attempt", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[draft]}
+        busy={false}
+        retryResult="Os dados do emissor da guia estão incompletos. Ajuste nas configurações."
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByText("Os dados do emissor da guia estão incompletos. Ajuste nas configurações.")).toBeInTheDocument();
+  });
+
   it("discards the selected draft, not the first in the list", () => {
     const older = {
       ...draft,

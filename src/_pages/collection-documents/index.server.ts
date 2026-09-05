@@ -11,8 +11,12 @@ import { DocumentViewerPage } from "./ui/document-viewer-page";
 export { verifyCollectionDocument } from "./api/public/verification";
 
 export async function PublicVerificationRoute({ token }: Readonly<{ token: string }>) {
-  const verification = await verifyCollectionDocument(token);
-  return createElement(PublicVerificationPage, { verification });
+  try {
+    const verification = await verifyCollectionDocument(token);
+    return createElement(PublicVerificationPage, { verification });
+  } catch {
+    return createElement(PublicVerificationPage, { verification: null });
+  }
 }
 
 export async function CollectionDocumentsRoute({ collectionId }: Readonly<{ collectionId: string }>) {
@@ -30,5 +34,10 @@ export async function CollectionDocumentViewerRoute({
   const documents = await listCollectionDocuments(collectionId);
   const document = documents.find((item) => item.id === documentId);
   const hasPdf = document?.artifacts.some((artifact) => artifact.type === "pdf") ?? false;
-  return createElement(DocumentViewerPage, { collectionId, documentId, hasPdf });
+  return createElement(DocumentViewerPage, {
+    collectionId,
+    documentId,
+    hasPdf,
+    pdfJobStatus: document?.pdfJobStatus,
+  });
 }

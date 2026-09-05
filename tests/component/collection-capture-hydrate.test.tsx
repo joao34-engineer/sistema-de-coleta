@@ -22,6 +22,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/_pages/collection-drafts/api/actions", () => ({
   fetchDraftWithItemsAction: (id: string) => fetchDraftWithItemsAction(id),
+  collectionExistsAction: async () => false,
 }));
 
 vi.mock("@/app/actions/draft-flow.actions", () => ({

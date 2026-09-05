@@ -52,6 +52,12 @@ describe("company settings mapper", () => {
       updatedAt: "2026-08-14T00:00:00.000Z",
     });
   });
+
+  it("reports complete only when setup_complete and an active issuer profile exist", () => {
+    const completeRow = { ...row, setup_complete: true };
+    expect(mapCompanySettingsRow(completeRow, "MJT", false).setupStatus).toBe("pending");
+    expect(mapCompanySettingsRow(completeRow, "MJT", true).setupStatus).toBe("complete");
+  });
 });
 
 describe("issuer profile settings", () => {
@@ -71,5 +77,37 @@ describe("issuer profile settings", () => {
       p_city: "São Paulo", p_state_code: "SP", p_postal_code: "01001000", p_receipt_legal_text: "Texto do recibo", p_signer_name: "João Marcelo", p_signer_title: "Administrador",
       p_logo_asset_id: "66666666-6666-4666-8666-666666666666",
     });
+  });
+
+  it("rejects phone shorter than ten characters", () => {
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "04252011000110", phone: "123456789", street: "Rua MJT", streetNumber: "10", complement: null,
+      district: "Centro", city: "São Paulo", stateCode: "SP", postalCode: "01001000", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toBeNull();
+  });
+
+  it("rejects phone longer than thirty characters", () => {
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "04252011000110", phone: "1".repeat(31), street: "Rua MJT", streetNumber: "10", complement: null,
+      district: "Centro", city: "São Paulo", stateCode: "SP", postalCode: "01001000", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toBeNull();
+  });
+
+  it("rejects invalid tax id shape", () => {
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "0425201100011", phone: "11999999999", street: "Rua MJT", streetNumber: "10", complement: null,
+      district: "Centro", city: "São Paulo", stateCode: "SP", postalCode: "01001000", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toBeNull();
+  });
+
+  it("rejects invalid UF or CEP", () => {
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "04252011000110", phone: "11999999999", street: "Rua MJT", streetNumber: "10", complement: null,
+      district: "Centro", city: "São Paulo", stateCode: "SPP", postalCode: "01001000", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toBeNull();
+    expect(toIssuerSettingsRpcInput({
+      legalName: "MJT Serviços Ltda.", taxId: "04252011000110", phone: "11999999999", street: "Rua MJT", streetNumber: "10", complement: null,
+      district: "Centro", city: "São Paulo", stateCode: "SP", postalCode: "0100100", receiptLegalText: "Texto do recibo", signerName: "João Marcelo", signerTitle: "Administrador",
+    }, "66666666-6666-4666-8666-666666666666")).toBeNull();
   });
 });

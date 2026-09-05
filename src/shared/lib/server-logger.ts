@@ -9,10 +9,17 @@ type TransactionFailure = Readonly<{
   code: string;
   actorId: string | null;
   status: number;
+  databaseCode?: string;
 }>;
 
 const requestIdPattern = /^[A-Za-z0-9._:-]{1,128}$/;
+const sqlStatePattern = /^[0-9A-Z]{5}$/;
 const actorIdProperty = "actorId";
+
+export function sanitizeDatabaseCode(code: string | undefined): string | undefined {
+  if (code === undefined || !sqlStatePattern.test(code)) return undefined;
+  return code;
+}
 
 export function getRequestId(request?: Request): string {
   const candidate = request?.headers.get("x-request-id")?.trim();
@@ -39,6 +46,7 @@ export function actorIdFromUnknown(error: unknown): string | null {
 
 export function logTransactionFailure(event: TransactionFailure): void {
   // Deliberately build an allow-listed payload. Never pass the original error or request body here.
+  const databaseCode = sanitizeDatabaseCode(event.databaseCode);
   const safeEvent = {
     event: "transaction_failure" as const,
     requestId: event.requestId,
@@ -46,6 +54,7 @@ export function logTransactionFailure(event: TransactionFailure): void {
     code: event.code,
     status: event.status,
     actor: pseudonymizeActor(event.actorId),
+    ...(databaseCode === undefined ? {} : { databaseCode }),
   };
   try {
     console.error(JSON.stringify(safeEvent));
