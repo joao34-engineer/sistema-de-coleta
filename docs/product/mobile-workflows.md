@@ -14,8 +14,8 @@ O coletor deve concluir uma guia com uma mao, em poucos minutos e com pouca digi
 6. Anexar fotos, se houver avaria, identificacao ou exigencia do cliente.
 7. Revisar o resumo com o responsavel no local da coleta.
 8. Registrar o nome, o aceite e a assinatura do signatario; por padrao, usar o responsavel no local, permitindo informar outra pessoa quando necessario.
-9. Finalizar; o sistema sincroniza, atribui numero e cria a guia.
-10. Compartilhar pelo WhatsApp/e-mail ou encerrar.
+9. Finalizar; o sistema sincroniza, atribui numero e abre Documentos. Enquanto o PDF nao existir, a tela mostra “Gerando o PDF da guia…”.
+10. Depois do artefato: baixar, criar link seguro e compartilhar pelo WhatsApp (`/d/{token}`) ou encerrar.
 
 ## Entrada na oficina propria
 
@@ -41,7 +41,7 @@ Se apenas parte dos itens estiver pronta, a entrega parcial e permitida. Os iten
 - Itens em lista editavel, sem limite artificial e com remocao confirmada.
 - Assinatura em area grande, com limpar/refazer antes da confirmacao.
 - Estado de conexao e quantidade de rascunhos pendentes sempre visiveis.
-- Apos finalizacao, bloquear alteracao silenciosa do conteudo e mostrar o PDF/compartilhamento.
+- Apos finalizacao, bloquear alteracao silenciosa do conteudo e ir para Documentos (pending honesto, depois PDF/compartilhamento).
 
 ## Consulta interna
 

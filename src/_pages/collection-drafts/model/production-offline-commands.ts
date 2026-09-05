@@ -1,7 +1,9 @@
 import {
   createCustomerAction,
   createDraftAction,
+  discardDraftAction,
   finalizeCollectionAction,
+  getCustomerAction,
   saveCollectionSignatureAction,
   searchCustomersAction,
 } from "@/app/actions/draft-flow.actions";
@@ -12,6 +14,7 @@ import {
   removeItemFromDraftAction,
   updateItemInDraftAction,
 } from "../api/actions";
+import { cadastralAddressForSync } from "./cadastral-address-for-sync";
 import type { OfflineSyncCommands } from "./offline-commands";
 
 function failure(error: string): { ok: false; error: string } {
@@ -20,13 +23,12 @@ function failure(error: string): { ok: false; error: string } {
 
 export const productionOfflineCommands: OfflineSyncCommands = {
   async createCustomer(input) {
+    const address = cadastralAddressForSync(input);
     const result = await createCustomerAction({
       displayName: input.displayName,
       taxId: input.taxId,
       phone: input.phone,
-      ...(input.street
-        ? { address: { street: input.street, city: "São Paulo", stateCode: "SP" } }
-        : {}),
+      ...(address === null ? {} : { address }),
     });
     if (!result.ok) {
       return failure(result.error);
@@ -120,6 +122,31 @@ export const productionOfflineCommands: OfflineSyncCommands = {
       items: result.items,
       hasSignature: result.hasSignature,
     };
+  },
+  async fetchCustomer(customerId) {
+    const result = await getCustomerAction(customerId);
+    if (!result.ok) {
+      return failure(result.error);
+    }
+    return {
+      ok: true,
+      customer: {
+        id: result.customer.id,
+        displayName: result.customer.displayName,
+        taxId: result.customer.taxId,
+        phone: result.customer.phone,
+        street: result.customer.address?.street ?? null,
+        city: result.customer.address?.city ?? null,
+        stateCode: result.customer.address?.stateCode ?? null,
+      },
+    };
+  },
+  async discardDraft(input) {
+    const result = await discardDraftAction(input);
+    if (!result.ok) {
+      return failure(result.error);
+    }
+    return { ok: true };
   },
   async finalize(input) {
     const result = await finalizeCollectionAction(input);

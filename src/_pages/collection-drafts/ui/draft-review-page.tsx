@@ -7,7 +7,10 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { fetchDraftWithItemsAction } from "../api/actions";
+import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
+
+const MISSING_COLLECTION_LOCATION_MSG = "Informe o local da coleta antes de continuar.";
 
 type Props = Readonly<{
   draftId: string;
@@ -110,22 +113,39 @@ export function DraftReviewPage({ draftId, initialDraft, initialItems }: Props) 
         </div>
 
         {/* Card LOCAL DA COLETA (Node 13:68) */}
-        <div className="flex flex-col gap-1 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
+        <div
+          className={`flex flex-col gap-1 rounded-[16px] border p-4 shadow-xs ${
+            hasRequiredCollectionLocation(draft.collectionLocation)
+              ? "border-[var(--color-border)] bg-[var(--color-card-bg)]"
+              : "border-[#fca5a5] bg-[#fdf2f1]"
+          }`}
+        >
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
             LOCAL DA COLETA
           </span>
-          <p className="text-[13px] font-normal text-[var(--color-text-primary)]">
-            {draft.collectionLocation || "Local da coleta não informado"}
-          </p>
+          {hasRequiredCollectionLocation(draft.collectionLocation) ? (
+            <p className="text-[13px] font-normal text-[var(--color-text-primary)]">
+              {draft.collectionLocation}
+            </p>
+          ) : (
+            <p className="text-[13px] font-semibold text-[#ba5b52]">
+              {MISSING_COLLECTION_LOCATION_MSG}
+            </p>
+          )}
         </div>
 
         {/* Botão Primário Emitir guia e coletar assinatura (Node 13:68) */}
         <Button
           type="button"
           variant="primary"
-          onClick={() => router.push(`/coletas/${draftId}/assinatura` as Route)}
+          onClick={() => {
+            if (!hasRequiredCollectionLocation(draft.collectionLocation)) {
+              return;
+            }
+            router.push(`/coletas/${draftId}/assinatura` as Route);
+          }}
           className="mt-4 h-[52px] rounded-[12px] text-[14px] font-semibold"
-          disabled={items.length === 0}
+          disabled={items.length === 0 || !hasRequiredCollectionLocation(draft.collectionLocation)}
         >
           Emitir guia e coletar assinatura
         </Button>

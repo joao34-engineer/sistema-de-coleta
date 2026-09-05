@@ -18,16 +18,23 @@ export const mutationKindSchema = z.enum([
   "remove_item",
   "save_signature",
   "finalize",
+  "discard_draft",
 ]);
 export const mutationStatusSchema = z.enum(["pending", "in_flight", "done", "failed"]);
 export const draftSyncStatusSchema = z.enum(["local", "queued", "syncing", "synced", "failed"]);
+
+const cadastralFields = {
+  street: z.string().max(160).nullable(),
+  city: z.string().max(100).nullable().optional(),
+  stateCode: z.string().regex(/^[A-Z]{2}$/).nullable().optional(),
+};
 
 const newCustomerSchema = z.object({
   mode: z.literal("new"),
   displayName: z.string().min(1).max(160),
   taxId: z.string().regex(/^\d{11}$|^\d{14}$/),
   phone: z.string().min(8).max(20),
-  street: z.string().max(160).nullable(),
+  ...cadastralFields,
 });
 
 const existingCustomerSchema = z.object({
@@ -36,7 +43,7 @@ const existingCustomerSchema = z.object({
   displayName: z.string().min(1).max(160),
   taxId: z.string().regex(/^\d{11}$|^\d{14}$/),
   phone: z.string().min(8).max(20),
-  street: z.string().max(160).nullable(),
+  ...cadastralFields,
 });
 
 export const offlineCustomerSchema = z.discriminatedUnion("mode", [newCustomerSchema, existingCustomerSchema]);
@@ -87,6 +94,12 @@ export const createCustomerPayloadSchema = z.object({
   taxId: z.string().regex(/^\d{11}$|^\d{14}$/),
   phone: z.string().min(8),
   street: z.string().max(160).nullable(),
+  city: z.string().max(100).nullable().optional(),
+  stateCode: z.string().regex(/^[A-Z]{2}$/).nullable().optional(),
+});
+
+export const discardDraftPayloadSchema = z.object({
+  expectedVersion: z.number().int().positive().optional(),
 });
 
 export const createDraftPayloadSchema = z.object({

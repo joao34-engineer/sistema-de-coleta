@@ -20,7 +20,7 @@ Uma coleta finalizada é evidência operacional imutável. O sistema precisa pro
 
 5. **Links privados.** `document_shares` guarda somente hash SHA-256 do token aleatório. O token bruto aparece uma única vez na criação. Links expiram por padrão em sete dias, têm limite de downloads e são revogáveis; o contador é incrementado atomicamente no endpoint de download. A página não consome o limite ao ser atualizada.
 
-6. **Entrega por e-mail.** `share_deliveries` registra canal, destinatário mascarado, resultado e referência do provedor. A chave `Idempotency-Key` participa da referência persistida e do request ao Resend. O adaptador é server-only, valida `RESEND_API_KEY`/`DOCUMENT_FROM_EMAIL` quando o envio real é habilitado e permanece dry-run por padrão; testes nunca fazem rede.
+6. **Entrega por e-mail.** `share_deliveries` registra canal, destinatário mascarado, resultado e referência do provedor. A chave `Idempotency-Key` participa da referência persistida e do request ao Resend. O adaptador é server-only, valida `RESEND_API_KEY`/`DOCUMENT_FROM_EMAIL` quando o envio real é habilitado e permanece dry-run por padrão; testes nunca fazem rede. **V1 (eixo 1.6):** com `DOCUMENT_EMAIL_SEND_ENABLED=true` o adaptador envia de fato via Resend; sem a flag (ou em `NODE_ENV=test`) continua dry-run. O corpo do e-mail aponta somente para `/d/{token}`.
 
 7. **Revisão append-only.** A RPC `revise_collection_document` recebe `sourceDocumentId`, `expectedVersion`, patch tipado, motivo, tipo e chave de idempotência. Ela valida a versão corrente, herda o snapshot protegido, cria nova versão/hash/token, registra `document_revisions` e agenda novo job de PDF. A versão anterior não é alterada nem removida.
 
@@ -32,8 +32,9 @@ Uma coleta finalizada é evidência operacional imutável. O sistema precisa pro
 - Reenvio de e-mail não duplica a intenção quando a mesma chave é repetida.
 - Correções aumentam a versão e exigem nova renderização, mantendo a cadeia documental.
 - A limpeza de intents expiradas é uma operação separada e nunca trata `document_artifacts` como fila mutável.
+- **V1 operacional:** o happy path é o kick in-process (`after()` + DAL) depois de finalize/cancel/reopen/revise. O cron em `vercel.json` chama `GET /api/internal/document-jobs/run` a cada 5 minutos (auth via `CRON_SECRET` Bearer ou `DOCUMENT_WORKER_SECRET`) só como retry. Sem artefato a UI declara “Gerando o PDF…” e depois um estado honesto. Compartilhamento WhatsApp/`navigator.share` usa apenas `/d/{token}`.
 
 ## Fora do escopo
 
-Aplicação remota de migrations, envio real de e-mail por padrão, alteração de documentos emitidos, exclusão de evidências e cache público de PDFs/links.
+Aplicação remota de migrations, envio real de e-mail por padrão (continua dry-run até flag explícita), alteração de documentos emitidos, exclusão de evidências e cache público de PDFs/links. Consumo de share antes da URL assinada (B28) permanece na Fase 4.
 

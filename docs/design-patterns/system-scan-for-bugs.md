@@ -169,6 +169,8 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 
 ### Passo 1.6 — Worker de documento + decisão V1 de e-mail/share
 
+> Stale vs código: finalize/cancel/reopen/revise disparam `processQueuedDocumentRenders` via `after()` no mesmo processo; Documentos tem `PdfPendingStatus` + WhatsApp/`navigator.share` em `/d/{token}`. Cron/curl continuam só retry. Não reabrir este passo como autorização de implementação.
+
 | | |
 | :--- | :--- |
 | **Severidade** | crítica (PDF) / produto (envio) |
@@ -180,7 +182,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 
 ## Fase 2 — Offline e wizard (resto)
 
-### Passo 2.1 — Recuperar mutações `in_flight`
+### Passo 2.1 — Recuperar mutações `in_flight` — **feito**
 
 | | |
 | :--- | :--- |
@@ -188,7 +190,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `drainCollectionQueue` (só `pending`/`failed`); `listPendingMutations` inclui `in_flight` |
 | **Quebra** | Crash no meio do sync. Painel conta pendente; drain nunca reprocessa. Draft eterno. No boot: `in_flight` → `pending`. |
 
-### Passo 2.2 — Finalize online não mentir
+### Passo 2.2 — Finalize online não mentir — **feito**
 
 | | |
 | :--- | :--- |
@@ -196,7 +198,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `collection-capture-page.tsx` após `drainAllPending` |
 | **Quebra** | Se o draft local sobra (sync falhou), ainda mostra “Salvo neste aparelho”. Mostrar erro + retry. |
 
-### Passo 2.3 — Lock de drain sem `navigator.locks`
+### Passo 2.3 — Lock de drain sem `navigator.locks` — **feito**
 
 | | |
 | :--- | :--- |
@@ -204,7 +206,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `fallbackDrainLock` retorna se `busy` |
 | **Quebra** | Drains sobrepostos (wizard + banner + save) são no-op. Enfileirar, não descartar. |
 
-### Passo 2.4 — Banner pendente no evento `online`
+### Passo 2.4 — Banner pendente no evento `online` — **feito**
 
 | | |
 | :--- | :--- |
@@ -212,7 +214,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `offline-pending-banner.tsx` |
 | **Quebra** | Drain só no mount / botão. Reconectar em `/coletas` ou dashboard não sincroniza. |
 
-### Passo 2.5 — Descartar e hidratar
+### Passo 2.5 — Descartar e hidratar — **feito**
 
 | | |
 | :--- | :--- |
@@ -220,7 +222,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `offline-pending-panel.tsx` (`onDiscard(first.id)`); `hydrateServerDraft` / `reload` |
 | **Quebra** | Descartar sempre o primeiro rascunho. Hidratar servidor inventa telefone `11000000000` e CPF `00000000000`. Discard local deixa rascunho órfão no servidor. |
 
-### Passo 2.6 — Endereço SP/SP no sync
+### Passo 2.6 — Endereço SP/SP no sync — **feito**
 
 | | |
 | :--- | :--- |
@@ -228,7 +230,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `production-offline-commands.ts` |
 | **Quebra** | Street sozinha vira cidade São Paulo / UF SP. |
 
-### Passo 2.7 — Pad de assinatura
+### Passo 2.7 — Pad de assinatura — **feito**
 
 | | |
 | :--- | :--- |
@@ -368,7 +370,7 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 | :--- | :--- |
 | 0 | Check-in, orçamento, rejeição, progresso, cancelar oficina e 2ª entrega parcial no SQL; remoto confirmado (0.9) — **feito** 29/08/2026 |
 | 1 | Nova coleta: local obrigatório, URL/Back, finalize com número; fila classifica códigos; hub CTAs; PDF nasce após worker (ou estado “PDF pendente” honesto) |
-| 2 | Crash no sync + retry conclui; finalize online não mente; reconnect no banner |
+| 2 | Crash no sync + retry conclui; finalize online não mente; reconnect no banner — **feito** 05/09/2026 |
 | 3 | Admin entra; não-admin sai; env documentado no deploy |
 | 4 | Share `/d/{token}` não queima cota à toa; verify não 500; issuer incompleto com mensagem clara |
 | 5 | Sob demanda; um eixo por PR |
@@ -396,11 +398,11 @@ Validação de código (quando implementar): `npm run check` em `sistema-coleta`
 | B13 | 1.4 | Códigos na fila offline |
 | B14 | 1.5 | Cancelar / Reabrir / rejected |
 | B15 | 1.6 | Worker + e-mail/share V1 |
-| B16 | 2.1 | `in_flight` |
-| B17 | 2.2 | Finalize online mente |
-| B18 | 2.3 | fallbackDrainLock |
-| B19 | 2.4 | Banner sem `online` |
-| B20–B22 | 2.5–2.7 | Discard / hydrate / SP / pad |
+| B16 | 2.1 | `in_flight` | **feito** |
+| B17 | 2.2 | Finalize online mente | **feito** |
+| B18 | 2.3 | fallbackDrainLock | **feito** |
+| B19 | 2.4 | Banner sem `online` | **feito** |
+| B20–B22 | 2.5–2.7 | Discard / hydrate / SP / pad | **feito** |
 | B23–B27 | 3.1–3.5 | Auth |
 | B28–B32 | 4.1–4.5 | Documento resto |
 | B33+ | 5.x | Polimento |

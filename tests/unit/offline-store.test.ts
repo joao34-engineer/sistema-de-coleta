@@ -64,6 +64,27 @@ describe("offline draft store", () => {
     expect(mutations.map((row) => row.kind)).toEqual(["create_customer", "create_draft", "patch_draft"]);
   });
 
+  it("keeps customer.street and collectionLocation distinct", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    const created = await createLocalDraft({
+      store,
+      actor,
+      customer: {
+        mode: "new",
+        displayName: "Oficina Norte",
+        taxId: "52998224725",
+        phone: "11999999999",
+        street: "Av. Cadastral, 100",
+      },
+      collectionLocation: "Galpão da coleta — portão 2",
+    });
+
+    const mine = await store.getDraft(created.id, actor.userId);
+    expect(mine?.customer.street).toBe("Av. Cadastral, 100");
+    expect(mine?.collectionLocation).toBe("Galpão da coleta — portão 2");
+    expect(mine?.customer.street).not.toBe(mine?.collectionLocation);
+  });
+
   it("keeps a stable finalize idempotency key", async () => {
     const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
     const created = await createLocalDraft({

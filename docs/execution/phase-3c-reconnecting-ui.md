@@ -458,7 +458,10 @@ Criar o componente que renderiza os botões contextuais no hub de detalhe, basea
    - `approved` ou `in_service` → botão "Atualizar progresso" → link para `/coletas/[id]/oficina/progresso`
    - `ready` → botão "Registrar NF-e" → link para `/coletas/[id]/oficina/nfe`
    - `invoiced` ou `partial_delivery` → botão "Entregar ao cliente" → link para `/coletas/[id]/oficina/entrega`
-   - `rejected`, `reopened`, `canceled` → botão "Reabrir" → link para `/coletas/[id]/oficina/reabrir`
+   - `canceled` → botão "Reabrir" → link para `/coletas/[id]/oficina/reabrir`
+   - `rejected` → primário "Novo orçamento" → `/oficina/orcamento`; secundário "Cancelar" → `/oficina/cancelar`
+   - estados ativos (`collected` … `partial_delivery`) → CTA primário existente + secundário "Cancelar" → `/oficina/cancelar`
+   - `reopened` → inalcançável (RPC não grava); sem CTA. `delivered` / `draft` → sem CTA
 
 ### Componentes auxiliares (a criar)
 

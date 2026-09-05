@@ -4,6 +4,7 @@ import type { CaptureActor } from "./capture-actor";
 import {
   createCustomerPayloadSchema,
   createDraftPayloadSchema,
+  discardDraftPayloadSchema,
   finalizePayloadSchema,
   itemPayloadSchema,
   patchDraftPayloadSchema,
@@ -14,26 +15,32 @@ import {
 
 const STALE_RETRY_ONCE = "stale_version";
 const AUTH_ERROR = "authentication_required";
+const SYNC_INTERRUPTED = "sync_interrupted";
 
 export type DrainLock = {
   request(name: string, callback: () => Promise<void>): Promise<void>;
 };
 
-const moduleLockState = { busy: false };
+export function createFallbackDrainLock(): DrainLock {
+  const queue = { tail: Promise.resolve() };
+  return {
+    async request(_name, callback) {
+      const previous = queue.tail;
+      let release = () => {};
+      queue.tail = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      try {
+        await previous;
+        await callback();
+      } finally {
+        release();
+      }
+    },
+  };
+}
 
-export const fallbackDrainLock: DrainLock = {
-  async request(_name, callback) {
-    if (moduleLockState.busy) {
-      return;
-    }
-    moduleLockState.busy = true;
-    try {
-      await callback();
-    } finally {
-      moduleLockState.busy = false;
-    }
-  },
-};
+export const fallbackDrainLock = createFallbackDrainLock();
 
 export function browserDrainLock(): DrainLock {
   if (typeof navigator === "undefined" || !("locks" in navigator) || navigator.locks === undefined) {
@@ -99,18 +106,27 @@ async function refreshVersion(
   return next;
 }
 
+export type DrainCollectionResult = Readonly<{
+  status: "completed" | "paused" | "failed";
+  officialKept: boolean;
+}>;
+
+export type DrainPendingResult = Readonly<{
+  officialKept: boolean;
+}>;
+
 export async function drainCollectionQueue(input: {
   store: OfflineDraftStore;
   commands: OfflineSyncCommands;
   actor: CaptureActor;
   collectionId: string;
   staleRetry?: boolean;
-}): Promise<"completed" | "paused" | "failed"> {
+}): Promise<DrainCollectionResult> {
   const { store, commands, actor, collectionId } = input;
   const staleRetry = input.staleRetry ?? false;
   let draft = await store.getDraft(collectionId, actor.userId);
   if (draft === null) {
-    return "completed";
+    return { status: "completed", officialKept: false };
   }
 
   const mutations = (await store.listMutations(collectionId, actor.userId)).filter(
@@ -122,7 +138,7 @@ export async function drainCollectionQueue(input: {
   for (const mutation of mutations) {
     draft = await store.getDraft(collectionId, actor.userId);
     if (draft === null) {
-      return "completed";
+      return { status: "completed", officialKept: false };
     }
 
     const inFlight: OfflineMutationRecord = { ...mutation, status: "in_flight" };
@@ -131,12 +147,12 @@ export async function drainCollectionQueue(input: {
     const outcome = await replayMutation(store, commands, draft, inFlight);
     if (outcome.kind === "auth") {
       await markFailed(store, inFlight, draft, AUTH_ERROR);
-      return "paused";
+      return { status: "paused", officialKept: false };
     }
     if (outcome.kind === "stale") {
       if (staleRetry) {
         await markFailed(store, inFlight, draft, STALE_RETRY_ONCE);
-        return "failed";
+        return { status: "failed", officialKept: false };
       }
       await refreshVersion(store, commands, draft);
       await store.putMutation({ ...inFlight, status: "pending" });
@@ -144,11 +160,11 @@ export async function drainCollectionQueue(input: {
     }
     if (outcome.kind === "error") {
       await markFailed(store, inFlight, draft, outcome.error);
-      return "failed";
+      return { status: "failed", officialKept: false };
     }
     if (outcome.kind === "purged") {
       await store.deleteDraftTree(collectionId, actor.userId);
-      return "completed";
+      return { status: "completed", officialKept: outcome.reason === "official_kept" };
     }
     await markDone(store, inFlight);
     if (outcome.draft) {
@@ -160,10 +176,32 @@ export async function drainCollectionQueue(input: {
     (row) => row.status === "pending" || row.status === "failed" || row.status === "in_flight",
   );
   const latest = await store.getDraft(collectionId, actor.userId);
+  const interrupted = leftover.filter((row) => row.status === "in_flight");
+  for (const row of interrupted) {
+    await store.putMutation({ ...row, status: "pending" });
+  }
   if (latest && leftover.length === 0) {
     await store.putDraft({ ...latest, syncStatus: "synced", lastError: null, updatedAt: store.nowIso() });
+  } else if (latest && interrupted.length > 0) {
+    await store.putDraft({
+      ...latest,
+      syncStatus: "failed",
+      lastError: SYNC_INTERRUPTED,
+      updatedAt: store.nowIso(),
+    });
   }
-  return leftover.length === 0 ? "completed" : "failed";
+  return leftover.length === 0
+    ? { status: "completed", officialKept: false }
+    : { status: "failed", officialKept: false };
+}
+
+export async function recoverInFlightMutations(store: OfflineDraftStore, userId: string): Promise<void> {
+  const pending = await store.listPendingMutations(userId);
+  for (const row of pending) {
+    if (row.status === "in_flight") {
+      await store.putMutation({ ...row, status: "pending" });
+    }
+  }
 }
 
 async function replayMutation(
@@ -173,7 +211,7 @@ async function replayMutation(
   mutation: OfflineMutationRecord,
 ): Promise<
   | { kind: "ok"; draft?: OfflineDraftRecord }
-  | { kind: "purged" }
+  | { kind: "purged"; reason?: "official_kept" }
   | { kind: "stale" }
   | { kind: "auth" }
   | { kind: "error"; error: string }
@@ -182,7 +220,14 @@ async function replayMutation(
 
   if (mutation.kind === "create_customer") {
     const payload = createCustomerPayloadSchema.parse(mutation.payload);
-    const result = await commands.createCustomer(payload);
+    const result = await commands.createCustomer({
+      displayName: payload.displayName,
+      taxId: payload.taxId,
+      phone: payload.phone,
+      street: payload.street,
+      ...(payload.city === undefined ? {} : { city: payload.city }),
+      ...(payload.stateCode === undefined ? {} : { stateCode: payload.stateCode }),
+    });
     if (!isSuccess(result)) {
       if (result.error === "duplicate_tax_id") {
         const found = await commands.searchCustomers(payload.taxId);
@@ -307,6 +352,24 @@ async function replayMutation(
     return { kind: "ok", draft: { ...draft, hasServerSignature: true, serverRowVersion: result.rowVersion } };
   }
 
+  if (mutation.kind === "discard_draft") {
+    discardDraftPayloadSchema.parse(mutation.payload);
+    if (draft.serverRowVersion === null) {
+      return { kind: "purged" };
+    }
+    const result = await commands.discardDraft({
+      collectionId: draft.id,
+      expectedVersion: draft.serverRowVersion,
+    });
+    if (!isSuccess(result)) {
+      if (result.error === "collection_not_draft" || result.error === "not_found") {
+        return { kind: "purged", reason: "official_kept" };
+      }
+      return classify(result.error);
+    }
+    return { kind: "purged" };
+  }
+
   if (mutation.kind === "finalize") {
     const payload = finalizePayloadSchema.parse(mutation.payload);
     const result = await commands.finalize({
@@ -338,20 +401,26 @@ export async function drainAllPending(input: {
   commands: OfflineSyncCommands;
   actor: CaptureActor;
   lock?: DrainLock;
-}): Promise<void> {
+}): Promise<DrainPendingResult> {
   const lock = input.lock ?? fallbackDrainLock;
+  let officialKept = false;
   await lock.request("mjt-offline-drain", async () => {
+    await recoverInFlightMutations(input.store, input.actor.userId);
     await input.store.refreshSnapshot(input.actor.userId, true);
     const pending = await input.store.listPendingMutations(input.actor.userId);
     const collectionIds = [...new Set(pending.map((row) => row.collectionId))];
     for (const collectionId of collectionIds) {
-      await drainCollectionQueue({
+      const drained = await drainCollectionQueue({
         store: input.store,
         commands: input.commands,
         actor: input.actor,
         collectionId,
       });
+      if (drained.officialKept) {
+        officialKept = true;
+      }
     }
     await input.store.refreshSnapshot(input.actor.userId, false);
   });
+  return { officialKept };
 }

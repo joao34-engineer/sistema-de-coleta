@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError, requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
 import { getRequestId, logTransactionFailure } from "@/shared/lib/server-logger";
+import { toActionFailureCode } from "@/shared/lib/action-failure-code";
 import { validateEvidenceFile } from "@/shared/lib/file-validation";
 import {
   collectionIdSchema,
@@ -200,7 +201,13 @@ export async function createDraft(request: Request): Promise<NextResponse> {
     if (existing.error) return failureResponse(request, "create_draft", "draft_query_failed", administrator.userId);
     const previous = mapDraft(existing.data);
     if (previous) return respond(200, { ok: true, data: { draft: previous, idempotent: true } });
-    const { data, error } = await supabase.from("collections").insert({ id: input.data.id, organization_id: administrator.organizationId, customer_id: input.data.customerId ?? null, status: "draft", row_version: 1, created_by: administrator.userId, updated_by: administrator.userId }).select(draftColumns).maybeSingle();
+    // `row_version` is not in the authenticated INSERT grant; the column default is 1 and RLS requires that default.
+    const { data, error } = await supabase.from("collections").insert({ id: input.data.id, organization_id: administrator.organizationId, customer_id: input.data.customerId ?? null, status: "draft", created_by: administrator.userId, updated_by: administrator.userId }).select(draftColumns).maybeSingle();
+    if (error && databaseErrorCode(error) === "23505") {
+      const replay = await supabase.from("collections").select(draftColumns).eq("organization_id", administrator.organizationId).eq("id", input.data.id).maybeSingle();
+      const replayed = replay.error ? null : mapDraft(replay.data);
+      if (replayed) return respond(200, { ok: true, data: { draft: replayed, idempotent: true } });
+    }
     const draft = mapDraft(data);
     if (error || !draft) return respond(409, { ok: false, code: "draft_create_conflict" });
     await supabase.from("collection_events").insert({ organization_id: administrator.organizationId, collection_id: draft.id, actor_user_id: administrator.userId, event_type: "collection.draft.created", metadata: {} });
@@ -401,5 +408,65 @@ export async function uploadEvidence(request: Request, collectionId: string): Pr
       logTransactionFailure({ requestId: getRequestId(request), operation: "evidence_post_commit_response", code: "evidence_post_commit_response_failed", actorId, status: 500 });
     }
     return errorResponse(error, request, "upload_evidence", actorId);
+  }
+}
+
+const discardResultSchema = z.object({
+  ok: z.literal(true),
+  collectionId: z.string().uuid(),
+});
+
+function mapDiscardRpcError(error: unknown): string {
+  const code = databaseErrorCode(error);
+  const message = databaseErrorMessage(error);
+  if (code === "40001" || message === "stale_version") {
+    return "stale_version";
+  }
+  if (code === "42501") {
+    return "forbidden";
+  }
+  if (code === "P0001" && message === "collection_not_draft") {
+    return "collection_not_draft";
+  }
+  if (code === "P0001" && message === "invalid_discard_request") {
+    return "invalid_discard_request";
+  }
+  if (code === "P0001" && message === "not_found") {
+    return "not_found";
+  }
+  return toActionFailureCode(error);
+}
+
+export async function discardCollectionDraft(
+  collectionId: string,
+  expectedVersion: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const parsedId = collectionIdSchema.safeParse(collectionId);
+  if (!parsedId.success || !Number.isInteger(expectedVersion) || expectedVersion < 1) {
+    return { ok: false, error: "validation_error" };
+  }
+  try {
+    await requireAuthenticatedAdministrator();
+    const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
+    const { data, error } = await supabase.rpc("discard_collection_draft", {
+      p_collection_id: parsedId.data,
+      p_expected_version: expectedVersion,
+    });
+    if (error) {
+      return { ok: false, error: mapDiscardRpcError(error) };
+    }
+    const parsed = discardResultSchema.safeParse(data);
+    if (!parsed.success) {
+      return { ok: false, error: "operation_failed" };
+    }
+    return { ok: true };
+  } catch (error: unknown) {
+    if (error instanceof AuthenticationRequiredError) {
+      return { ok: false, error: "authentication_required" };
+    }
+    if (error instanceof AdministratorAccessDeniedError) {
+      return { ok: false, error: "administrator_access_denied" };
+    }
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }

@@ -3,7 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
-import { createLifecycleSupabaseClient } from "./lifecycle-supabase";
+import { createLifecycleSupabaseClient, createLifecycleUserStorageClient } from "./lifecycle-supabase";
 import { lifecycleCommandResultSchema, signatureCommandResultSchema, type SignatureInput } from "../model/contracts";
 
 async function digestSha256(file: File): Promise<string> {
@@ -116,8 +116,24 @@ export async function saveCollectionSignature(collectionId: string, input: Signa
     if (!intent.success || !isSafeStoragePath(intent.data.storagePath)) throw new Error("upload_intent_contract_invalid");
     intentId = intent.data.intentId;
     storagePath = intent.data.storagePath;
-    const upload = await supabase.storage.from("collection-signatures").upload(storagePath, file, { contentType: "image/png", upsert: false });
-    if (upload.error) throw upload.error;
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || userData.user === null) throw new Error("authentication_required");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) throw new Error("authentication_required");
+    const pngBytes = new Uint8Array(await file.arrayBuffer());
+    const storageClient = createLifecycleUserStorageClient(accessToken);
+    const upload = await storageClient.storage.from("collection-signatures").upload(storagePath, pngBytes, {
+      contentType: "image/png",
+      upsert: false,
+    });
+    if (upload.error) {
+      const statusCode = typeof upload.error === "object" && upload.error !== null && "statusCode" in upload.error ? String(upload.error.statusCode) : "";
+      if (statusCode === "401") throw new Error("authentication_required");
+      if (statusCode === "403") throw new Error("forbidden");
+      if (statusCode === "409") throw new Error("signature_upload_conflict");
+      throw new Error("signature_upload_failed");
+    }
     const committed = await supabase.rpc("commit_collection_upload", { p_upload_intent_id: intentId, p_expected_version: input.expectedVersion });
     if (committed.error) throw committed.error;
     commitSucceeded = true;

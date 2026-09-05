@@ -9,10 +9,12 @@ export interface SignaturePadProps {
   disabled?: boolean;
 }
 
+export type SignaturePadPhase = "idle" | "drawn" | "confirmed";
+
 export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, disabled = false }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
-  const [hasSignature, setHasSignature] = React.useState(false);
+  const [phase, setPhase] = React.useState<SignaturePadPhase>("idle");
 
   const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -36,6 +38,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, dis
     const { x, y } = getCoordinates(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
+    if (phase === "confirmed") {
+      onClear?.();
+    }
+    setPhase("drawn");
     setIsDrawing(true);
   };
 
@@ -53,7 +59,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, dis
     ctx.lineJoin = "round";
     ctx.lineTo(x, y);
     ctx.stroke();
-    setHasSignature(true);
   };
 
   const stopDrawing = () => {
@@ -66,14 +71,15 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, dis
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setHasSignature(false);
+    setPhase("idle");
     onClear?.();
   };
 
   const handleConfirm = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasSignature) return;
+    if (!canvas || phase !== "drawn") return;
     const dataUrl = canvas.toDataURL("image/png");
+    setPhase("confirmed");
     onSave?.(dataUrl);
   };
 
@@ -98,17 +104,20 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, dis
           onTouchEnd={stopDrawing}
           className="h-[180px] w-full touch-none cursor-crosshair bg-white"
         />
-        {!hasSignature ? (
+        {phase === "idle" ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-[var(--color-muted)]">
             Assine com o dedo ou mouse nesta área
           </div>
         ) : null}
       </div>
+      {phase === "drawn" ? (
+        <p className="text-[12px] font-medium text-[#a36b2c]">Confirme a assinatura para emitir a guia.</p>
+      ) : null}
       <div className="flex items-center justify-between gap-3">
-        <Button variant="secondary" size="sm" type="button" onClick={handleClear} disabled={disabled || !hasSignature}>
+        <Button variant="secondary" size="sm" type="button" onClick={handleClear} disabled={disabled || phase === "idle"}>
           Limpar Assinatura
         </Button>
-        <Button variant="primary" size="sm" type="button" onClick={handleConfirm} disabled={disabled || !hasSignature}>
+        <Button variant="primary" size="sm" type="button" onClick={handleConfirm} disabled={disabled || phase !== "drawn"}>
           Confirmar Assinatura
         </Button>
       </div>

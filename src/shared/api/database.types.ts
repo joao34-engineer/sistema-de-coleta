@@ -67,6 +67,7 @@ type PhaseFunctionOverlays = {
   save_collection_signature: { Args: { p_collection_id: string; p_expected_version: number; p_signer_name: string; p_signer_tax_id: string; p_acceptance_text: string; p_storage_path: string; p_file_sha256: string; p_byte_size: number }; Returns: Json };
   finalize_collection: { Args: { p_collection_id: string; p_expected_version: number; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
   cancel_collection: { Args: { p_collection_id: string; p_expected_version: number; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
+  discard_collection_draft: { Args: { p_collection_id: string; p_expected_version: number }; Returns: Json };
   reopen_collection: { Args: { p_collection_id: string; p_expected_version: number; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
   verify_collection_document: { Args: { p_verification_token: string }; Returns: { is_authentic: boolean; official_code: string; issued_at: string; collection_status: string; organization_name: string; document_version: number }[] };
   validate_document_issuer_profile: { Args: { p_organization_id: number; p_issuer_profile_id: string }; Returns: Json };

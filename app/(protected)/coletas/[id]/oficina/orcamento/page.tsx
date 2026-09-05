@@ -1,4 +1,5 @@
 import { getBudgetItems } from "@/_pages/collection-operations/api/queries";
+import { seedBudgetItemsFromCollection } from "@/_pages/collection-operations/model/budget-seed";
 import { loadCollectionForOperation } from "../../load-operation";
 import { budgetTotalOf } from "../budget-total";
 import { TechnicalBudgetPage } from "@/_pages/collection-operations/ui/technical-budget-page";
@@ -9,17 +10,17 @@ export default async function TechnicalBudgetRoute({ params }: Readonly<{ params
   const { id } = await params;
   const [collection, budgetItems] = await Promise.all([loadCollectionForOperation(id), getBudgetItems(id)]);
 
-  const budgetItemsWithDescription = budgetItems.map((item) => ({
-    ...item,
-    itemDescription: collection.items.find((collectionItem) => collectionItem.id === item.collectionItemId)?.description ?? "Item da coleta",
-  }));
+  const budgetItemsForForm = seedBudgetItemsFromCollection({
+    collectionItems: collection.items,
+    budgetItems,
+  });
 
   return (
     <TechnicalBudgetPage
       collectionId={collection.id}
       officialCode={collection.officialCode}
-      budgetItems={budgetItemsWithDescription}
-      budgetTotal={budgetTotalOf(budgetItems)}
+      budgetItems={budgetItemsForForm}
+      budgetTotal={budgetTotalOf(budgetItemsForForm)}
       rowVersion={collection.rowVersion}
     />
   );

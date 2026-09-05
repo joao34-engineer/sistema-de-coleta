@@ -1,9 +1,13 @@
 "use server";
 
-import { createDraft } from "@/_pages/collection-drafts/api/drafts.server";
+import { createDraft, discardCollectionDraft } from "@/_pages/collection-drafts/api/drafts.server";
+import { patchDraftFieldsAction } from "@/_pages/collection-drafts/api/actions";
 import { saveCollectionSignature, finalizeCollection } from "@/_pages/collection-lifecycle/index.server";
-import { listCustomers, createCustomer } from "@/_pages/customers/index.server";
+import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
+import { listCustomers, createCustomer, loadCustomerDto } from "@/_pages/customers/index.server";
+import { toActionFailureCode } from "@/shared/lib/action-failure-code";
 import { toSafeActionError } from "@/shared/lib/action-error";
+import { getRequestId } from "@/shared/lib/server-logger";
 
 /** Forma mínima de cliente consumida pela tela de nova coleta. */
 export type CustomerView = Readonly<{
@@ -11,7 +15,7 @@ export type CustomerView = Readonly<{
   displayName: string;
   taxId: string;
   phone: string;
-  address?: Readonly<{ street: string }> | null;
+  address?: Readonly<{ street: string; city?: string; stateCode?: string }> | null;
 }>;
 
 export type CreateDraftActionResult =
@@ -37,6 +41,12 @@ export type SearchCustomersActionResult =
 export type FinalizeCollectionActionResult =
   | { ok: true; collectionId: string; documentUrl?: string }
   | { ok: false; error: string };
+
+export type GetCustomerActionResult =
+  | { ok: true; customer: CustomerView }
+  | { ok: false; error: string };
+
+export type DiscardDraftActionResult = { ok: true } | { ok: false; error: string };
 
 export async function searchCustomersAction(query: string): Promise<SearchCustomersActionResult> {
   try {
@@ -162,7 +172,24 @@ export async function createDraftWithCustomerAction(payload: {
       return { ok: false, error: "customer_required" };
     }
 
-    return await createDraftAction({ draftId: payload.draftId, customerId });
+    const created = await createDraftAction({ draftId: payload.draftId, customerId });
+    if (!created.ok) {
+      return created;
+    }
+
+    const location = payload.collectionLocation?.trim();
+    if (location) {
+      const patched = await patchDraftFieldsAction({
+        collectionId: created.draftId,
+        expectedVersion: created.rowVersion,
+        collectionLocation: location,
+      });
+      if (!patched.ok) {
+        return { ok: false, error: patched.error };
+      }
+    }
+
+    return created;
   } catch (error: unknown) {
     return toSafeActionError(error);
   }
@@ -178,8 +205,8 @@ export async function saveCollectionSignatureAction(payload: {
 }): Promise<SaveSignatureActionResult> {
   try {
     const cleanBase64 = payload.signatureBase64Png.replace(/^data:image\/png;base64,/, "");
-    const buffer = Buffer.from(cleanBase64, "base64");
-    const signatureFile = new File([buffer], "signature.png", { type: "image/png" });
+    const bytes = Uint8Array.from(Buffer.from(cleanBase64, "base64"));
+    const signatureFile = new File([bytes], "signature.png", { type: "image/png" });
     const signatureResult = await saveCollectionSignature(
       payload.collectionId,
       {
@@ -189,10 +216,11 @@ export async function saveCollectionSignatureAction(payload: {
         acceptanceText: payload.acceptanceText,
       },
       signatureFile,
+      getRequestId(),
     );
     return { ok: true, rowVersion: signatureResult.rowVersion, signatureId: signatureResult.signatureId };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -207,6 +235,7 @@ export async function finalizeCollectionAction(payload: {
       payload.expectedVersion,
       payload.idempotencyKey,
     );
+    scheduleDocumentRenderKick();
     const documentUrl = finalizeResult.document?.id ? `/api/documents/${finalizeResult.document.id}` : undefined;
     return {
       ok: true,
@@ -214,7 +243,49 @@ export async function finalizeCollectionAction(payload: {
       ...(documentUrl ? { documentUrl } : {}),
     };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
+  }
+}
+
+export async function getCustomerAction(customerId: string): Promise<GetCustomerActionResult> {
+  try {
+    const loaded = await loadCustomerDto(customerId);
+    if (!loaded.ok) {
+      if (loaded.reason === "invalid_id" || loaded.reason === "not_found") {
+        return { ok: false, error: "not_found" };
+      }
+      return { ok: false, error: "operation_failed" };
+    }
+    const customer = loaded.customer;
+    return {
+      ok: true,
+      customer: {
+        id: customer.id,
+        displayName: customer.displayName,
+        taxId: customer.taxId,
+        phone: customer.phone,
+        address: customer.address
+          ? {
+              street: customer.address.street,
+              ...(customer.address.city === "" ? {} : { city: customer.address.city }),
+              ...(customer.address.stateCode === "" ? {} : { stateCode: customer.address.stateCode }),
+            }
+          : null,
+      },
+    };
+  } catch (error: unknown) {
+    return { ok: false, error: toActionFailureCode(error) };
+  }
+}
+
+export async function discardDraftAction(payload: {
+  collectionId: string;
+  expectedVersion: number;
+}): Promise<DiscardDraftActionResult> {
+  try {
+    return await discardCollectionDraft(payload.collectionId, payload.expectedVersion);
+  } catch (error: unknown) {
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 

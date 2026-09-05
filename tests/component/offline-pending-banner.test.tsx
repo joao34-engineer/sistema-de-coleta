@@ -42,9 +42,61 @@ describe("OfflinePendingPanel", () => {
     expect(screen.getByText(/Oficina Norte/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: offlineCopy.resume })).toHaveAttribute(
       "href",
-      "/coletas/nova?rascunho=22222222-2222-4222-8222-222222222222",
+      "/coletas/22222222-2222-4222-8222-222222222222/itens",
     );
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it("discards the selected draft, not the first in the list", () => {
+    const older = {
+      ...draft,
+      id: "77777777-7777-4777-8777-777777777777",
+      customer: { ...draft.customer, displayName: "Oficina Sul" },
+      updatedAt: "2026-08-27T11:00:00.000Z",
+    };
+    const newer = {
+      ...draft,
+      updatedAt: "2026-08-27T13:00:00.000Z",
+    };
+    const onDiscard = vi.fn();
+    render(<OfflinePendingPanel drafts={[older, newer]} busy={false} onRetry={() => undefined} onDiscard={onDiscard} />);
+    const discardButtons = screen.getAllByRole("button", { name: offlineCopy.discard });
+    const secondDiscard = discardButtons[1];
+    expect(secondDiscard).toBeDefined();
+    if (secondDiscard === undefined) {
+      return;
+    }
+    fireEvent.click(secondDiscard);
+    expect(onDiscard).toHaveBeenCalledWith(older.id);
+  });
+
+  it("shows a discard error and an official-guide-kept notice", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[{ ...draft, lastError: "operation_failed", syncStatus: "failed" }]}
+        busy={false}
+        notice={offlineCopy.discardOfficialKept}
+        bannerError={offlineCopy.failed}
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByText(offlineCopy.discardOfficialKept)).toBeInTheDocument();
+    expect(screen.getAllByText(offlineCopy.failed).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the official-guide notice after the local row is gone", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[]}
+        busy={false}
+        notice={offlineCopy.discardOfficialKept}
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByText(offlineCopy.discardOfficialKept)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: offlineCopy.discard })).not.toBeInTheDocument();
   });
 });

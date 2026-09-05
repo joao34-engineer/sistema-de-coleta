@@ -55,7 +55,7 @@ Revisar permissao por papel, migration/RLS, Storage, env, CSP/cabecalhos, rate l
 | `signInAction` | n/a | Auth | estado da action, nao 429 | `unexpected_error` via logger |
 | `GET`/`HEAD /api/health` | anon | n/a (Auth+REST probe) | nenhum | n/a; corpo minimo |
 | `onRequestError` | n/a | n/a | n/a | so `routePath` template |
-| Worker interno | secret 32+ timing-safe | service_role | n/a | sem segredo |
+| Worker interno | secret 32+ timing-safe (rota HTTP/cron); kick in-process após finalize não usa secret | service_role | n/a | sem segredo |
 
 Login usa `auth_login` (5 tentativas / 15 min por IP+e-mail HMAC). Download publico de share usa `document_share_download` (30 / 5 min por IP), o mesmo RPC `consume_document_rate_limit`. A pagina `/d/{token}` nao consome quota. `/verificar` ja era limitado e nao foi duplicado.
 
@@ -73,6 +73,6 @@ Login depende de `DOCUMENT_RATE_LIMIT_SECRET` (>=32), `SUPABASE_SECRET_KEY` e `S
 
 ## Estado das migrations (remoto)
 
-Conferido em 28/08/2026 com `supabase migration list --linked`: as migrations ate `20260828120000_phase_4_chat3_security_acl.sql` estavam aplicadas. Em 29/08/2026 foram aplicadas `20260829010000_phase_4_auth_login_rate_limit_scope.sql` (allowlist `auth_login` na RPC), `20260829020000_phase_4_auth_login_rate_limit_scope_check.sql` (CHECK da tabela `private.document_rate_limit_windows`) e `20260829220000_phase_0_workshop_schema_contracts.sql` (Fase 0 oficina: CHECKs, `collections.check_in_signature_path`, REPLACE 3b; sem grant extra de UPDATE em `collections`; RPCs continuam SECURITY DEFINER). Chat 4 (observabilidade) nao cria migration de schema de negocio.
+Conferido em 28/08/2026 com `supabase migration list --linked`: as migrations ate `20260828120000_phase_4_chat3_security_acl.sql` estavam aplicadas. Em 29/08/2026 foram aplicadas `20260829010000_phase_4_auth_login_rate_limit_scope.sql` (allowlist `auth_login` na RPC), `20260829020000_phase_4_auth_login_rate_limit_scope_check.sql` (CHECK da tabela `private.document_rate_limit_windows`) e `20260829220000_phase_0_workshop_schema_contracts.sql` (Fase 0 oficina: CHECKs, `collections.check_in_signature_path`, REPLACE 3b; sem grant extra de UPDATE em `collections`; RPCs continuam SECURITY DEFINER). Chat 4 (observabilidade) nao cria migration de schema de negocio. Em 05/09/2026 ficaram aplicadas `20260905010000_signature_storage_insert_intent_only.sql`, `20260905020000_discard_collection_draft.sql` e `20260905133628_signature_storage_delivery_intent_definer.sql` (helpers DEFINER no lugar de SELECT direto em intents private; detalhe em `docs/supabase.md`).
 
 Fontes: [OWASP ASVS 5.0](https://owasp.org/www-project-application-security-verification-standard/), [ASVS para desenvolvedores](https://devguide.owasp.org/en/03-requirements/05-asvs/) e [seguranca de dados Next.js](https://nextjs.org/docs/app/guides/data-security).

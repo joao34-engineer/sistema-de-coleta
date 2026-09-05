@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { Route } from "next";
-import { buttonClassName } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/lib/button-class-name";
 
 vi.mock("next/link", async () => {
   const React = await import("react");

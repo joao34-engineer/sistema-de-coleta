@@ -10,6 +10,8 @@ import { Input } from "@/shared/ui/input";
 import { searchCustomersAction, type CustomerView } from "@/app/actions/draft-flow.actions";
 import { isOfflineQuotaExceeded } from "@/shared/lib/offline";
 import type { CaptureActor } from "../model/capture-actor";
+import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
+import { cadastralAddressForSync, isIncompleteCadastral } from "../model/cadastral-address-for-sync";
 import { createLocalDraft, isBrowserOnline, normalizeTaxId } from "../model/offline-capture";
 import { offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
@@ -19,6 +21,11 @@ type Props = Readonly<{
   actor: CaptureActor;
   onCreated: (draftId: string) => void;
 }>;
+
+const BRAZILIAN_STATE_CODES = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+] as const;
 
 export function NewCollectionPage({ actor, onCreated }: Props) {
   const [tab, setTab] = useState<"new" | "search">("new");
@@ -30,6 +37,9 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
   const [taxId, setTaxId] = useState("");
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [stateCode, setStateCode] = useState("");
+  const [collectionLocation, setCollectionLocation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const online = isBrowserOnline();
@@ -59,6 +69,12 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
     setPhone(cust.phone);
     if (cust.address) {
       setStreet(cust.address.street);
+      setCity(cust.address.city ?? "");
+      setStateCode(cust.address.stateCode ?? "");
+    } else {
+      setStreet("");
+      setCity("");
+      setStateCode("");
     }
   };
 
@@ -78,6 +94,14 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
       setErrorMsg("Preencha Nome/Razão Social, CPF/CNPJ e Telefone.");
       return;
     }
+    if (isIncompleteCadastral({ street, city, stateCode })) {
+      setErrorMsg(offlineCopy.cadastralIncomplete);
+      return;
+    }
+    if (!hasRequiredCollectionLocation(collectionLocation)) {
+      setErrorMsg("Informe o local da coleta.");
+      return;
+    }
     const normalizedTaxId = normalizeTaxId(taxId);
     if (!/^\d{11}$|^\d{14}$/.test(normalizedTaxId)) {
       setErrorMsg("Informe um CPF ou CNPJ válido.");
@@ -87,7 +111,11 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
     setIsLoading(true);
     try {
       const store = await ensureOfflineDraftStore();
-      const location = street.trim() || null;
+      const address = cadastralAddressForSync({ street, city, stateCode });
+      const cadastralStreet = address?.street ?? null;
+      const cadastralCity = address?.city;
+      const cadastralState = address?.stateCode;
+      const location = collectionLocation.trim();
       const customer =
         tab === "search" && selectedCustomer
           ? {
@@ -96,14 +124,18 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
               displayName: selectedCustomer.displayName,
               taxId: normalizeTaxId(selectedCustomer.taxId),
               phone: selectedCustomer.phone,
-              street: location,
+              street: cadastralStreet,
+              ...(cadastralCity === undefined ? {} : { city: cadastralCity }),
+              ...(cadastralState === undefined ? {} : { stateCode: cadastralState }),
             }
           : {
               mode: "new" as const,
               displayName: displayName.trim(),
               taxId: normalizedTaxId,
               phone: phone.trim(),
-              street: location,
+              street: cadastralStreet,
+              ...(cadastralCity === undefined ? {} : { city: cadastralCity }),
+              ...(cadastralState === undefined ? {} : { stateCode: cadastralState }),
             };
       const draft = await createLocalDraft({ store, actor, customer, collectionLocation: location });
       onCreated(draft.id);
@@ -208,7 +240,30 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
           <Input label="Nome ou razão social *" placeholder="Digite o nome" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
           <Input label="CPF/CNPJ *" placeholder="Digite apenas números" value={taxId} onChange={(event) => setTaxId(event.target.value)} required />
           <Input label="Telefone *" placeholder="(00) 00000-0000" value={phone} onChange={(event) => setPhone(event.target.value)} required />
-          <Input label="Endereço cadastral" placeholder="Opcional" value={street} onChange={(event) => setStreet(event.target.value)} />
+          <Input label="Endereço cadastral (opcional)" placeholder="Rua e número, se houver" value={street} onChange={(event) => setStreet(event.target.value)} />
+          <Input label="Cidade (se houver endereço)" placeholder="Opcional" value={city} onChange={(event) => setCity(event.target.value)} />
+          <label className="flex w-full flex-col gap-1.5">
+            <span className="text-[12px] font-semibold text-[var(--color-muted)]">UF (se houver endereço)</span>
+            <select
+              value={stateCode}
+              onChange={(event) => setStateCode(event.target.value)}
+              className="min-h-[48px] w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[14px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+            >
+              <option value="">Não informar</option>
+              {BRAZILIAN_STATE_CODES.map((uf) => (
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Input
+            label="Local da coleta *"
+            placeholder="Onde os itens serão coletados"
+            value={collectionLocation}
+            onChange={(event) => setCollectionLocation(event.target.value)}
+            required
+          />
         </div>
 
         <Button type="submit" variant="primary" isLoading={isLoading} className="mt-4 h-[52px] rounded-[12px] text-[14px] font-semibold">

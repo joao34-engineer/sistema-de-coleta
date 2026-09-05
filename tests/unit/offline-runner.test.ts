@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryOfflinePort } from "@/shared/lib/offline";
 import { createOfflineDraftStore } from "@/_pages/collection-drafts/model/offline-store";
-import { drainCollectionQueue, drainAllPending, fallbackDrainLock } from "@/_pages/collection-drafts/model/offline-runner";
+import {
+  createFallbackDrainLock,
+  drainAllPending,
+  drainCollectionQueue,
+  fallbackDrainLock,
+} from "@/_pages/collection-drafts/model/offline-runner";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 import { offlineDatabaseSchema, type OfflineDraftRecord } from "@/_pages/collection-drafts/model/offline-records";
 import type { OfflineSyncCommands } from "@/_pages/collection-drafts/model/offline-commands";
@@ -76,6 +81,19 @@ function commands(overrides: Partial<OfflineSyncCommands> = {}): OfflineSyncComm
     removeItem: vi.fn(async () => ({ ok: true as const, rowVersion: 5 })),
     saveSignature: vi.fn(async () => ({ ok: true as const, rowVersion: 6 })),
     fetchDraft: vi.fn(async () => ({ ok: true as const, draft: sampleDraft, items: [sampleItem], hasSignature: false })),
+    fetchCustomer: vi.fn(async () => ({
+      ok: true as const,
+      customer: {
+        id: customerId,
+        displayName: "Oficina Norte",
+        taxId: "52998224725",
+        phone: "11999999999",
+        street: null,
+        city: null,
+        stateCode: null,
+      },
+    })),
+    discardDraft: vi.fn(async () => ({ ok: true as const })),
     finalize: vi.fn(async () => ({ ok: true as const })),
     ...overrides,
   };
@@ -188,7 +206,7 @@ describe("offline drain runner", () => {
       actor,
       collectionId,
     });
-    expect(result).toBe("paused");
+    expect(result).toEqual({ status: "paused", officialKept: false });
     expect(await store.getDraft(collectionId, actor.userId)).not.toBeNull();
   });
 
@@ -244,5 +262,115 @@ describe("offline drain runner", () => {
     const updated = await store.getDraft(collectionId, actor.userId);
     expect(updated?.serverCustomerId).toBe(customerId);
     expect(searchCustomers).toHaveBeenCalledWith("52998224725");
+  });
+
+  it("recovers in_flight mutations when drainAllPending starts", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverCustomerId: customerId }));
+    const mutation = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "add_item",
+      payload: { itemId, description: "Motor", quantity: 1, condition: "Usado", notes: null },
+    });
+    await store.putMutation({ ...mutation, status: "in_flight" });
+    const addItem = vi.fn(async () => ({ ok: true as const, item: sampleItem, rowVersion: 3 }));
+    await drainAllPending({
+      store,
+      commands: commands({ addItem }),
+      actor,
+      lock: createFallbackDrainLock(),
+    });
+    expect(addItem).toHaveBeenCalledOnce();
+    const leftover = await store.listPendingMutations(actor.userId);
+    expect(leftover).toHaveLength(0);
+  });
+
+  it("runs overlapping fallbackDrainLock requests in series", async () => {
+    const lock = createFallbackDrainLock();
+    const order: number[] = [];
+    let releaseFirst = () => {};
+    const firstHold = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+
+    const first = lock.request("mjt-offline-drain", async () => {
+      order.push(1);
+      await firstHold;
+      order.push(2);
+    });
+    let secondStarted = false;
+    const second = lock.request("mjt-offline-drain", async () => {
+      secondStarted = true;
+      order.push(3);
+    });
+
+    await Promise.resolve();
+    expect(secondStarted).toBe(false);
+    releaseFirst();
+    await Promise.all([first, second]);
+    expect(order).toEqual([1, 2, 3]);
+  });
+
+  it("replays discard_draft and purges the local tree", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 1 }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 1 },
+    });
+    const discardDraft = vi.fn(async () => ({ ok: true as const }));
+    await drainCollectionQueue({
+      store,
+      commands: commands({ discardDraft }),
+      actor,
+      collectionId,
+    });
+    expect(discardDraft).toHaveBeenCalledWith({ collectionId, expectedVersion: 1 });
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+  });
+
+  it("purges a local discard when the server draft is no longer a draft", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 2 }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 2 },
+    });
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({
+        discardDraft: vi.fn(async () => ({ ok: false as const, error: "collection_not_draft" })),
+      }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "completed", officialKept: true });
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+  });
+
+  it("surfaces officialKept from drainAllPending after a non-draft discard", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 2 }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 2 },
+    });
+    const drained = await drainAllPending({
+      store,
+      commands: commands({
+        discardDraft: vi.fn(async () => ({ ok: false as const, error: "collection_not_draft" })),
+      }),
+      actor,
+      lock: fallbackDrainLock,
+    });
+    expect(drained.officialKept).toBe(true);
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
   });
 });

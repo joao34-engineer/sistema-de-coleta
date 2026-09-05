@@ -16,7 +16,7 @@ Os DTOs de delivery usam somente as colunas existentes na migration `20260820230
 
 ## Segurança e operação
 
-Respostas autenticadas, públicas e de erro usam `Cache-Control: no-store`. A autorização ocorre no servidor antes de consultar Storage. O token bruto só é entregue na criação; consumo não retorna o token nem caminho do arquivo. O contador de share é incrementado apenas no endpoint de download, nunca ao abrir a página. O worker exige `DOCUMENT_WORKER_SECRET` e `X-Document-Worker-Secret`, com mínimo de 32 caracteres.
+Respostas autenticadas, públicas e de erro usam `Cache-Control: no-store`. A autorização ocorre no servidor antes de consultar Storage. O token bruto só é entregue na criação; consumo não retorna o token nem caminho do arquivo. O contador de share é incrementado apenas no endpoint de download, nunca ao abrir a página. O kick in-process após finalize (e equivalentes) chama o DAL direto e não usa secret. A rota HTTP `/api/internal/document-jobs/run` exige `DOCUMENT_WORKER_SECRET` (`X-Document-Worker-Secret`) ou `CRON_SECRET` (Bearer), com mínimo de 32 caracteres — retry/ops, não o fluxo do celular.
 
 Rate limiting é consumido por RPC atômica e distribuída, nunca por memória da instância: verificação pública usa 30 requisições por IP pseudonimizado em 5 minutos; criação de link 30 por administradora/hora; e-mail 10 por administradora/hora e 50 por organização/dia. `DOCUMENT_RATE_LIMIT_SECRET` (mínimo 32 caracteres) gera HMAC do IP, ID de administradora ou ID da organização; os valores brutos não são persistidos ou logados. Falta desse segredo ou da RPC falha fechada.
 

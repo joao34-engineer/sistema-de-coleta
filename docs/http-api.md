@@ -103,11 +103,21 @@ Recebe `multipart/form-data` com PNG, `signerName`, `signerTaxId`, `acceptanceTe
 
 ### `POST /api/collections/{id}/finalize`
 
-Recebe `expectedVersion` e exige `Idempotency-Key`. A RPC bloqueia a coleta, valida cliente, local, responsável, item e assinatura, congela cliente/evidências no snapshot, reserva o código oficial e cria a primeira versão documental. Retry com a mesma chave e hash devolve a mesma resposta.
+Recebe `expectedVersion` e exige `Idempotency-Key`. A RPC bloqueia a coleta, valida cliente, local, responsável, item e assinatura, congela cliente/evidências no snapshot, reserva o código oficial e cria a primeira versão documental. Retry com a mesma chave e hash devolve a mesma resposta. Depois do RPC com sucesso, o adaptador (Server Action e esta rota) agenda `processQueuedDocumentRenders` no mesmo processo via `after()` — o celular recebe o número imediatamente; a falha do render não desfaz o finalize.
 
 ### `POST /api/collections/{id}/cancel` e `POST /api/collections/{id}/reopen`
 
-Recebem `expectedVersion`, `reason` e `Idempotency-Key`. São transações idempotentes, preservam código e documentos anteriores e registram eventos append-only.
+Recebem `expectedVersion`, `reason` e `Idempotency-Key`. São transações idempotentes, preservam código e documentos anteriores e registram eventos append-only. Quando o comando cria uma nova versão documental, o adaptador HTTP agenda o mesmo kick in-process de PDF/QR. A rota Fase 3 `/cancel-reopen` não cria documento e não dispara o worker.
+
+### Descarte de rascunho (`discard_collection_draft`)
+
+Não há Route Handler dedicado. A Server Action `discardDraftAction` chama o DAL `discardCollectionDraft`, que executa a RPC `discard_collection_draft(p_collection_id, p_expected_version)`.
+
+- Só `status = 'draft'` da organização do administrador autenticado.
+- Remove a árvore do rascunho (itens, eventos, evidências, assinatura, intents, idempotency).
+- Recusa coleta emitida (`collection_not_draft`) e versão velha (`stale_version`).
+- Não apaga `customers` nem documentos/PDF. A UI offline, após purge local por `collection_not_draft`/`not_found`, explica que a guia oficial não foi apagada.
+- Anon e `public` não recebem `EXECUTE`. A fila offline enfileira `discard_draft` quando o rascunho já existe no servidor.
 
 ## Consulta e paginação
 
@@ -156,11 +166,11 @@ Revoga o link chamando `revoke_document_share`. A operação é idempotente no b
 
 ### `POST /api/documents/shares/{shareId}/email`
 
-Recebe `{ email }` e exige `Idempotency-Key` UUID. A chave é consultada no histórico de `share_deliveries` por `provider_reference`; retry devolve o mesmo registro sem uma segunda entrega. O adaptador Resend é dry-run por padrão; somente `DOCUMENT_EMAIL_SEND_ENABLED=true` habilita a API, exigindo `RESEND_API_KEY` e `DOCUMENT_FROM_EMAIL` server-only. Testes nunca fazem chamada de rede.
+Recebe `{ email }` e exige `Idempotency-Key` UUID. A chave é consultada no histórico de `share_deliveries` por `provider_reference`; retry devolve o mesmo registro sem uma segunda entrega. O adaptador Resend é dry-run por padrão (`providerReference` com prefixo `dry-run:`); somente `DOCUMENT_EMAIL_SEND_ENABLED=true` habilita envio real via Resend (`providerReference` com prefixo `resend:`), exigindo `RESEND_API_KEY` e `DOCUMENT_FROM_EMAIL` server-only. O link do e-mail usa `NEXT_PUBLIC_APP_URL` + `/d/{token}` — nunca a rota autenticada de download. `NODE_ENV=test` permanece dry-run sem rede.
 
 ### `POST /api/documents/revisions`
 
-Exige `Idempotency-Key` UUID e recebe `{ sourceDocumentId, expectedVersion, typedDocumentPatch, revisionType, reason }`. O patch aceita somente `customer`, `collection` e `items` nos campos documentados pelo contrato SQL. A rota chama `revise_collection_document`, que valida a versão atual, cria novo snapshot/versionamento, registra a revisão, agenda `render_pdf` e retorna o `jobId`. Retry com a mesma chave e payload devolve a mesma resposta.
+Exige `Idempotency-Key` UUID e recebe `{ sourceDocumentId, expectedVersion, typedDocumentPatch, revisionType, reason }`. O patch aceita somente `customer`, `collection` e `items` nos campos documentados pelo contrato SQL. A rota chama `revise_collection_document`, que valida a versão atual, cria novo snapshot/versionamento, registra a revisão, agenda `render_pdf` e retorna o `jobId`. Depois do RPC com sucesso o adaptador agenda o kick in-process de PDF/QR. Retry com a mesma chave e payload devolve a mesma resposta.
 
 As rotas aninhadas `/api/collections/{id}/documents/{documentId}/download`, `/shares`, `/shares/email` e `/revisions` são aliases finos dos mesmos comandos, para clientes que mantêm o contexto da coleta na URL. Não há divergência de autorização ou DTO. `/retry` responde `document_retry_not_available`: retries de geração são controlados pelo lease do worker.
 
@@ -198,6 +208,37 @@ Resposta `503` (env ausente, timeout ou check Supabase falhou):
 
 ## Worker interno
 
-### `POST /api/internal/document-generation/run` (alias `/api/internal/document-jobs/run`)
+Happy path do celular: finalize / cancel / reopen (Fase 1A) / revise no mesmo processo Next — `after()` chama o DAL `processQueuedDocumentRenders` (lote 2). Sem secret no aparelho e sem `fetch` da própria `/api`. Esta rota HTTP e o cron são **retry/recovery**, não o fluxo do dia a dia.
 
-Rota interna para o worker, protegida por `DOCUMENT_WORKER_SECRET` e `X-Document-Worker-Secret` (segredo de pelo menos 32 caracteres, comparado em tempo constante). Recebe opcionalmente `{ batchSize: 1..5 }` (padrão 5); sem o cabeçalho correto responde `403`; respostas não são cacheadas e retornam somente contagem/status. `/cleanup` usa a mesma proteção.
+### `GET` / `POST /api/internal/document-jobs/run` (alias `POST /api/internal/document-generation/run`)
+
+Rota interna para retry do worker documental. Autorização (não enfraquecida):
+
+| Canal | Cabeçalho | Env (≥32 chars) |
+| --- | --- | --- |
+| Ops / curl (retry) | `X-Document-Worker-Secret: <secret>` | `DOCUMENT_WORKER_SECRET` |
+| Vercel Cron (retry) | `Authorization: Bearer <secret>` (enviado automaticamente se `CRON_SECRET` estiver configurado no projeto) | `CRON_SECRET` |
+
+Comparação em tempo constante. Sem credencial válida responde `403`. Respostas são `no-store` e retornam somente contagem/status.
+
+- **GET** — cron em `vercel.json` (`*/5 * * * *` → `/api/internal/document-jobs/run`); processa lote padrão de 5 se o kick in-process morrer ou o job falhar.
+- **POST** — aceita opcionalmente `{ batchSize: 1..5 }` (padrão 5). O alias `/api/internal/document-generation/run` permanece POST-only com a mesma autenticação de worker.
+- `/cleanup` usa a mesma proteção por `X-Document-Worker-Secret`.
+
+Retry manual (ops, não UX):
+
+```bash
+curl -X POST "$NEXT_PUBLIC_APP_URL/api/internal/document-jobs/run" \
+  -H "Content-Type: application/json" \
+  -H "X-Document-Worker-Secret: $DOCUMENT_WORKER_SECRET" \
+  -d '{"batchSize":5}'
+```
+
+Ou GET com o segredo do cron (mesmo valor configurado em `CRON_SECRET`):
+
+```bash
+curl -X GET "$NEXT_PUBLIC_APP_URL/api/internal/document-jobs/run" \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Em planos Vercel sem cron sub-diário, o curl acima continua sendo só backup se `after()` não completar. Não coloque o segredo no repositório. Não peça ao operador de campo para rodar curl.

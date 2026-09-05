@@ -22,7 +22,7 @@ A interface pode fazer verificacao otimista para UX, mas ela nunca substitui RLS
 O sistema e online-first com continuidade de campo. O manifest define nome, icones, `display: standalone`, cores e `start_url`. O service worker armazena somente os recursos do aplicativo e dados explicitamente seguros para cache.
 
 - Rascunhos locais podem conter dados de coleta pendente; proteger o dispositivo e excluir apos sincronizacao confirmada.
-- Codigo oficial, PDF, evento de finalizacao e compartilhamento nascem somente no servidor apos sincronizacao.
+- Codigo oficial, PDF, evento de finalizacao e compartilhamento nascem somente no servidor apos sincronizacao. Depois do finalize confirmado, o mesmo processo Next agenda o render via `after()` + DAL (`processQueuedDocumentRenders`); o aparelho nao gera PDF, nao guarda worker secret e so espera/poll na tela Documentos. O service worker nao cacheia PDF. Cron/curl interno e so retry.
 - Mostrar estado claro: online, salvo localmente, sincronizando, sincronizado ou falhou.
 - Atualizacao do service worker nao pode descartar rascunhos; avisar o usuario antes de recarregar quando houver trabalho pendente.
 - Nao armazenar JWT, service role, PDF privado ou link assinado em cache de longa duracao.
@@ -31,9 +31,9 @@ O sistema e online-first com continuidade de campo. O manifest define nome, icon
 
 Rascunhos de captura vivem em IndexedDB (`mjt-offline-v1`), com escopo por `userId`. A UI grava local primeiro e, se houver rede, drena a fila serial reusando as server actions existentes. O service worker nao participa do replay e continua sem cachear HTML, API ou PDF (ADR 0005 e ADR 0006).
 
-- Wizard de captura permanece em `/coletas/nova`; a etapa corrente (`cliente` | `itens` | `revisao` | `assinatura`) e persistida no registro local.
+- Wizard de captura: `/coletas/nova` é só a entrada de uma coleta **nova**. Após criar o rascunho, as etapas ficam em `/coletas/[id]/itens|revisao|assinatura` (URL sincronizada via `router.replace`; `initialStep` da rota vence `currentStep` no IndexedDB). Alias `?rascunho=` redireciona para `/itens`.
 - Estados visiveis: online, salvo localmente, sincronizando, sincronizado, falhou.
-- Painel de pendentes no host PWA lista rascunhos locais, permite retry e retoma a etapa. Descarte local nao apaga guia oficial no servidor.
+- Painel de pendentes no host PWA lista rascunhos locais, permite retry e retoma em `/coletas/{id}/itens`. Descarte local nao apaga guia oficial no servidor.
 - `PwaShell.canReload` le um snapshot em memoria (pendente ou drain em voo → nao recarregar). O aviso de update menciona trabalho pendente antes da confirmacao.
 - Sem JWT, service role, PDF ou link assinado no IndexedDB. Assinatura PNG e CPF/telefone sao apagados apos finalize confirmado.
 

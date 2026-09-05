@@ -32,12 +32,31 @@ export type SearchCustomerCommandResult =
 
 export type FinalizeCommandResult = { ok: true } | CommandFailure;
 
+export type FetchCustomerCommandResult =
+  | {
+      ok: true;
+      customer: Readonly<{
+        id: string;
+        displayName: string;
+        taxId: string;
+        phone: string;
+        street: string | null;
+        city: string | null;
+        stateCode: string | null;
+      }>;
+    }
+  | CommandFailure;
+
+export type DiscardDraftCommandResult = { ok: true } | CommandFailure;
+
 export type OfflineSyncCommands = {
   createCustomer(input: {
     displayName: string;
     taxId: string;
     phone: string;
     street: string | null;
+    city?: string | null;
+    stateCode?: string | null;
   }): Promise<CreateCustomerCommandResult>;
   searchCustomers(query: string): Promise<SearchCustomerCommandResult>;
   createDraft(input: { draftId: string; customerId: string }): Promise<CreateDraftCommandResult>;
@@ -82,6 +101,11 @@ export type OfflineSyncCommands = {
     signatureBase64Png: string;
   }): Promise<MutationCommandResult>;
   fetchDraft(collectionId: string): Promise<FetchDraftCommandResult>;
+  fetchCustomer(customerId: string): Promise<FetchCustomerCommandResult>;
+  discardDraft(input: {
+    collectionId: string;
+    expectedVersion: number;
+  }): Promise<DiscardDraftCommandResult>;
   finalize(input: {
     collectionId: string;
     expectedVersion: number;

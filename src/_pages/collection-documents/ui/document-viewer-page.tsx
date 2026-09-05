@@ -3,18 +3,19 @@ import type { Route } from "next";
 import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
+import { PdfPendingStatus } from "./pdf-pending-status";
 
 type Props = Readonly<{
   collectionId: string;
   documentId: string;
+  hasPdf: boolean;
 }>;
 
-export function DocumentViewerPage({ collectionId, documentId }: Props) {
+export function DocumentViewerPage({ collectionId, documentId, hasPdf }: Props) {
   const pdfDownloadUrl = `/api/documents/${documentId}/download?artifact=pdf`;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6 flex flex-col">
-      {/* Top Header Mobile */}
       <header className="mb-4 flex items-center justify-between">
         <div>
           <Link
@@ -27,14 +28,15 @@ export function DocumentViewerPage({ collectionId, documentId }: Props) {
             Visualizador de PDF
           </h1>
         </div>
-        <a href={pdfDownloadUrl} download target="_blank" rel="noopener noreferrer">
-          <Button variant="primary" size="sm">
-            📥 Baixar
-          </Button>
-        </a>
+        {hasPdf ? (
+          <a href={pdfDownloadUrl} download target="_blank" rel="noopener noreferrer">
+            <Button variant="primary" size="sm">
+              Baixar
+            </Button>
+          </a>
+        ) : null}
       </header>
 
-      {/* Card Principal de Exibição */}
       <Card className="flex flex-1 flex-col overflow-hidden p-0">
         <CardHeader className="border-b border-[var(--color-border)] p-4">
           <div className="flex items-center justify-between">
@@ -46,16 +48,22 @@ export function DocumentViewerPage({ collectionId, documentId }: Props) {
                 ID do Documento: {documentId}
               </p>
             </div>
-            <Badge status="ready">Integridade Preservada</Badge>
+            <Badge status={hasPdf ? "ready" : "draft"}>{hasPdf ? "Integridade Preservada" : "Gerando PDF"}</Badge>
           </div>
         </CardHeader>
 
         <CardContent className="flex flex-1 flex-col p-0 min-h-[500px]">
-          <iframe
-            src={pdfDownloadUrl}
-            title="Visualizador de PDF da Coleta MJT"
-            className="h-full w-full border-0 min-h-[500px]"
-          />
+          {hasPdf ? (
+            <iframe
+              src={pdfDownloadUrl}
+              title="Visualizador de PDF da Coleta MJT"
+              className="h-full w-full border-0 min-h-[500px]"
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center p-4">
+              <PdfPendingStatus pending />
+            </div>
+          )}
         </CardContent>
       </Card>
     </main>

@@ -1,4 +1,5 @@
 import { normalizeDigits } from "@/shared/lib/cnpj";
+import { isValidCpfOrCnpj } from "@/shared/lib/cpf";
 import type { CaptureActor, CaptureStep } from "./capture-actor";
 import type { OfflineCustomer, OfflineDraftRecord, OfflineItemRecord } from "./offline-records";
 import type { OfflineDraftStore } from "./offline-store";
@@ -50,6 +51,8 @@ export async function createLocalDraft(input: {
   try {
     await input.store.putDraft(record);
     if (input.customer.mode === "new") {
+      const city = input.customer.city?.trim() ?? "";
+      const stateCode = input.customer.stateCode?.trim().toUpperCase() ?? "";
       await input.store.enqueue({
         collectionId: record.id,
         userId: input.actor.userId,
@@ -59,6 +62,8 @@ export async function createLocalDraft(input: {
           taxId: input.customer.taxId,
           phone: input.customer.phone,
           street: input.customer.street,
+          ...(city === "" ? {} : { city }),
+          ...(stateCode === "" ? {} : { stateCode }),
         },
       });
     }
@@ -260,7 +265,10 @@ export async function hydrateServerDraft(input: {
     return existing;
   }
   const createdAt = existing?.createdAt ?? input.draft.createdAt;
-  const taxId = asStoredTaxId(input.customer.taxId) ?? "00000000000";
+  const taxId = asStoredTaxId(input.customer.taxId);
+  if (taxId === null || !isValidCpfOrCnpj(taxId)) {
+    throw new Error("customer_identity_invalid");
+  }
   const street = input.customer.street === null ? null : input.customer.street.slice(0, 160);
   const record: OfflineDraftRecord = {
     id: input.draft.id,

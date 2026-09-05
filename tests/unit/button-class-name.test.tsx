@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Button, buttonClassName } from "@/shared/ui/button";
+import { Button } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/lib/button-class-name";
 
 describe("buttonClassName", () => {
   it("includes primary and size tokens", () => {

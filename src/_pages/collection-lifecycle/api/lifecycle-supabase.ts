@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Json } from "@/shared/api/database.types";
 import { getPublicEnvironment } from "@/shared/config/environment";
@@ -28,5 +29,13 @@ export async function createLifecycleSupabaseClient() {
       getAll: () => cookieStore.getAll(),
       setAll: (values) => { try { values.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); } catch { /* Route handlers can always set cookies; safe fallback for non-mutation contexts. */ } },
     },
+  });
+}
+
+export function createLifecycleUserStorageClient(accessToken: string) {
+  const environment = getPublicEnvironment();
+  return createClient(environment.supabaseUrl, environment.supabasePublishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 }

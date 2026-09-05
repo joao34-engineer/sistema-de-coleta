@@ -185,26 +185,60 @@ export async function createCustomer(request: Request): Promise<NextResponse> {
   }
 }
 
-export async function getCustomer(id: string, request?: Request): Promise<NextResponse> {
+export type LoadCustomerResult =
+  | { ok: true; customer: CustomerDTO }
+  | { ok: false; reason: "invalid_id" | "not_found" | "query_failed" | "contract_invalid" };
+
+export async function loadCustomerDto(id: string): Promise<LoadCustomerResult> {
+  const parsedId = customerIdSchema.safeParse(id);
+  if (!parsedId.success) {
+    return { ok: false, reason: "invalid_id" };
+  }
+  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
+  const { data, error } = await supabase
+    .from("customers")
+    .select(customerColumns)
+    .eq("organization_id", administrator.organizationId)
+    .eq("id", parsedId.data)
+    .maybeSingle();
+  if (error) {
+    return { ok: false, reason: "query_failed" };
+  }
+  if (!data) {
+    return { ok: false, reason: "not_found" };
+  }
+  const customer = mapCustomer(data, await loadPrimaryAddress(supabase, administrator.organizationId, parsedId.data));
+  if (!customer) {
+    return { ok: false, reason: "contract_invalid" };
+  }
+  return { ok: true, customer };
+}
+
+export async function getCustomer(id: string, request: Request): Promise<NextResponse> {
   try {
-    const parsedId = customerIdSchema.safeParse(id);
-    if (!parsedId.success) return result(400, { ok: false, code: "validation_error" });
+    const loaded = await loadCustomerDto(id);
+    if (loaded.ok) {
+      return result(200, { ok: true, data: { customer: loaded.customer } });
+    }
+    if (loaded.reason === "invalid_id") {
+      return result(400, { ok: false, code: "validation_error" });
+    }
+    if (loaded.reason === "not_found") {
+      return result(404, { ok: false, code: "not_found" });
+    }
     const administrator = await requireAuthenticatedAdministrator();
-    const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
-    const { data, error } = await supabase.from("customers").select(customerColumns).eq("organization_id", administrator.organizationId).eq("id", parsedId.data).maybeSingle();
-    if (error) {
-      logTransactionFailure({ requestId: getRequestId(request ?? new Request("http://localhost/api/customers")), operation: "get_customer", code: "customer_query_failed", actorId: administrator.userId, status: 500 });
-      return result(500, { ok: false, code: "customer_query_failed" });
-    }
-    if (!data) return result(404, { ok: false, code: "not_found" });
-    const customer = mapCustomer(data, await loadPrimaryAddress(supabase, administrator.organizationId, parsedId.data));
-    if (!customer) {
-      logTransactionFailure({ requestId: getRequestId(request ?? new Request("http://localhost/api/customers")), operation: "get_customer", code: "customer_query_contract_invalid", actorId: administrator.userId, status: 500 });
-      return result(500, { ok: false, code: "customer_query_contract_invalid" });
-    }
-    return result(200, { ok: true, data: { customer } });
+    const code = loaded.reason === "query_failed" ? "customer_query_failed" : "customer_query_contract_invalid";
+    logTransactionFailure({
+      requestId: getRequestId(request),
+      operation: "get_customer",
+      code,
+      actorId: administrator.userId,
+      status: 500,
+    });
+    return result(500, { ok: false, code });
   } catch (error: unknown) {
-    return errorResponse(error, request ?? new Request("http://localhost/api/customers"), "get_customer");
+    return errorResponse(error, request, "get_customer");
   }
 }
 

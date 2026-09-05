@@ -5,6 +5,7 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { DocumentDeliveryActions } from "./document-delivery-actions";
+import { PdfPendingStatus } from "./pdf-pending-status";
 
 type Props = Readonly<{
   collectionId: string;
@@ -45,37 +46,45 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
             }
           />
         ) : (
-          documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex flex-col gap-3 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-                  Versão {doc.version}
-                </h3>
-                <span className="text-[11px] font-normal text-[var(--color-text-muted)]">
-                  {formatIssuedAt(doc.issuedAt)}
-                </span>
-              </div>
+          documents.map((doc) => {
+            const hasPdf = doc.artifacts.some((artifact) => artifact.type === "pdf");
+            return (
+              <div
+                key={doc.id}
+                className="flex flex-col gap-3 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
+                    Versão {doc.version}
+                  </h3>
+                  <span className="text-[11px] font-normal text-[var(--color-text-muted)]">
+                    {formatIssuedAt(doc.issuedAt)}
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-3 border-t border-[var(--color-border)] pt-3 text-[11px] font-semibold text-[var(--color-text-muted)]">
-                <Link href={`/coletas/${collectionId}/documentos/${doc.id}` as Route} className="hover:text-[var(--color-primary)]">
-                  Ver
-                </Link>
-                {doc.artifacts.some((artifact) => artifact.type === "pdf") ? (
-                  <>
-                    <span>·</span>
-                    <a href={`/api/documents/${doc.id}/download?artifact=pdf`} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary)]">
-                      Baixar PDF
-                    </a>
-                  </>
+                <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3">
+                  <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--color-text-muted)]">
+                    <Link href={`/coletas/${collectionId}/documentos/${doc.id}` as Route} className="hover:text-[var(--color-primary)]">
+                      Ver
+                    </Link>
+                    {hasPdf ? (
+                      <>
+                        <span>·</span>
+                        <a href={`/api/documents/${doc.id}/download?artifact=pdf`} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary)]">
+                          Baixar PDF
+                        </a>
+                      </>
+                    ) : null}
+                  </div>
+                  <PdfPendingStatus pending={!hasPdf} />
+                </div>
+
+                {hasPdf ? (
+                  <DocumentDeliveryActions documentId={doc.id} version={doc.version} officialCode={officialCode} />
                 ) : null}
               </div>
-
-              <DocumentDeliveryActions documentId={doc.id} />
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
