@@ -18,7 +18,7 @@ describe("messageForQueueError", () => {
   it("maps other known codes to Portuguese", () => {
     expect(messageForQueueError("idempotency_conflict")).toMatch(/já foi enviada/i);
     expect(messageForQueueError("invalid_signature_file")).toMatch(/PNG/i);
-    expect(messageForQueueError("collection_incomplete")).toMatch(/requisitos/i);
+    expect(messageForQueueError("collection_incomplete")).toMatch(/local da coleta/i);
     expect(messageForQueueError("issuer_profile_incomplete")).toMatch(/emissor/i);
     expect(messageForQueueError("sync_interrupted")).toMatch(/interrompid/i);
     expect(messageForQueueError("collection_not_draft")).toBe(offlineCopy.discardOfficialKept);

@@ -13,6 +13,7 @@ import {
   isBrowserOnline,
   asStoredTaxId,
   normalizeTaxId,
+  patchLocalDraft,
   removeLocalItem,
   saveLocalSignature,
   setDraftStep,
@@ -304,6 +305,7 @@ function CaptureSteps({
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [locationDraft, setLocationDraft] = useState<string | null>(null);
   const displayError = errorMsg ?? localError;
   const signerName = signerNameDraft ?? draft?.responsibleName ?? "";
   const signerTaxId = signerTaxIdDraft ?? draft?.responsibleTaxId ?? "";
@@ -325,6 +327,21 @@ function CaptureSteps({
     }
     setEditingItem(null);
     setIsAddingNew(false);
+    onReload();
+    if (isBrowserOnline()) {
+      void runAuthenticatedDrain(actor).then(onReload);
+    }
+  }
+
+  async function persistLocation(nextLocation: string) {
+    const store = await ensureOfflineDraftStore();
+    await patchLocalDraft({
+      store,
+      actor,
+      collectionId: draftId,
+      collectionLocation: nextLocation,
+    });
+    setLocationDraft(null);
     onReload();
     if (isBrowserOnline()) {
       void runAuthenticatedDrain(actor).then(onReload);
@@ -459,7 +476,8 @@ function CaptureSteps({
   }
 
   if (step === "revisao" && draft) {
-    const locationReady = hasRequiredCollectionLocation(draft.collectionLocation);
+    const locationValue = locationDraft ?? draft.collectionLocation ?? "";
+    const locationReady = hasRequiredCollectionLocation(locationValue);
     return (
       <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
         <MobilePageHeader title="Revisar coleta" subtitle="Etapa 3 de 3" backHref={captureStepHref(draftId, "itens") as Route} />
@@ -487,18 +505,28 @@ function CaptureSteps({
             ))}
           </div>
           <div
-            className={`flex flex-col gap-1 rounded-[16px] border p-4 shadow-xs ${
+            className={`rounded-[16px] border p-4 shadow-xs ${
               locationReady
                 ? "border-[var(--color-border)] bg-[var(--color-card-bg)]"
                 : "border-[#fca5a5] bg-[#fdf2f1]"
             }`}
           >
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">LOCAL DA COLETA</span>
-            {locationReady ? (
-              <p className="text-[13px] font-normal text-[var(--color-text-primary)]">{draft.collectionLocation}</p>
-            ) : (
-              <p className="text-[13px] font-semibold text-[#ba5b52]">{MISSING_COLLECTION_LOCATION_MSG}</p>
-            )}
+            <Input
+              label="Local da coleta *"
+              value={locationValue}
+              onChange={(event) => {
+                setLocationDraft(event.target.value);
+                setLocalError(null);
+              }}
+              onBlur={() => {
+                const trimmed = locationValue.trim();
+                if (trimmed !== (draft.collectionLocation?.trim() ?? "")) {
+                  void persistLocation(trimmed);
+                }
+              }}
+              required
+              {...(locationReady ? {} : { error: MISSING_COLLECTION_LOCATION_MSG })}
+            />
           </div>
           <Button type="button" variant="secondary" onClick={() => void onStep("itens")} className="h-[52px] rounded-[12px] text-[14px] font-semibold">
             Voltar aos itens
@@ -508,11 +536,17 @@ function CaptureSteps({
             variant="primary"
             disabled={items.length === 0 || !locationReady}
             onClick={() => {
-              if (!hasRequiredCollectionLocation(draft.collectionLocation)) {
+              if (!hasRequiredCollectionLocation(locationValue)) {
                 setLocalError(MISSING_COLLECTION_LOCATION_MSG);
                 return;
               }
-              void onStep("assinatura");
+              void (async () => {
+                const trimmed = locationValue.trim();
+                if (trimmed !== (draft.collectionLocation?.trim() ?? "")) {
+                  await persistLocation(trimmed);
+                }
+                await onStep("assinatura");
+              })();
             }}
             className="h-[52px] rounded-[12px] text-[14px] font-semibold"
           >

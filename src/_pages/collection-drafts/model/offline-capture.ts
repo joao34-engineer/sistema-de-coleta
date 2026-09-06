@@ -130,6 +130,33 @@ export async function addLocalItem(input: {
   return record;
 }
 
+export async function patchLocalDraft(input: {
+  store: OfflineDraftStore;
+  actor: CaptureActor;
+  collectionId: string;
+  collectionLocation: string;
+}): Promise<OfflineDraftRecord> {
+  const draft = await input.store.getDraft(input.collectionId, input.actor.userId);
+  if (draft === null) {
+    throw new Error("draft_not_found");
+  }
+  const trimmed = input.collectionLocation.trim();
+  const next: OfflineDraftRecord = {
+    ...draft,
+    collectionLocation: trimmed === "" ? null : trimmed,
+    updatedAt: input.store.nowIso(),
+  };
+  await input.store.putDraft(next);
+  await input.store.enqueue({
+    collectionId: input.collectionId,
+    userId: input.actor.userId,
+    kind: "patch_draft",
+    payload: { collectionLocation: next.collectionLocation },
+  });
+  await markQueued(input.store, input.collectionId, input.actor.userId);
+  return next;
+}
+
 export async function updateLocalItem(input: {
   store: OfflineDraftStore;
   actor: CaptureActor;
@@ -215,6 +242,7 @@ export async function saveLocalSignature(input: {
       responsibleName: input.signerName,
       responsibleTaxId: input.signerTaxId,
       collectedAt,
+      ...(draft.collectionLocation ? { collectionLocation: draft.collectionLocation } : {}),
     },
   });
   await input.store.enqueue({

@@ -26,7 +26,7 @@ const draft: OfflineDraftRecord = {
     phone: "11999999999",
     street: null,
   },
-  collectionLocation: null,
+  collectionLocation: "Galpão Norte",
   responsibleName: null,
   responsibleTaxId: null,
   collectedAt: null,
@@ -101,6 +101,22 @@ describe("OfflinePendingBanner online drain", () => {
     });
   });
 
+  it("does not discard when confirm is cancelled", async () => {
+    vi.mocked(window.confirm).mockReturnValue(false);
+    refreshDrafts.mockResolvedValue([draft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
+    await waitFor(() => {
+      expect(window.confirm).toHaveBeenCalled();
+    });
+    expect(discardLocalDraft).not.toHaveBeenCalled();
+  });
+
   it("shows an error when discardLocalDraft fails and keeps the row", async () => {
     refreshDrafts.mockResolvedValue([draft]);
     discardLocalDraft.mockResolvedValue({ ok: false, error: "operation_failed" });
@@ -143,6 +159,29 @@ describe("OfflinePendingBanner online drain", () => {
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
     await waitFor(() => {
       expect(window.confirm).toHaveBeenCalledWith(offlineCopy.discardConfirmSynced);
+    });
+  });
+
+  it("disables discard while discard is in progress then completes successfully", async () => {
+    let resolveDiscard: ((value: { ok: true }) => void) | undefined;
+    const discardPromise = new Promise<{ ok: true }>((resolve) => {
+      resolveDiscard = resolve;
+    });
+    refreshDrafts.mockResolvedValue([draft]);
+    discardLocalDraft.mockReturnValue(discardPromise);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeDisabled();
+    });
+    resolveDiscard?.({ ok: true });
+    await waitFor(() => {
+      expect(discardLocalDraft).toHaveBeenCalledOnce();
     });
   });
 
@@ -213,6 +252,29 @@ describe("OfflinePendingBanner online drain", () => {
     expect(screen.queryByText(offlineCopy.pendingTitle)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: offlineCopy.showPending })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: offlineCopy.discard })).not.toBeInTheDocument();
+  });
+
+  it("shows location guidance on retry when collection is incomplete without calling drain", async () => {
+    const incompleteDraft = {
+      ...draft,
+      collectionLocation: null,
+      lastError: "collection_incomplete" as const,
+    };
+    refreshDrafts.mockResolvedValue([incompleteDraft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: offlineCopy.completeCollection })).toBeInTheDocument();
+    });
+    drain.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.completeCollection }));
+    await waitFor(() => {
+      expect(document.getElementById("offline-pending-retry-result")).toHaveTextContent(
+        "Informe o local da coleta antes de continuar.",
+      );
+    });
+    expect(drain).not.toHaveBeenCalled();
   });
 
   it("shows sync complete when the queue clears after retry", async () => {

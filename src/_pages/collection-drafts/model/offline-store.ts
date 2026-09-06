@@ -113,6 +113,16 @@ export function createOfflineDraftStore(port: OfflineKvPort) {
     payload: unknown;
   }): Promise<OfflineMutationRecord> {
     const existing = await listMutations(input.collectionId, input.userId);
+    if (input.kind === "discard_draft") {
+      const leftover = existing.find(
+        (row) =>
+          row.kind === "discard_draft" &&
+          (row.status === "pending" || row.status === "failed" || row.status === "in_flight"),
+      );
+      if (leftover) {
+        return leftover;
+      }
+    }
     const sequence = existing.reduce((max, row) => Math.max(max, row.sequence), -1) + 1;
     const record: OfflineMutationRecord = {
       id: crypto.randomUUID(),

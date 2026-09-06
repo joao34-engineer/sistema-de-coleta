@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryOfflinePort } from "@/shared/lib/offline";
 import { CollectionCapturePage } from "@/_pages/collection-drafts/ui/collection-capture-page";
 import { offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
-import { offlineDatabaseSchema, type OfflineDraftRecord } from "@/_pages/collection-drafts/model/offline-records";
+import { offlineDatabaseSchema, type OfflineDraftRecord, type OfflineItemRecord } from "@/_pages/collection-drafts/model/offline-records";
 import { ensureOfflineDraftStore, resetOfflinePortForTests, setOfflinePortForTests } from "@/_pages/collection-drafts/model/offline-port";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 
@@ -17,6 +17,48 @@ const { fetchDraftWithItemsAction, collectionExistsAction, getCustomerAction, ru
 const actor = { userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 };
 const collectionId = "22222222-2222-4222-8222-222222222222";
 const customerId = "44444444-4444-4444-8444-444444444444";
+
+const itemId = "55555555-5555-4555-8555-555555555555";
+
+const sampleItem: OfflineItemRecord = {
+  id: itemId,
+  collectionId,
+  userId: actor.userId,
+  description: "Motor usado",
+  quantity: 1,
+  condition: "Usado",
+  notes: null,
+  removed: false,
+  createdAt: "2026-08-27T12:00:00.000Z",
+  updatedAt: "2026-08-27T12:00:00.000Z",
+};
+
+const revisaoDraft: OfflineDraftRecord = {
+  id: collectionId,
+  userId: actor.userId,
+  organizationId: 1,
+  currentStep: "revisao",
+  customer: {
+    mode: "existing",
+    customerId,
+    displayName: "Oficina Norte",
+    taxId: "52998224725",
+    phone: "11998765432",
+    street: null,
+  },
+  collectionLocation: null,
+  responsibleName: null,
+  responsibleTaxId: null,
+  collectedAt: null,
+  serverRowVersion: 4,
+  serverCustomerId: customerId,
+  hasServerSignature: false,
+  finalizeIdempotencyKey: "33333333-3333-4333-8333-333333333333",
+  syncStatus: "queued",
+  lastError: "collection_incomplete",
+  createdAt: "2026-08-27T12:00:00.000Z",
+  updatedAt: "2026-08-27T12:00:00.000Z",
+};
 
 const localDraft: OfflineDraftRecord = {
   id: collectionId,
@@ -164,5 +206,61 @@ describe("CollectionCapturePage leftovers", () => {
     expect(screen.queryByText(offlineCopy.savedLocally)).not.toBeInTheDocument();
     expect(screen.queryByText("Salvo neste aparelho")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: offlineCopy.retry })).toBeInTheDocument();
+  });
+});
+
+describe("CollectionCapturePage revisão", () => {
+  beforeEach(() => {
+    fetchDraftWithItemsAction.mockReset();
+    getCustomerAction.mockReset();
+    runAuthenticatedDrain.mockReset();
+    runAuthenticatedDrain.mockResolvedValue({ officialKept: false });
+    setOfflinePortForTests(createMemoryOfflinePort(offlineDatabaseSchema));
+  });
+
+  afterEach(() => {
+    cleanup();
+    resetOfflinePortForTests();
+    resetOfflineSnapshotForTests();
+  });
+
+  async function seedRevisaoDraft() {
+    const store = await ensureOfflineDraftStore();
+    await store.putDraft(revisaoDraft);
+    await store.putItem(sampleItem);
+    return store;
+  }
+
+  it("disables emit when collection location is empty", async () => {
+    await seedRevisaoDraft();
+
+    render(<CollectionCapturePage actor={actor} resumeDraftId={collectionId} initialStep="revisao" />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Local da coleta *")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Motor usado")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Emitir guia e coletar assinatura" })).toBeDisabled();
+  });
+
+  it("enables emit after location is entered and persisted on blur", async () => {
+    const store = await seedRevisaoDraft();
+
+    render(<CollectionCapturePage actor={actor} resumeDraftId={collectionId} initialStep="revisao" />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Local da coleta *")).toBeInTheDocument();
+    });
+
+    const locationInput = screen.getByLabelText("Local da coleta *");
+    fireEvent.change(locationInput, { target: { value: "Pátio externo, bloco B" } });
+    fireEvent.blur(locationInput);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Emitir guia e coletar assinatura" })).toBeEnabled();
+    });
+
+    const updated = await store.getDraft(collectionId, actor.userId);
+    expect(updated?.collectionLocation).toBe("Pátio externo, bloco B");
   });
 });

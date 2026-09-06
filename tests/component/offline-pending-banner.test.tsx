@@ -16,7 +16,7 @@ const draft: OfflineDraftRecord = {
     phone: "11999999999",
     street: null,
   },
-  collectionLocation: null,
+  collectionLocation: "Galpão Norte",
   responsibleName: null,
   responsibleTaxId: null,
   collectedAt: null,
@@ -65,6 +65,70 @@ describe("OfflinePendingPanel", () => {
     render(<OfflinePendingPanel drafts={[draft]} busy={true} onRetry={() => undefined} onDiscard={() => undefined} />);
     const retryButton = screen.getByRole("button", { name: offlineCopy.retryBusy });
     expect(retryButton).toBeDisabled();
+  });
+
+  it("routes Continuar to revisão when location is missing", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[{ ...draft, collectionLocation: null }]}
+        busy={false}
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("link", { name: offlineCopy.resume })).toHaveAttribute(
+      "href",
+      "/coletas/22222222-2222-4222-8222-222222222222/revisao",
+    );
+  });
+
+  it("routes Continuar to revisão when lastError is collection_incomplete", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[{ ...draft, lastError: "collection_incomplete" }]}
+        busy={false}
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("link", { name: offlineCopy.resume })).toHaveAttribute(
+      "href",
+      "/coletas/22222222-2222-4222-8222-222222222222/revisao",
+    );
+  });
+
+  it("collapses the panel when Continuar targets the current page", () => {
+    const onClose = vi.fn();
+    const resumeHref = "/coletas/22222222-2222-4222-8222-222222222222/itens";
+    render(
+      <OfflinePendingPanel
+        drafts={[draft]}
+        busy={false}
+        currentPathname={resumeHref}
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+        onClose={onClose}
+      />,
+    );
+    fireEvent.click(screen.getByRole("link", { name: offlineCopy.resume }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("disables discard while busy", () => {
+    render(<OfflinePendingPanel drafts={[draft]} busy={true} onRetry={() => undefined} onDiscard={() => undefined} />);
+    expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeDisabled();
+  });
+
+  it("labels the primary action Completar coleta when collection is incomplete", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[{ ...draft, lastError: "collection_incomplete" }]}
+        busy={false}
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("button", { name: offlineCopy.completeCollection })).toBeInTheDocument();
   });
 
   it("shows a retry result after a failed attempt", () => {

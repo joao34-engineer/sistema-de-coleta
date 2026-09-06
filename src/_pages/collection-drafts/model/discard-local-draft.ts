@@ -36,7 +36,9 @@ export async function discardLocalDraft(input: {
   const drained = await runAuthenticatedDrain(input.actor);
   const leftover = await input.store.getDraft(input.collectionId, input.actor.userId);
   if (leftover !== null) {
-    return { ok: false, error: leftover.lastError ?? "operation_failed" };
+    const raw = leftover.lastError ?? "operation_failed";
+    // Discard must not echo a poisoned finalize code after the human confirmed discard.
+    return { ok: false, error: raw === "collection_incomplete" ? "operation_failed" : raw };
   }
   return drained.officialKept ? { ok: true, officialKept: true } : { ok: true };
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { OfflineDraftRecord } from "@/_pages/collection-drafts/model/offline-records";
+import { pendingResumeHref } from "@/_pages/collection-drafts/model/capture-step-href";
 import { messageForQueueError, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
 import { Button } from "@/shared/ui/button";
 
@@ -10,6 +11,7 @@ type Props = Readonly<{
   notice?: string | null;
   bannerError?: string | null;
   retryResult?: string | null;
+  currentPathname?: string;
   onRetry: () => void;
   onDiscard: (draftId: string) => void;
   onClose?: () => void;
@@ -28,6 +30,7 @@ export function OfflinePendingPanel({
   notice = null,
   bannerError = null,
   retryResult = null,
+  currentPathname,
   onRetry,
   onDiscard,
   onClose,
@@ -38,7 +41,12 @@ export function OfflinePendingPanel({
     return null;
   }
 
-  const retryLabel = busy ? offlineCopy.retryBusy : offlineCopy.retry;
+  const blockedIncomplete = first?.lastError === "collection_incomplete";
+  const retryLabel = busy
+    ? offlineCopy.retryBusy
+    : blockedIncomplete
+      ? offlineCopy.completeCollection
+      : offlineCopy.retry;
 
   return (
     <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md p-3">
@@ -81,13 +89,25 @@ export function OfflinePendingPanel({
                     </span>
                     <Link
                       className="font-semibold text-[var(--color-primary-strong)]"
-                      href={`/coletas/${draft.id}/itens` as Route}
+                      href={pendingResumeHref(draft) as Route}
+                      onClick={(event) => {
+                        if (currentPathname === pendingResumeHref(draft)) {
+                          event.preventDefault();
+                          onClose?.();
+                        }
+                      }}
                     >
                       {offlineCopy.resume}
                     </Link>
                   </div>
                   {errorText ? <p className="text-[12px] font-medium text-[#ba5b52]">{errorText}</p> : null}
-                  <Button type="button" variant="secondary" onClick={() => onDiscard(draft.id)}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    isLoading={busy}
+                    disabled={busy}
+                    onClick={() => onDiscard(draft.id)}
+                  >
                     {offlineCopy.discard}
                   </Button>
                 </li>

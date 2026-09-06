@@ -212,7 +212,13 @@ describe("offline drain runner", () => {
 
   it("purges the local tree after a successful finalize", async () => {
     const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
-    await store.putDraft(draftRecord({ serverCustomerId: customerId, serverRowVersion: 6 }));
+    await store.putDraft(
+      draftRecord({
+        serverCustomerId: customerId,
+        serverRowVersion: 6,
+        collectionLocation: "Oficina Norte",
+      }),
+    );
     await store.enqueue({
       collectionId,
       userId: actor.userId,
@@ -433,5 +439,138 @@ describe("offline drain runner", () => {
     const updated = await store.getDraft(collectionId, actor.userId);
     expect(updated?.syncStatus).toBe("failed");
     expect(updated?.lastError).toBe("validation_error");
+  });
+
+  it("preempts a failed finalize when discard_draft is unfinished", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(
+      draftRecord({
+        serverCustomerId: customerId,
+        serverRowVersion: 4,
+        collectionLocation: null,
+        syncStatus: "failed",
+        lastError: "collection_incomplete",
+      }),
+    );
+    const finalizeMutation = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "finalize",
+      payload: { idempotencyKey: finalizeKey },
+    });
+    await store.putMutation({
+      ...finalizeMutation,
+      status: "failed",
+      lastError: "collection_incomplete",
+      attempts: 5,
+    });
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 4 },
+    });
+    const finalize = vi.fn(async () => ({ ok: true as const }));
+    const discardDraft = vi.fn(async () => ({ ok: true as const }));
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ finalize, discardDraft }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "completed", officialKept: false });
+    expect(finalize).not.toHaveBeenCalled();
+    expect(discardDraft).toHaveBeenCalledOnce();
+    expect(discardDraft).toHaveBeenCalledWith({ collectionId, expectedVersion: 4 });
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+    expect(await store.listMutations(collectionId, actor.userId)).toEqual([]);
+  });
+
+  it("applies a later location patch before replaying finalize", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(
+      draftRecord({
+        serverCustomerId: customerId,
+        serverRowVersion: 4,
+        collectionLocation: null,
+        syncStatus: "failed",
+        lastError: "collection_incomplete",
+      }),
+    );
+    const finalizeMutation = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "finalize",
+      payload: { idempotencyKey: finalizeKey },
+    });
+    await store.putMutation({
+      ...finalizeMutation,
+      status: "failed",
+      lastError: "collection_incomplete",
+    });
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { collectionLocation: "Oficina Norte" },
+    });
+    const patchDraft = vi.fn(async () => ({ ok: true as const, rowVersion: 5 }));
+    const finalize = vi.fn(async () => ({ ok: true as const }));
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ patchDraft, finalize }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "completed", officialKept: false });
+    expect(patchDraft).toHaveBeenCalledOnce();
+    expect(finalize).toHaveBeenCalledOnce();
+    const patchOrder = patchDraft.mock.invocationCallOrder[0];
+    const finalizeOrder = finalize.mock.invocationCallOrder[0];
+    expect(patchOrder).toBeDefined();
+    expect(finalizeOrder).toBeDefined();
+    if (patchOrder === undefined || finalizeOrder === undefined) {
+      return;
+    }
+    expect(patchOrder).toBeLessThan(finalizeOrder);
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+  });
+
+  it("does not increment attempts when collection_incomplete skips finalize", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(
+      draftRecord({
+        serverCustomerId: customerId,
+        serverRowVersion: 4,
+        collectionLocation: null,
+        syncStatus: "failed",
+        lastError: "collection_incomplete",
+      }),
+    );
+    const finalizeMutation = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "finalize",
+      payload: { idempotencyKey: finalizeKey },
+    });
+    await store.putMutation({
+      ...finalizeMutation,
+      status: "failed",
+      lastError: "collection_incomplete",
+      attempts: 5,
+    });
+    const finalize = vi.fn(async () => ({ ok: true as const }));
+    const sync = commands({ finalize });
+    await drainCollectionQueue({ store, commands: sync, actor, collectionId });
+    await drainCollectionQueue({ store, commands: sync, actor, collectionId });
+    expect(finalize).not.toHaveBeenCalled();
+    const leftover = await store.listMutations(collectionId, actor.userId);
+    const failedFinalize = leftover.find((row) => row.kind === "finalize");
+    expect(failedFinalize?.status).toBe("failed");
+    expect(failedFinalize?.lastError).toBe("collection_incomplete");
+    expect(failedFinalize?.attempts).toBe(5);
+    const draft = await store.getDraft(collectionId, actor.userId);
+    expect(draft?.lastError).toBe("collection_incomplete");
+    expect(draft?.syncStatus).toBe("failed");
   });
 });

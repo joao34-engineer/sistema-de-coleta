@@ -161,4 +161,35 @@ describe("offline draft store", () => {
       store.putDraft(draftFixture()),
     ).rejects.toBeInstanceOf(OfflineQuotaExceededError);
   });
+
+  it("enqueues a second discard_draft as the same unfinished row", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    const collectionId = draftFixture().id;
+    await store.putDraft(draftFixture());
+    const first = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 1 },
+    });
+    const second = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 1 },
+    });
+    expect(second.id).toBe(first.id);
+    await store.putMutation({ ...first, status: "failed", lastError: "operation_failed" });
+    const afterFailed = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "discard_draft",
+      payload: { expectedVersion: 1 },
+    });
+    expect(afterFailed.id).toBe(first.id);
+    const discards = (await store.listMutations(collectionId, actor.userId)).filter(
+      (row) => row.kind === "discard_draft",
+    );
+    expect(discards).toHaveLength(1);
+  });
 });

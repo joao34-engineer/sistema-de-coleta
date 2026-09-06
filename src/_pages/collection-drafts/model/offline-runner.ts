@@ -1,6 +1,7 @@
 import type { OfflineDraftStore } from "./offline-store";
 import type { OfflineSyncCommands } from "./offline-commands";
 import type { CaptureActor } from "./capture-actor";
+import { hasRequiredCollectionLocation } from "./has-required-collection-location";
 import {
   createCustomerPayloadSchema,
   createDraftPayloadSchema,
@@ -17,6 +18,51 @@ const STALE_RETRY_ONCE = "stale_version";
 const AUTH_ERROR = "authentication_required";
 const SYNC_INTERRUPTED = "sync_interrupted";
 const VALIDATION_ERROR = "validation_error";
+const COLLECTION_INCOMPLETE = "collection_incomplete";
+const CANCELLED_BY_DISCARD = "cancelled_by_discard";
+
+function isUnfinishedMutation(row: OfflineMutationRecord): boolean {
+  return row.status === "pending" || row.status === "failed" || row.status === "in_flight";
+}
+
+function isTerminalValidation(error: string): boolean {
+  return error === COLLECTION_INCOMPLETE || error === VALIDATION_ERROR;
+}
+
+function pickUnfinishedDiscard(
+  rows: readonly OfflineMutationRecord[],
+): OfflineMutationRecord | null {
+  const discards = rows
+    .filter((row) => row.kind === "discard_draft" && isUnfinishedMutation(row))
+    .sort((left, right) => left.sequence - right.sequence);
+  return discards[0] ?? null;
+}
+
+async function cancelUnfinishedExcept(
+  store: OfflineDraftStore,
+  rows: readonly OfflineMutationRecord[],
+  keepId: string,
+): Promise<void> {
+  for (const row of rows) {
+    if (row.id !== keepId && isUnfinishedMutation(row)) {
+      await store.putMutation({
+        ...row,
+        status: "done",
+        lastError: CANCELLED_BY_DISCARD,
+      });
+    }
+  }
+}
+
+/** Apply patch/item work before finalize so a later location patch can unblock emit. */
+function orderMutationsForDrain(
+  rows: readonly OfflineMutationRecord[],
+): OfflineMutationRecord[] {
+  const work = rows.filter((row) => row.status === "pending" || row.status === "failed");
+  const beforeFinalize = work.filter((row) => row.kind !== "finalize");
+  const finalizes = work.filter((row) => row.kind === "finalize");
+  return [...beforeFinalize, ...finalizes];
+}
 
 export type DrainLock = {
   request(name: string, callback: () => Promise<void>): Promise<void>;
@@ -64,10 +110,11 @@ async function markFailed(
   draft: OfflineDraftRecord,
   error: string,
 ): Promise<void> {
+  const sameTerminal = isTerminalValidation(error) && mutation.lastError === error;
   await store.putMutation({
     ...mutation,
     status: "failed",
-    attempts: mutation.attempts + 1,
+    attempts: sameTerminal ? mutation.attempts : mutation.attempts + 1,
     lastError: error,
   });
   await store.putDraft({
@@ -130,9 +177,19 @@ export async function drainCollectionQueue(input: {
     return { status: "completed", officialKept: false };
   }
 
-  const mutations = (await store.listMutations(collectionId, actor.userId)).filter(
-    (row) => row.status === "pending" || row.status === "failed",
-  );
+  const listed = await store.listMutations(collectionId, actor.userId);
+  const discardWinner = pickUnfinishedDiscard(listed);
+  if (discardWinner) {
+    // Discard must win: a failed finalize must not block the human's discard.
+    await cancelUnfinishedExcept(store, listed, discardWinner.id);
+  }
+  const mutations = discardWinner
+    ? [
+        discardWinner.status === "in_flight"
+          ? { ...discardWinner, status: "pending" as const }
+          : discardWinner,
+      ].filter((row) => row.status === "pending" || row.status === "failed")
+    : orderMutationsForDrain(listed);
 
   await store.putDraft({ ...draft, syncStatus: "syncing", updatedAt: store.nowIso() });
 
@@ -140,6 +197,21 @@ export async function drainCollectionQueue(input: {
     draft = await store.getDraft(collectionId, actor.userId);
     if (draft === null) {
       return { status: "completed", officialKept: false };
+    }
+
+    if (mutation.kind === "finalize" && !hasRequiredCollectionLocation(draft.collectionLocation)) {
+      await store.putMutation({
+        ...mutation,
+        status: "failed",
+        lastError: COLLECTION_INCOMPLETE,
+      });
+      await store.putDraft({
+        ...draft,
+        syncStatus: "failed",
+        lastError: COLLECTION_INCOMPLETE,
+        updatedAt: store.nowIso(),
+      });
+      return { status: "failed", officialKept: false };
     }
 
     const inFlight: OfflineMutationRecord = { ...mutation, status: "in_flight" };
@@ -300,7 +372,19 @@ async function replayMutation(
     if (!isSuccess(result)) {
       return classify(result.error);
     }
-    return { kind: "ok", draft: { ...draft, serverRowVersion: result.rowVersion } };
+    return {
+      kind: "ok",
+      draft: {
+        ...draft,
+        serverRowVersion: result.rowVersion,
+        ...(payload.collectionLocation === undefined
+          ? {}
+          : { collectionLocation: payload.collectionLocation }),
+        ...(payload.responsibleName === undefined ? {} : { responsibleName: payload.responsibleName }),
+        ...(payload.responsibleTaxId === undefined ? {} : { responsibleTaxId: payload.responsibleTaxId }),
+        ...(payload.collectedAt === undefined ? {} : { collectedAt: payload.collectedAt }),
+      },
+    };
   }
 
   if (mutation.kind === "add_item") {

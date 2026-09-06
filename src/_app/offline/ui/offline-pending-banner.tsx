@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { CaptureActor } from "@/_pages/collection-drafts/model/capture-actor";
+import { pendingResumeHref } from "@/_pages/collection-drafts/model/capture-step-href";
 import type { OfflineDraftRecord } from "@/_pages/collection-drafts/model/offline-records";
 import { isBrowserOnline } from "@/_pages/collection-drafts/model/offline-capture";
 import { messageForQueueError, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
@@ -67,6 +68,8 @@ export function OfflinePendingBanner({ actor }: Props) {
     );
   }
 
+  const currentPathname = typeof window === "undefined" ? "" : window.location.pathname;
+
   return (
     <OfflinePendingPanel
       drafts={drafts}
@@ -74,9 +77,20 @@ export function OfflinePendingBanner({ actor }: Props) {
       notice={notice}
       bannerError={bannerError}
       retryResult={retryResult}
+      currentPathname={currentPathname}
       onClose={() => setCollapsed(true)}
       onRetry={() => {
         if (busy) {
+          return;
+        }
+        const ordered = [...drafts].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+        const first = ordered[0];
+        if (first?.lastError === "collection_incomplete") {
+          setBannerError(null);
+          setRetryResult(messageForQueueError("collection_incomplete"));
+          if (currentPathname === pendingResumeHref(first)) {
+            setCollapsed(true);
+          }
           return;
         }
         void (async () => {
@@ -100,6 +114,9 @@ export function OfflinePendingBanner({ actor }: Props) {
         })();
       }}
       onDiscard={(draftId) => {
+        if (busy) {
+          return;
+        }
         void (async () => {
           const store = await ensureOfflineDraftStore();
           const target = drafts.find((row) => row.id === draftId) ?? (await store.getDraft(draftId, actor.userId));
@@ -108,17 +125,24 @@ export function OfflinePendingBanner({ actor }: Props) {
           if (!window.confirm(confirmServer ? offlineCopy.discardConfirmSynced : offlineCopy.discardConfirm)) {
             return;
           }
-          const result = await discardLocalDraft({ store, actor, collectionId: draftId });
-          if (!result.ok) {
-            setBannerError(messageForQueueError(result.error));
-            await reloadPanel();
-            return;
-          }
+          setBusy(true);
           setBannerError(null);
-          if (result.officialKept === true) {
-            setNotice(offlineCopy.discardOfficialKept);
+          setRetryResult(null);
+          try {
+            const result = await discardLocalDraft({ store, actor, collectionId: draftId });
+            if (!result.ok) {
+              setBannerError(messageForQueueError(result.error));
+              await reloadPanel();
+              return;
+            }
+            setBannerError(null);
+            if (result.officialKept === true) {
+              setNotice(offlineCopy.discardOfficialKept);
+            }
+            await reloadPanel();
+          } finally {
+            setBusy(false);
           }
-          await reloadPanel();
         })();
       }}
     />
