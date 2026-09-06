@@ -50,6 +50,6 @@ Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS
 | 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |
 | 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Chats 1–5 ferramentas; prova humana de restore adiada; faltam campo e go-live formal |
 | — | [Leftovers F1/F2 + doc resto](execution/fase1-2-leftovers-and-doc-resto-fix-prompt.md) | Prompt: SW, hidratação, B28, retry PDF, `/verificar` 429 |
-| — | [Pending panel dead CTAs](execution/vercel-pending-panel-dead-actions-fix-prompt.md) | Prompt: `collection_incomplete` popup; Continuar / Descartar / Tentar de novo |
+| — | [Pending panel leftover discard](execution/vercel-pending-panel-dead-actions-fix-prompt.md) | Waves 2–3 closed; open: leftover `immutable_record` on Descartar |
 
 Nenhum documento de execucao deve ultrapassar 500 linhas. Novas decisoes devem ser registradas em `decisions/` ou no documento tematico correspondente, nao diluidas em prompts ou codigo.

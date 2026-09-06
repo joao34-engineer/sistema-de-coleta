@@ -493,7 +493,11 @@ async function replayMutation(
       expectedVersion: draft.serverRowVersion,
     });
     if (!isSuccess(result)) {
-      if (result.error === "collection_not_draft" || result.error === "not_found") {
+      if (
+        result.error === "collection_not_draft" ||
+        result.error === "not_found" ||
+        result.error === "immutable_record"
+      ) {
         return { kind: "purged", reason: "official_kept" };
       }
       return classify(result.error);

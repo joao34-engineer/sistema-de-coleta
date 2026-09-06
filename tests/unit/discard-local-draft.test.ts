@@ -202,4 +202,16 @@ describe("discardLocalDraft", () => {
     expect(finalize).not.toHaveBeenCalled();
     expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
   });
+
+  it("returns officialKept when discardDraft reports immutable_record", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ lastError: null, syncStatus: "queued" }));
+    const discardDraft = vi.fn(async () => ({ ok: false as const, error: "immutable_record" }));
+    const finalize = vi.fn(async () => ({ ok: true as const }));
+    bindAuthenticatedDrain(store, commands({ discardDraft, finalize }));
+    const result = await discardLocalDraft({ store, actor, collectionId });
+    expect(result).toEqual({ ok: true, officialKept: true });
+    expect(finalize).not.toHaveBeenCalled();
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+  });
 });

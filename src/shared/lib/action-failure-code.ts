@@ -20,6 +20,7 @@ const KNOWN_ACTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   "collection_cannot_be_canceled",
   "collection_not_canceled",
   "collection_not_draft",
+  "immutable_record",
   "invalid_discard_request",
   "not_found",
   "signature_contract_invalid",

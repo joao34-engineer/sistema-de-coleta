@@ -39,6 +39,7 @@ const queueErrorMessages: Readonly<Record<string, string>> = {
   collection_incomplete: "Informe o local da coleta antes de continuar.",
   issuer_profile_incomplete: "Os dados do emissor da guia estão incompletos. Ajuste nas configurações.",
   collection_not_draft: offlineCopy.discardOfficialKept,
+  immutable_record: offlineCopy.discardOfficialKept,
   invalid_discard_request: "Não foi possível descartar este rascunho.",
   not_found: "Rascunho de coleta não encontrado.",
   signature_contract_invalid: "Não foi possível confirmar a assinatura.",

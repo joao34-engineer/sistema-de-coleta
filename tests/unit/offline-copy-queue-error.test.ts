@@ -22,6 +22,8 @@ describe("messageForQueueError", () => {
     expect(messageForQueueError("issuer_profile_incomplete")).toMatch(/emissor/i);
     expect(messageForQueueError("sync_interrupted")).toMatch(/interrompid/i);
     expect(messageForQueueError("collection_not_draft")).toBe(offlineCopy.discardOfficialKept);
+    expect(messageForQueueError("immutable_record")).toBe(offlineCopy.discardOfficialKept);
+    expect(messageForQueueError("immutable_record")).not.toBe("immutable_record");
   });
 
   it("returns the generic failed label for unknown codes and legacy Portuguese lastError", () => {

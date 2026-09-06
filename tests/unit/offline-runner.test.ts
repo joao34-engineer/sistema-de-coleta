@@ -359,6 +359,30 @@ describe("offline drain runner", () => {
     expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
   });
 
+  it.each(["immutable_record", "not_found"] as const)(
+    "purges a local discard when discardDraft returns %s",
+    async (error) => {
+      const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+      await store.putDraft(draftRecord({ serverRowVersion: 2 }));
+      await store.enqueue({
+        collectionId,
+        userId: actor.userId,
+        kind: "discard_draft",
+        payload: { expectedVersion: 2 },
+      });
+      const result = await drainCollectionQueue({
+        store,
+        commands: commands({
+          discardDraft: vi.fn(async () => ({ ok: false as const, error })),
+        }),
+        actor,
+        collectionId,
+      });
+      expect(result).toEqual({ status: "completed", officialKept: true });
+      expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+    },
+  );
+
   it("surfaces officialKept from drainAllPending after a non-draft discard", async () => {
     const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
     await store.putDraft(draftRecord({ serverRowVersion: 2 }));
