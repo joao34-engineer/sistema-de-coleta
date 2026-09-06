@@ -8,6 +8,7 @@ export const collectionStatuses = [
   "canceled",
   "in_workshop",
   "in_budget",
+  /** Reservado no CHECK/Zod; nenhuma RPC grava este valor — dwell real é `in_budget`. */
   "awaiting_approval",
   "approved",
   "in_service",

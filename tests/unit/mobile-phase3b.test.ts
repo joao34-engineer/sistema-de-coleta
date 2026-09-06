@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { collectionQuerySchema } from "@/_pages/collection-lifecycle/model/contracts";
+import { technicalBudgetResultSchema } from "@/_pages/collection-operations/model/contracts";
 
 describe("Mobile Phase 3B Contract & Logic Tests", () => {
   it("validates collection query parameters schema", () => {
@@ -21,6 +24,35 @@ describe("Mobile Phase 3B Contract & Logic Tests", () => {
     expect(defaultQuery.limit).toBe(25);
     expect(defaultQuery.code).toBeUndefined();
     expect(defaultQuery.status).toBeUndefined();
+  });
+
+  it("create_technical_budget still reports in_budget (not awaiting_approval)", () => {
+    const sampleUuid = "d3b07384-d113-40a2-a9b3-6c845b410001";
+    const inBudget = technicalBudgetResultSchema.safeParse({
+      collectionId: sampleUuid,
+      status: "in_budget",
+      rowVersion: 2,
+      serviceOrderId: sampleUuid,
+    });
+    expect(inBudget.success).toBe(true);
+
+    const awaitingApproval = technicalBudgetResultSchema.safeParse({
+      collectionId: sampleUuid,
+      status: "awaiting_approval",
+      rowVersion: 2,
+      serviceOrderId: sampleUuid,
+    });
+    expect(awaitingApproval.success).toBe(false);
+
+    const migrationSql = readFileSync(
+      join(process.cwd(), "supabase/migrations/20260829230000_phase_1_rejected_rebudget.sql"),
+      "utf8",
+    );
+    const rpcBody =
+      migrationSql.match(/create or replace function public\.create_technical_budget[\s\S]*?\$\$;/i)?.[0] ?? "";
+    expect(rpcBody).toMatch(/set status = 'in_budget'/);
+    expect(rpcBody).toMatch(/'status', 'in_budget'/);
+    expect(rpcBody).not.toMatch(/set status = 'awaiting_approval'/);
   });
 
   it("formats WhatsApp share text correctly", () => {
