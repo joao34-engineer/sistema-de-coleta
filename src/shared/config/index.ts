@@ -1,1 +1,1 @@
-export { routes, protectedRoutePrefixes } from "./routes";
+export { routes, protectedRoutePrefixes, isProtectedPath } from "./routes";

@@ -6,3 +6,9 @@ export const routes = {
 } as const;
 
 export const protectedRoutePrefixes = [routes.dashboard, "/configuracoes", "/coletas"] as const;
+
+export function isProtectedPath(pathname: string): boolean {
+  return protectedRoutePrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
