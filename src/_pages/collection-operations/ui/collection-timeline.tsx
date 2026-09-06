@@ -5,16 +5,23 @@ import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 type Props = Readonly<{ events: ReadonlyArray<CollectionEventSummary> }>;
 
 const eventTypeLabels: Readonly<Record<string, string>> = {
-  collection_finalized: "Coleta finalizada",
-  workshop_check_in: "Entrada na oficina",
-  technical_budget_created: "Orçamento registrado",
-  technical_budget_approved: "Orçamento aprovado",
-  technical_budget_rejected: "Orçamento rejeitado",
-  service_progress_updated: "Progresso atualizado",
-  invoice_reference_registered: "NF-e registrada",
-  delivery_completed: "Entrega concluída",
-  collection_canceled: "Coleta cancelada",
-  collection_reopened: "Coleta reaberta",
+  "collection.draft.created": "Rascunho criado",
+  "collection.draft.updated": "Rascunho atualizado",
+  "collection.item.created": "Item adicionado",
+  "collection.item.updated": "Item atualizado",
+  "collection.item.removed": "Item removido",
+  "collection.evidence.committed": "Evidência anexada",
+  "collection.signature.committed": "Assinatura registrada",
+  "collection.finalized": "Coleta finalizada",
+  "collection.workshop.checked_in": "Entrada na oficina",
+  "collection.budget.created": "Orçamento registrado",
+  "collection.budget.approved": "Orçamento aprovado",
+  "collection.budget.rejected": "Orçamento rejeitado",
+  "collection.service.progress_updated": "Progresso atualizado",
+  "collection.invoice.registered": "NF-e registrada",
+  "collection.delivered": "Entrega ao cliente",
+  "collection.canceled": "Coleta cancelada",
+  "collection.reopened": "Coleta reaberta",
 };
 
 function formatEventDate(value: string): string {
