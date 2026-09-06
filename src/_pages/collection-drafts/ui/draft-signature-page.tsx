@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { fetchDraftWithItemsAction } from "../api/actions";
+import { messageForQueueError } from "../model/offline-copy";
 import { finalizeCollectionWithSignatureAction } from "@/app/actions/draft-flow.actions";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
 
@@ -87,7 +88,7 @@ export function DraftSignaturePage({ draftId, initialDraft, initialItems }: Prop
       });
 
       if (!res.ok) {
-        setErrorMsg(`Erro ao finalizar coleta: ${res.error}`);
+        setErrorMsg(messageForQueueError(res.error));
         setIsFinalizing(false);
         return;
       }
