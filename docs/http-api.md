@@ -257,7 +257,7 @@ Rota interna para retry do worker documental. Autorização (não enfraquecida):
 
 Comparação em tempo constante. Sem credencial válida responde `403`. Respostas são `no-store` e retornam somente contagem/status.
 
-- **GET** — cron em `vercel.json` (`*/5 * * * *` → `/api/internal/document-jobs/run`); processa lote padrão de 5 se o kick in-process morrer ou o job falhar.
+- **GET** — cron em `vercel.json` (`0 7 * * *` → `/api/internal/document-jobs/run`, uma vez ao dia; plano Hobby recusa cron sub-diário); processa lote padrão de 5 se o kick in-process morrer ou o job falhar.
 - **POST** — aceita opcionalmente `{ batchSize: 1..5 }` (padrão 5). O alias `/api/internal/document-generation/run` permanece POST-only com a mesma autenticação de worker.
 - `/cleanup` usa a mesma proteção por `X-Document-Worker-Secret`.
 

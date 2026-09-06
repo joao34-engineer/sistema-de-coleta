@@ -32,7 +32,7 @@ Uma coleta finalizada é evidência operacional imutável. O sistema precisa pro
 - Reenvio de e-mail não duplica a intenção quando a mesma chave é repetida.
 - Correções aumentam a versão e exigem nova renderização, mantendo a cadeia documental.
 - A limpeza de intents expiradas é uma operação separada e nunca trata `document_artifacts` como fila mutável.
-- **V1 operacional:** o happy path é o kick in-process (`after()` + DAL) depois de finalize/cancel/reopen/revise. O cron em `vercel.json` chama `GET /api/internal/document-jobs/run` a cada 5 minutos (auth via `CRON_SECRET` Bearer ou `DOCUMENT_WORKER_SECRET`) só como retry. Sem artefato a UI declara “Gerando o PDF…” e depois um estado honesto. Compartilhamento WhatsApp/`navigator.share` usa apenas `/d/{token}`.
+- **V1 operacional:** o happy path é o kick in-process (`after()` + DAL) depois de finalize/cancel/reopen/revise. O cron em `vercel.json` chama `GET /api/internal/document-jobs/run` uma vez ao dia (Hobby; auth via `CRON_SECRET` Bearer ou `DOCUMENT_WORKER_SECRET`) só como retry. Sem artefato a UI declara “Gerando o PDF…” e depois um estado honesto. Compartilhamento WhatsApp/`navigator.share` usa apenas `/d/{token}`.
 
 ## Fora do escopo
 
