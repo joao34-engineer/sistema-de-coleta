@@ -6,7 +6,7 @@ import type { CollectionStatus } from "@/shared/model/collection-status";
 
 export type { CollectionStatus };
 
-export type ServiceOrderStatus = "draft" | "budgeted" | "approved" | "in_service" | "ready" | "canceled" | "rejected";
+export type ServiceOrderStatus = "draft" | "budgeted" | "approved" | "in_service" | "ready" | "canceled" | "rejected" | "delivered";
 
 export type ServiceOrder = Readonly<{
   id: string;

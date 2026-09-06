@@ -24,7 +24,7 @@ select is((
   where conrelid = 'public.service_orders'::regclass
     and contype = 'c'
     and conname = 'service_orders_status_check'
-), '(status = ANY (ARRAY[\'draft\'::text, \'budgeted\'::text, \'approved\'::text, \'in_service\'::text, \'ready\'::text, \'canceled\'::text, \'rejected\'::text]))', 'service_orders status constraint matches allowed values');
+), '(status = ANY (ARRAY[\'draft\'::text, \'budgeted\'::text, \'approved\'::text, \'in_service\'::text, \'ready\'::text, \'canceled\'::text, \'rejected\'::text, \'delivered\'::text]))', 'service_orders status constraint matches allowed values');
 
 -- 4. Constraints de integridade referencial
 select is((
