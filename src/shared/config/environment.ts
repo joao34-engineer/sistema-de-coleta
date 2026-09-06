@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { projectRefFromUrl } from "./project-ref";
 
 const publicEnvironmentSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional().or(z.literal("")),
@@ -38,6 +39,32 @@ export type ServiceEnvironment = Readonly<{
   supabaseSecretKey: string;
   confirmProjectRef: string;
 }>;
+
+export class ServiceEnvironmentInvalidError extends Error {
+  constructor() {
+    super("Variáveis de serviço Supabase ausentes ou inválidas.");
+    this.name = "ServiceEnvironmentInvalidError";
+  }
+}
+
+export class ServiceEnvironmentMismatchError extends Error {
+  constructor() {
+    super("SUPABASE_CONFIRM_PROJECT_REF");
+    this.name = "ServiceEnvironmentMismatchError";
+  }
+}
+
+export function assertServiceProjectRef(environment: ServiceEnvironment): void {
+  let urlRef: string;
+  try {
+    urlRef = projectRefFromUrl(environment.supabaseUrl);
+  } catch {
+    throw new ServiceEnvironmentInvalidError();
+  }
+  if (environment.confirmProjectRef !== urlRef) {
+    throw new ServiceEnvironmentMismatchError();
+  }
+}
 
 export function getPublicEnvironment(): PublicEnvironment {
   const parsed = publicEnvironmentSchema.safeParse({
@@ -95,10 +122,13 @@ export function getServiceEnvironment(): ServiceEnvironment {
     SUPABASE_CONFIRM_PROJECT_REF: process.env["SUPABASE_CONFIRM_PROJECT_REF"],
   });
 
-  if (!parsed.success) throw new Error("Variáveis de serviço Supabase ausentes ou inválidas.");
-  return {
+  if (!parsed.success) throw new ServiceEnvironmentInvalidError();
+
+  const environment = {
     supabaseUrl: parsed.data.NEXT_PUBLIC_SUPABASE_URL,
     supabaseSecretKey: parsed.data.SUPABASE_SECRET_KEY,
     confirmProjectRef: parsed.data.SUPABASE_CONFIRM_PROJECT_REF,
   };
+  assertServiceProjectRef(environment);
+  return environment;
 }

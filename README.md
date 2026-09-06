@@ -13,7 +13,7 @@ Coletas, clientes, itens, assinaturas, documentos, QR e funcionamento offline ai
 - Windows para desenvolvimento.
 - Next.js App Router, React, TypeScript estrito e Tailwind CSS.
 - Supabase remoto único para Auth, PostgreSQL, Storage privado e RLS.
-- Vercel somente com URL e publishable key do Supabase remoto.
+- Vercel: URL e publishable key no cliente; `SUPABASE_SECRET_KEY` somente no servidor (rate limit + worker de documentos). Nunca `NEXT_PUBLIC_*`, nunca no Git.
 - Supabase local/Docker adiado; não executar `supabase start`, `supabase db reset` ou `supabase db reset --linked` neste fluxo.
 - Um único administrador provisionado manualmente no painel Supabase.
 
@@ -61,7 +61,7 @@ O usuário remoto é criado manualmente no painel Supabase. Depois, o script ide
 npm.cmd run bootstrap:admin
 ```
 
-No modo remoto, a senha nunca é lida ou alterada pelo script. `SUPABASE_SECRET_KEY` deve existir apenas no terminal local durante o bootstrap e nunca na Vercel.
+No modo remoto, a senha nunca é lida ou alterada pelo script. `SUPABASE_SECRET_KEY` é obrigatória no servidor Vercel (RPC de rate limit e worker de documentos); nunca `NEXT_PUBLIC_*`, nunca no cliente e nunca commitada. No bootstrap local ela fica só no terminal.
 
 ## Documentação e governança
 

@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/shared/api/database.types";
-import { getServiceEnvironment } from "@/shared/config/environment";
+import { assertServiceProjectRef, getServiceEnvironment } from "@/shared/config/environment";
 
 type PhaseTwoRow = Readonly<Record<string, unknown>>;
 type PhaseTwoTable = { Row: PhaseTwoRow; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
@@ -20,6 +20,7 @@ export type PhaseTwoSupabaseClient = SupabaseClient<PhaseTwoDatabase>;
 
 export function createPhaseTwoServiceClient(): PhaseTwoSupabaseClient {
   const environment = getServiceEnvironment();
+  assertServiceProjectRef(environment);
   return createClient<PhaseTwoDatabase>(environment.supabaseUrl, environment.supabaseSecretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });

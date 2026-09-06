@@ -30,3 +30,9 @@ MFA, observabilidade, backup e os 4 gates remotos da Fase 1A.
 ## Atualizacao (28/08/2026)
 
 A migration `20260828120000_phase_4_chat3_security_acl.sql` foi aplicada no remoto (`migration list --linked` alinhado). Observabilidade ficou no Chat 4 (ADR 0008).
+
+## Atualizacao (06/09/2026) — B24/B25
+
+Login permanece fail-closed. `SUPABASE_CONFIRM_PROJECT_REF` passou a ser confrontado com o project ref de `NEXT_PUBLIC_SUPABASE_URL` em `getServiceEnvironment`; o mesmo assert vale para o cliente de rate limit e o cliente de serviço da Fase 2. `SUPABASE_SECRET_KEY` é obrigatória no servidor Vercel (nunca `NEXT_PUBLIC_*`, nunca commitada).
+
+A quota `auth_login` (5 / 900 s) continua consumindo atomicamente antes de `signInWithPassword`. Credencial inválida mantém o slot. Login bem-sucedido chama `reset_document_rate_limit`, que apaga a linha da janela corrente — cinco logins corretos no mesmo slot não bloqueiam o administrador. Lockout ativo não chega no Auth. Peek existe para testes/escopos futuros; consume não muda. Reset com falha não impede o redirect; o log usa `rate_limit_reset_failed`. Falhas de ambiente/RPC no login usam `logTransactionFailure` com códigos allow-listed e somente nomes de variável.
