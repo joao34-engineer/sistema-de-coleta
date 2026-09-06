@@ -5,8 +5,13 @@ import { cookies } from "next/headers";
 import type { Database } from "@/shared/api/database.types";
 import { getPublicEnvironment } from "@/shared/config/environment";
 
-export async function createServerSupabaseClient() {
+export type CookieMutation = "best-effort" | "required";
+
+export async function createServerSupabaseClient(
+  options: Readonly<{ cookieMutation?: CookieMutation }> = {},
+) {
   const environment = getPublicEnvironment();
+  const cookieMutation = options.cookieMutation ?? "best-effort";
   const cookieStore = await cookies();
 
   return createServerClient<Database>(environment.supabaseUrl, environment.supabasePublishableKey, {
@@ -17,8 +22,8 @@ export async function createServerSupabaseClient() {
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          // Server Components cannot always mutate cookies; proxy refreshes them.
+        } catch (error) {
+          if (cookieMutation === "required") throw error;
         }
       },
     },
