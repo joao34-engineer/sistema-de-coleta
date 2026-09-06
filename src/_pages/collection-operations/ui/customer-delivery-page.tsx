@@ -11,11 +11,13 @@ import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { deliverToCustomerAction } from "@/_app/actions/phase3-flow.actions";
 import { customerDeliverySchema } from "../model/contracts";
+import { defaultDeliveredItemIds, isAlreadyDeliveredItem } from "../model/delivery-selection";
 
 type Props = Readonly<{
   collectionId: string;
   officialCode: string | null;
   items: ReadonlyArray<{ id: string; description: string; quantity: number }>;
+  alreadyDeliveredItemIds: ReadonlyArray<string>;
   rowVersion: number;
 }>;
 
@@ -25,9 +27,15 @@ function dataUrlToFile(dataUrl: string): File {
   return new File([buffer], "signature.png", { type: "image/png" });
 }
 
-export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVersion }: Props) {
+export function CustomerDeliveryPage({
+  collectionId,
+  officialCode,
+  items,
+  alreadyDeliveredItemIds,
+  rowVersion,
+}: Props) {
   const router = useRouter();
-  const [deliveredItemIds, setDeliveredItemIds] = useState<string[]>(() => items.map((item) => item.id));
+  const [deliveredItemIds, setDeliveredItemIds] = useState<string[]>(() => [...defaultDeliveredItemIds()]);
   const [receiverName, setReceiverName] = useState("");
   const [receiverTaxId, setReceiverTaxId] = useState("");
   const [notes, setNotes] = useState("");
@@ -37,6 +45,7 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   function toggleItem(itemId: string): void {
+    if (isAlreadyDeliveredItem(itemId, alreadyDeliveredItemIds)) return;
     setDeliveredItemIds((current) =>
       current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]
     );
@@ -46,7 +55,8 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
     if (isSubmitting) return;
     setErrorMsg(null);
 
-    if (deliveredItemIds.length === 0) {
+    const selectedIds = deliveredItemIds.filter((itemId) => !isAlreadyDeliveredItem(itemId, alreadyDeliveredItemIds));
+    if (selectedIds.length === 0) {
       setErrorMsg("Selecione ao menos um item para entrega.");
       return;
     }
@@ -59,7 +69,7 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
     const parsed = customerDeliverySchema.safeParse({
       collectionId,
       expectedVersion: rowVersion,
-      deliveredItemIds,
+      deliveredItemIds: selectedIds,
       receiverName,
       receiverTaxId,
       notes: notes.trim() === "" ? undefined : notes.trim(),
@@ -80,7 +90,7 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
     if (notes.trim() !== "") {
       formData.set("notes", notes.trim());
     }
-    formData.set("deliveredItemIds", JSON.stringify(deliveredItemIds));
+    formData.set("deliveredItemIds", JSON.stringify(selectedIds));
     formData.set("signatureIntentId", signatureIntentId);
     formData.set("signature", dataUrlToFile(signatureDataUrl));
 
@@ -96,7 +106,8 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
     });
   }
 
-  const isPartialSelection = deliveredItemIds.length > 0 && deliveredItemIds.length < items.length;
+  const selectableCount = items.filter((item) => !isAlreadyDeliveredItem(item.id, alreadyDeliveredItemIds)).length;
+  const isPartialSelection = deliveredItemIds.length > 0 && deliveredItemIds.length < selectableCount;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
@@ -118,22 +129,33 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
             Itens entregues
           </h2>
           {items.map((item) => {
-            const isChecked = deliveredItemIds.includes(item.id);
+            const alreadyDelivered = isAlreadyDeliveredItem(item.id, alreadyDeliveredItemIds);
+            const isChecked = alreadyDelivered ? false : deliveredItemIds.includes(item.id);
             return (
               <label
                 key={item.id}
-                className="flex cursor-pointer items-center justify-between gap-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-4 py-3 shadow-xs transition-all active:scale-[0.99]"
+                className={`flex items-center justify-between gap-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-4 py-3 shadow-xs transition-all ${
+                  alreadyDelivered
+                    ? "cursor-not-allowed opacity-70"
+                    : "cursor-pointer active:scale-[0.99]"
+                }`}
               >
                 <span className="min-w-0 break-words text-[13px] font-medium text-[var(--color-text-primary)]">
                   {item.description}
                 </span>
                 <span className="flex shrink-0 items-center gap-3">
                   <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">{item.quantity}x</span>
+                  {alreadyDelivered ? (
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      já entregue
+                    </span>
+                  ) : null}
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggleItem(item.id)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || alreadyDelivered}
+                    aria-label={alreadyDelivered ? `${item.description} já entregue` : item.description}
                     className="h-5 w-5 accent-[var(--color-primary)]"
                   />
                 </span>
@@ -144,7 +166,7 @@ export function CustomerDeliveryPage({ collectionId, officialCode, items, rowVer
 
         {isPartialSelection ? (
           <p className="text-center text-[12px] font-semibold text-[var(--color-text-muted)]">
-            {deliveredItemIds.length} de {items.length} itens serão entregues
+            {deliveredItemIds.length} de {selectableCount} itens serão entregues
           </p>
         ) : null}
 

@@ -33,6 +33,25 @@ describe("safe action errors", () => {
     });
   });
 
+  it("maps delivery item validation codes to Portuguese", () => {
+    expect(toSafeActionError({ code: "P0001", message: "duplicate_delivery_item" })).toEqual({
+      ok: false,
+      error: "O mesmo item foi informado mais de uma vez na entrega.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "item_already_delivered" })).toEqual({
+      ok: false,
+      error: "Um ou mais itens já foram entregues em um termo anterior.",
+    });
+    expect(toSafeActionError(new Error("duplicate_delivery_item"))).toEqual({
+      ok: false,
+      error: "O mesmo item foi informado mais de uma vez na entrega.",
+    });
+    expect(toSafeActionError(new Error("item_already_delivered"))).toEqual({
+      ok: false,
+      error: "Um ou mais itens já foram entregues em um termo anterior.",
+    });
+  });
+
   it("falls back to the generic P0001 message for unknown business rules", () => {
     expect(toSafeActionError({ code: "P0001", message: "some_unknown_detail" })).toEqual({
       ok: false,

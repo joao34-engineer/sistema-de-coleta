@@ -13,6 +13,8 @@ const failureMessages: Readonly<Record<string, string>> = {
   service_order_not_in_service: "A coleta precisa estar 'aprovada' ou 'em reparo' para atualizar o progresso.",
   invoice_not_ready: "A coleta precisa estar 'pronta' para registrar a NF-e.",
   delivery_not_invoiced: "A coleta precisa estar 'faturada' ou em entrega parcial para entregar ao cliente.",
+  duplicate_delivery_item: "O mesmo item foi informado mais de uma vez na entrega.",
+  item_already_delivered: "Um ou mais itens já foram entregues em um termo anterior.",
   collection_cannot_be_canceled: "A coleta não pode ser cancelada no status atual.",
   collection_not_canceled: "A coleta não está cancelada para ser reaberta.",
   validation_error: "Revise os dados informados e tente novamente.",

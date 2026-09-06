@@ -115,6 +115,24 @@ describe("Phase 4 Operations & Workshop Zod Contracts", () => {
     expect(customerDeliverySchema.safeParse(emptyItemsDelivery).success).toBe(false);
   });
 
+  it("rejects duplicate delivered item ids with a machine-readable refine", () => {
+    const otherUuid = "d3b07384-d113-40a2-a9b3-6c845b410002";
+    const duplicateDelivery = {
+      collectionId: sampleUuid,
+      expectedVersion: 1,
+      deliveredItemIds: [sampleUuid, sampleUuid, otherUuid],
+      receiverName: "Marcio Souza",
+      receiverTaxId: "12345678909",
+      signatureIntentId: sampleUuid,
+    };
+    const result = customerDeliverySchema.safeParse(duplicateDelivery);
+    expect(result.success).toBe(false);
+    if (result.success) {
+      return;
+    }
+    expect(result.error.issues.some((issue) => issue.message.includes("mais de uma vez"))).toBe(true);
+  });
+
   it("validates service progress schema (M14)", () => {
     const validProgress = {
       collectionId: sampleUuid,

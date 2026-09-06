@@ -37,6 +37,8 @@ function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorI
     if (error.code === "P0001" && error.message === "invalid_item_progress_status") return { status: 422, code: "validation_error", message: "Status de progresso do item inválido." };
     if (error.code === "P0001" && error.message === "invalid_invoice_request") return { status: 422, code: "validation_error", message: "Dados da NF-e inválidos." };
     if (error.code === "P0001" && error.message === "invalid_delivery_request") return { status: 422, code: "validation_error", message: "Dados da entrega inválidos." };
+    if (error.code === "P0001" && error.message === "duplicate_delivery_item") return { status: 409, code: "duplicate_delivery_item", message: "O mesmo item foi informado mais de uma vez na entrega." };
+    if (error.code === "P0001" && error.message === "item_already_delivered") return { status: 409, code: "item_already_delivered", message: "Um ou mais itens já foram entregues em um termo anterior." };
     if (error.code === "P0001" && error.message === "invalid_cancel_reopen_request") return { status: 422, code: "validation_error", message: "Dados de cancelamento/reabertura inválidos." };
     if (error.code === "P0001" && error.message === "invalid_upload_metadata") return { status: 422, code: "validation_error", message: "Metadados de upload inválidos." };
     if (error.code === "P0001" && error.message === "invalid_signature_metadata") return { status: 422, code: "validation_error", message: "Metadados de assinatura inválidos." };
