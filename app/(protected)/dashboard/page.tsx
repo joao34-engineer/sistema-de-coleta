@@ -1,15 +1,27 @@
 import { listCollections } from "@/_pages/collection-lifecycle/api/queries";
+import { getCollectionDashboardSummary } from "@/_pages/dashboard/api/queries";
 import { DashboardRoute } from "@/_pages/dashboard/index.server";
 import type { DashboardActivityItem } from "@/_pages/dashboard/model/contracts";
+import { inProgressStatuses } from "@/shared/model/collection-status";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPageRoute() {
   let activities: DashboardActivityItem[] = [];
+  let inProgressCount = 0;
+  let readyForDeliveryCount = 0;
   let loadFailed = false;
 
   try {
-    const result = await listCollections({ limit: 50 });
+    const [summary, result] = await Promise.all([
+      getCollectionDashboardSummary(),
+      listCollections({
+        statuses: [...inProgressStatuses],
+        limit: 3,
+      }),
+    ]);
+    inProgressCount = summary.inProgress;
+    readyForDeliveryCount = summary.readyForDelivery;
     activities = result.items.map((item) => ({
       id: item.id,
       officialCode: item.officialCode,
@@ -21,5 +33,12 @@ export default async function DashboardPageRoute() {
     loadFailed = true;
   }
 
-  return <DashboardRoute activities={activities} loadFailed={loadFailed} />;
+  return (
+    <DashboardRoute
+      activities={activities}
+      inProgressCount={inProgressCount}
+      readyForDeliveryCount={readyForDeliveryCount}
+      loadFailed={loadFailed}
+    />
+  );
 }

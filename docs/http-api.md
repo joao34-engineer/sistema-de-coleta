@@ -121,7 +121,17 @@ Não há Route Handler dedicado. A Server Action `discardDraftAction` chama o DA
 
 ## Consulta e paginação
 
-`GET /api/collections` e `GET /api/collections/{id}/events` usam cursor opaco base64url contendo `{ createdAt, id }`. A ordenação é estável por `created_at` e `id`; o cliente não deve interpretar nem fabricar cursor.
+`GET /api/collections` aceita busca e filtro no servidor, além do cursor:
+
+- `q` — busca unificada (código oficial e nome por `ILIKE`; CPF/CNPJ e telefone pelos dígitos, após `regexp_replace` no SQL e `normalizeDigits` no TypeScript). Sete ou mais dígitos também fazem match parcial em documento e telefone.
+- `filter` — chip da lista: `all` | `collected` | `in_repair` | `ready`. O servidor traduz para `statuses` via `statusesForListFilter` (taxonomia compartilhada).
+- `statuses` — lista explícita de status canônicos (vírgula ou repetido). Tem precedência sobre `filter` quando presente.
+- filtros pontuais existentes: `code`, `customer`, `taxId`, `phone`, `status`, `from`, `to`.
+- `cursor` opaco base64url `{ createdAt, id }` e `limit` entre 1 e 50 (padrão 25).
+
+A resposta inclui `items`, `nextCursor` e `totalCount` (total do filtro, independente da página). Trocar `q` ou `filter` descarta o cursor. `ILIKE` não é insensível a acento (extensão `unaccent` não instalada).
+
+`GET /api/collections` e `GET /api/collections/{id}/events` usam o mesmo cursor opaco. A ordenação é estável por `created_at` e `id`; o cliente não deve interpretar nem fabricar cursor.
 
 Detalhes de coletas finalizadas/canceladas usam o cliente congelado e o snapshot documental, incluindo evidências confirmadas. O cadastro atual do cliente não reescreve uma guia já emitida. Detalhe e lista usam o snapshot do cliente em **todo** status emitido (oficina incluída), não só `collected|canceled`.
 

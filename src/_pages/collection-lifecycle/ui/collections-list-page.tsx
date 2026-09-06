@@ -1,29 +1,72 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
-import { collectionStatusLabel, matchesStatusFilter, type CollectionsListFilter } from "../model/status-filters";
+import { buildCollectionsListHref } from "../model/list-search";
+import {
+  collectionStatusLabel,
+  statusesForListFilter,
+  type CollectionStatus,
+  type CollectionsListFilter,
+} from "../model/status-filters";
+import { loadMoreCollectionsAction } from "../api/actions";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 
 type Props = Readonly<{
   initialItems: ReadonlyArray<CollectionListItemDTO>;
+  searchTerm?: string;
+  selectedFilter?: CollectionsListFilter;
+  nextCursor?: string | null;
+  totalCount?: number;
   loadFailed?: boolean;
+  showStatusFilters?: boolean;
+  status?: CollectionStatus;
 }>;
 
-type StatusFilter = CollectionsListFilter;
+const SEARCH_DEBOUNCE_MS = 300;
 
-export function CollectionsListPage({ initialItems, loadFailed = false }: Props) {
+export function CollectionsListPage({
+  initialItems,
+  searchTerm = "",
+  selectedFilter = "all",
+  nextCursor = null,
+  loadFailed = false,
+  showStatusFilters = true,
+  status,
+}: Props) {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<StatusFilter>("all");
-  const [, startTransition] = useTransition();
+  const pathname = usePathname();
+  const [draftQ, setDraftQ] = useState(searchTerm);
+  const [items, setItems] = useState(initialItems);
+  const [cursor, setCursor] = useState(nextCursor);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setDraftQ(searchTerm);
+    setItems(initialItems);
+    setCursor(nextCursor);
+    setLoadMoreFailed(false);
+  }, [initialItems, nextCursor, searchTerm]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      if (draftQ.trim() === searchTerm.trim()) return;
+      startTransition(() => {
+        router.replace(buildCollectionsListHref(pathname, { q: draftQ, filter: selectedFilter }));
+      });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(handle);
+  }, [draftQ, pathname, router, searchTerm, selectedFilter]);
 
   if (loadFailed) {
     return (
@@ -44,17 +87,30 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
     );
   }
 
-  const filteredItems = initialItems.filter((item) => {
-    const matchesStatus = matchesStatusFilter(item.status, selectedFilter);
+  function replaceListQuery(next: Readonly<{ q: string; filter: CollectionsListFilter }>) {
+    startTransition(() => {
+      router.replace(buildCollectionsListHref(pathname, next));
+    });
+  }
 
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return matchesStatus;
-
-    const matchesCode = item.officialCode?.toLowerCase().includes(term) ?? false;
-    const matchesCustomer = item.customerName?.toLowerCase().includes(term) ?? false;
-
-    return matchesStatus && (matchesCode || matchesCustomer);
-  });
+  async function loadMore() {
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    setLoadMoreFailed(false);
+    const result = await loadMoreCollectionsAction({
+      ...(searchTerm.trim() ? { q: searchTerm.trim() } : {}),
+      ...(status ? { status } : { filter: selectedFilter, statuses: [...statusesForListFilter(selectedFilter)] }),
+      cursor,
+      limit: 25,
+    });
+    setLoadingMore(false);
+    if (!result.ok) {
+      setLoadMoreFailed(true);
+      return;
+    }
+    setItems((current) => [...current, ...result.data.items]);
+    setCursor(result.data.nextCursor);
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
@@ -64,46 +120,42 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
-        {/* Campo de Busca (Figma Node 22:2) */}
         <Input
-          placeholder="Buscar por número ou cliente"
-          value={searchTerm}
-          onChange={(e) => {
-            const val = e.target.value;
-            startTransition(() => setSearchTerm(val));
-          }}
+          placeholder="Buscar por número, cliente, CPF ou telefone"
+          value={draftQ}
+          onChange={(event) => setDraftQ(event.target.value)}
         />
 
-        {/* Chips de Filtro (Figma Node 22:2) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {(
-            [
-              { id: "all", label: "Todos" },
-              { id: "collected", label: "Coletadas" },
-              { id: "in_repair", label: "Em reparo" },
-              { id: "ready", label: "Prontas" },
-            ] as const
-          ).map((chip) => {
-            const isActive = selectedFilter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setSelectedFilter(chip.id)}
-                className={`flex h-[36px] shrink-0 items-center justify-center rounded-full px-4 text-[12px] font-semibold transition-colors ${
-                  isActive
-                    ? "bg-[var(--color-text-primary)] text-white shadow-xs"
-                    : "bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
-                }`}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-        </div>
+        {showStatusFilters ? (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {(
+              [
+                { id: "all", label: "Todos" },
+                { id: "collected", label: "Coletadas" },
+                { id: "in_repair", label: "Em reparo" },
+                { id: "ready", label: "Prontas" },
+              ] as const
+            ).map((chip) => {
+              const isActive = selectedFilter === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => replaceListQuery({ q: draftQ, filter: chip.id })}
+                  className={`flex h-[36px] shrink-0 items-center justify-center rounded-full px-4 text-[12px] font-semibold transition-colors ${
+                    isActive
+                      ? "bg-[var(--color-text-primary)] text-white shadow-xs"
+                      : "bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
-        {/* Lista de Cards de Coleta (Figma Node 22:2) */}
-        {filteredItems.length === 0 ? (
+        {items.length === 0 ? (
           <MobileStatePanel
             type="empty"
             title="Nenhuma coleta encontrada"
@@ -117,7 +169,7 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
           />
         ) : (
           <div className="flex flex-col gap-3">
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <PendingNavLink
                 key={item.id}
                 href={
@@ -141,6 +193,23 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
                 <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
               </PendingNavLink>
             ))}
+
+            {cursor ? (
+              <div className="flex flex-col items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  isLoading={loadingMore || isPending}
+                  onClick={() => void loadMore()}
+                >
+                  Carregar mais
+                </Button>
+                {loadMoreFailed ? (
+                  <p className="text-[12px] text-[var(--color-text-muted)]">Não foi possível carregar a próxima página.</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -149,4 +218,3 @@ export function CollectionsListPage({ initialItems, loadFailed = false }: Props)
     </main>
   );
 }
-
