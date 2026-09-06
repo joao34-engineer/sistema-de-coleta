@@ -42,7 +42,7 @@ coletada, em_oficina ou estados posteriores -> cancelada (com motivo)
 cancelada -> reaberta -> retorno ao estado operacional anterior (com motivo e auditoria)
 ```
 
-Somente usuarios autorizados podem executar uma transicao. Todo evento guarda ator, horario, estado anterior, estado novo e motivo quando exigido.
+Somente usuarios autorizados podem executar uma transicao. Todo evento guarda ator, horario, estado anterior, estado novo e motivo quando exigido. O dwell de espera pela aprovacao do orcamento e `em_orcamento` (`in_budget`); `aguardando_aprovacao` (`awaiting_approval`) permanece no CHECK e nos contratos como reserva defensiva, mas nenhuma RPC o grava hoje.
 
 ## Finalizacao e documento
 
