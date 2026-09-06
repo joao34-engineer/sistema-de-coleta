@@ -13,4 +13,30 @@ describe("safe action errors", () => {
     });
     expect(JSON.stringify(toSafeActionError(new Error("cpf=52998224725")))).not.toContain("52998224725");
   });
+
+  it("maps new workshop check-in business rule codes to Portuguese", () => {
+    expect(toSafeActionError({ code: "P0001", message: "duplicate_workshop_item" })).toEqual({
+      ok: false,
+      error: "O mesmo item da coleta foi informado mais de uma vez no check-in.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "workshop_checkin_items_incomplete" })).toEqual({
+      ok: false,
+      error: "O check-in de oficina deve incluir todos os itens da coleta.",
+    });
+    expect(toSafeActionError(new Error("duplicate_workshop_item"))).toEqual({
+      ok: false,
+      error: "O mesmo item da coleta foi informado mais de uma vez no check-in.",
+    });
+    expect(toSafeActionError(new Error("workshop_checkin_items_incomplete"))).toEqual({
+      ok: false,
+      error: "O check-in de oficina deve incluir todos os itens da coleta.",
+    });
+  });
+
+  it("falls back to the generic P0001 message for unknown business rules", () => {
+    expect(toSafeActionError({ code: "P0001", message: "some_unknown_detail" })).toEqual({
+      ok: false,
+      error: "A coleta não atende aos requisitos desta operação.",
+    });
+  });
 });
