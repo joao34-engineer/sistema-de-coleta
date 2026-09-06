@@ -50,6 +50,15 @@ const queueErrorMessages: Readonly<Record<string, string>> = {
   operation_failed: offlineCopy.failed,
   finalize_failed: offlineCopy.onlineFinalizeFailed,
   sync_interrupted: "A sincronização foi interrompida. Tente de novo.",
+  collection_requires_item: "Adicione pelo menos um item antes de emitir a guia.",
+  collection_requires_signature: offlineCopy.confirmSignatureToIssue,
+  customer_not_found: "Cliente não encontrado.",
+  duplicate_tax_id: "Já existe um cliente com este CPF ou CNPJ.",
+  customer_required: "Selecione ou cadastre um cliente para continuar.",
+  collection_item_mismatch: "O item não pertence a esta coleta.",
+  signature_upload_conflict:
+    "Não foi possível enviar a assinatura porque ela já foi registrada ou está em conflito.",
+  sequence_exhausted: "Não foi possível gerar o número oficial da guia. Tente novamente.",
 };
 
 const MACHINE_CODE_PATTERN = /^[a-z][a-z0-9_]*$/;

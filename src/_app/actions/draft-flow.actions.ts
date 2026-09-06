@@ -6,7 +6,6 @@ import { saveCollectionSignature, finalizeCollection } from "@/_pages/collection
 import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
 import { listCustomers, createCustomer, loadCustomerDto } from "@/_pages/customers/index.server";
 import { toActionFailureCode, toFinalizeActionFailureCode } from "@/shared/lib/action-failure-code";
-import { toSafeActionError } from "@/shared/lib/action-error";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 /** Forma mínima de cliente consumida pela tela de nova coleta. */
@@ -64,7 +63,7 @@ export async function searchCustomersAction(query: string): Promise<SearchCustom
 
     return { ok: true, customers: body.data.customers };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -104,7 +103,7 @@ export async function createCustomerAction(payload: {
     }
     return { ok: true, customerId: customerBody.data.customer.id };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -134,7 +133,7 @@ export async function createDraftAction(payload: {
     }
     return { ok: true, draftId: draftBody.data.draft.id, rowVersion: draftBody.data.draft.rowVersion };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -191,7 +190,7 @@ export async function createDraftWithCustomerAction(payload: {
 
     return created;
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 

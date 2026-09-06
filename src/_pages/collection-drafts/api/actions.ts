@@ -3,7 +3,7 @@
 import { getDraft, patchDraft, addItem, patchItem, removeItem } from "./drafts.server";
 import { getCollectionDetail } from "@/_pages/collection-lifecycle/api/queries";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
-import { toSafeActionError } from "@/shared/lib/action-error";
+import { toActionFailureCode } from "@/shared/lib/action-failure-code";
 
 export async function collectionExistsAction(collectionId: string): Promise<boolean> {
   try {
@@ -57,7 +57,7 @@ export async function fetchDraftWithItemsAction(draftId: string): Promise<
       hasSignature: body.data.hasSignature === true,
     };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -102,7 +102,7 @@ export async function addItemToDraftAction(payload: {
       rowVersion: body.data.rowVersion,
     };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -149,7 +149,7 @@ export async function updateItemInDraftAction(payload: {
       rowVersion: body.data.rowVersion,
     };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -185,7 +185,7 @@ export async function removeItemFromDraftAction(payload: {
       rowVersion: body.data.rowVersion,
     };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
@@ -226,7 +226,7 @@ export async function patchDraftFieldsAction(payload: {
     }
     return { ok: true, draft: body.data.draft };
   } catch (error: unknown) {
-    return toSafeActionError(error);
+    return { ok: false, error: toActionFailureCode(error) };
   }
 }
 
