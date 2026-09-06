@@ -1,25 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { matchesStatusFilter, collectionStatusLabel } from "../../src/_pages/collection-lifecycle/model/status-filters";
+import { matchesStatusFilter, collectionStatusLabel, inRepairStatuses, readyForDeliveryStatuses } from "../../src/_pages/collection-lifecycle/model/status-filters";
 
 describe("collections list status filter", () => {
-  it("includes every active workshop status under 'Em reparo'", () => {
-    const repairStatuses = ["in_workshop", "in_budget", "awaiting_approval", "approved", "in_service", "ready"] as const;
-    for (const status of repairStatuses) {
+  it("includes every active workshop status under 'Em reparo' except ready", () => {
+    for (const status of inRepairStatuses) {
       expect(matchesStatusFilter(status, "in_repair")).toBe(true);
     }
+    expect(matchesStatusFilter("ready", "in_repair")).toBe(false);
   });
 
   it("excludes non-workshop statuses from 'Em reparo'", () => {
-    const excluded = ["draft", "collected", "canceled", "invoiced", "partial_delivery", "delivered", "rejected", "reopened"] as const;
+    const excluded = ["draft", "collected", "canceled", "invoiced", "partial_delivery", "delivered", "reopened"] as const;
     for (const status of excluded) {
       expect(matchesStatusFilter(status, "in_repair")).toBe(false);
     }
   });
 
-  it("'Coletadas' matches only collected and 'Prontas' only ready", () => {
+  it("'Coletadas' matches only collected and 'Prontas' matches ready, invoiced and partial_delivery", () => {
     expect(matchesStatusFilter("collected", "collected")).toBe(true);
     expect(matchesStatusFilter("ready", "collected")).toBe(false);
-    expect(matchesStatusFilter("ready", "ready")).toBe(true);
+    for (const status of readyForDeliveryStatuses) {
+      expect(matchesStatusFilter(status, "ready")).toBe(true);
+    }
     expect(matchesStatusFilter("in_service", "ready")).toBe(false);
   });
 

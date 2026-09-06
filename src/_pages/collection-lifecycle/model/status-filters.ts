@@ -3,7 +3,15 @@ import { collectionStatusSchema } from "./contracts";
 import { collectionStatuses, type CollectionStatus, type CollectionsListFilter } from "@/shared/model/collection-status";
 
 export type { CollectionStatus, CollectionsListFilter };
-export { matchesStatusFilter, collectionStatusLabel } from "@/shared/model/collection-status";
+export {
+  matchesStatusFilter,
+  collectionStatusLabel,
+  inRepairStatuses,
+  readyForDeliveryStatuses,
+  inProgressStatuses,
+  statusesForListFilter,
+  isReadyForDelivery,
+} from "@/shared/model/collection-status";
 export { collectionStatuses };
 
 // Paridade em tempo de compilação entre o enum Zod canônico e o tipo compartilhado.

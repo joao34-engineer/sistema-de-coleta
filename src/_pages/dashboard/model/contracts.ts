@@ -1,18 +1,6 @@
-export type DashboardActivityStatus =
-  | "draft"
-  | "collected"
-  | "canceled"
-  | "in_workshop"
-  | "in_budget"
-  | "awaiting_approval"
-  | "approved"
-  | "in_service"
-  | "ready"
-  | "invoiced"
-  | "partial_delivery"
-  | "delivered"
-  | "rejected"
-  | "reopened";
+import { type CollectionStatus, isReadyForDelivery } from "@/shared/model/collection-status";
+
+export type DashboardActivityStatus = CollectionStatus;
 
 /** DTO mínimo do dashboard: sem dados de contato do cliente. */
 export type DashboardActivityItem = Readonly<{
@@ -25,14 +13,12 @@ export type DashboardActivityItem = Readonly<{
 
 const notInProgressStatuses: ReadonlySet<DashboardActivityStatus> = new Set(["draft", "canceled", "delivered"]);
 
-const readyStatuses: ReadonlySet<DashboardActivityStatus> = new Set(["ready"]);
-
 export function countInProgress(items: ReadonlyArray<DashboardActivityItem>): number {
   return items.filter((item) => !notInProgressStatuses.has(item.status)).length;
 }
 
 export function countReadyForDelivery(items: ReadonlyArray<DashboardActivityItem>): number {
-  return items.filter((item) => readyStatuses.has(item.status)).length;
+  return items.filter((item) => isReadyForDelivery(item.status)).length;
 }
 
 export function latestActivities(
