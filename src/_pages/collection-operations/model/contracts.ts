@@ -97,7 +97,10 @@ export const invoiceReferenceSchema = z.object({
 export const customerDeliverySchema = z.object({
   collectionId: uuidSchema,
   expectedVersion: z.number().int().positive(),
-  deliveredItemIds: z.array(uuidSchema).min(1, "Selecione ao menos um item para entrega."),
+  deliveredItemIds: z
+    .array(uuidSchema)
+    .min(1, "Selecione ao menos um item para entrega.")
+    .refine((ids) => new Set(ids).size === ids.length, "O mesmo item não pode ser informado mais de uma vez."),
   receiverName: z.string().trim().min(2, "Informe o nome de quem recebeu os equipamentos.").max(160),
   receiverTaxId: taxIdSchema,
   notes: z.string().trim().max(1000).optional(),

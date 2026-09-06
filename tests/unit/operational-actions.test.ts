@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { collectionStatuses, type CollectionStatus } from "@/shared/model/collection-status";
 import {
+  alreadyDeliveredCollectionItemIds,
+  defaultDeliveredItemIds,
+  isAlreadyDeliveredItem,
+} from "@/_pages/collection-operations/model/delivery-selection";
+import {
   nextOperationalAction,
   operationalActionsForStatus,
   secondaryOperationalAction,
@@ -82,5 +87,35 @@ describe("operationalActionsForStatus (B14)", () => {
   it("hides CTAs for delivered and draft", () => {
     expect(operationalActionsForStatus("delivered")).toEqual({ primary: null, secondary: null });
     expect(operationalActionsForStatus("draft")).toEqual({ primary: null, secondary: null });
+  });
+
+  it("keeps Entregar ao cliente after a first partial term", () => {
+    expect(nextOperationalAction("invoiced")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
+    expect(nextOperationalAction("partial_delivery")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
+    expect(nextOperationalAction("delivered")).toBeNull();
+  });
+});
+
+describe("delivery item selection (5.5)", () => {
+  const first = "11111111-1111-4111-8111-111111111111";
+  const second = "22222222-2222-4222-8222-222222222222";
+
+  it("defaults the next delivery selection to empty, not all ids", () => {
+    expect(defaultDeliveredItemIds()).toEqual([]);
+  });
+
+  it("collects unique already-delivered ids from prior term items", () => {
+    expect(
+      alreadyDeliveredCollectionItemIds([
+        { collectionItemId: first },
+        { collectionItemId: first },
+        { collectionItemId: second },
+      ]),
+    ).toEqual([first, second]);
+  });
+
+  it("marks only prior-term items as already delivered", () => {
+    expect(isAlreadyDeliveredItem(first, [first])).toBe(true);
+    expect(isAlreadyDeliveredItem(second, [first])).toBe(false);
   });
 });
