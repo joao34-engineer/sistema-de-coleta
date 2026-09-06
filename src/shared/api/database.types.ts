@@ -89,6 +89,27 @@ type PhaseFunctionOverlays = {
   complete_document_share_email_delivery: { Args: { p_reservation_id: string; p_reservation_token: string; p_result: string; p_recipient_masked?: string | null; p_provider_reference?: string | null; p_error_code?: string | null }; Returns: Json };
   revise_collection_document: { Args: { p_source_document_id: string; p_expected_version: number; p_typed_document_patch: Json; p_revision_type: string; p_reason: string; p_idempotency_key: string; p_request_hash: string }; Returns: Json };
   create_document_revision: { Args: { p_previous_document_id: string; p_replacement_document_id: string; p_revision_type: string; p_reason: string }; Returns: Json };
+  // PR 7 overlay until `npm run db:types:remote` after the migration is pushed.
+  list_collections: {
+    Args: {
+      p_code?: string | null;
+      p_customer?: string | null;
+      p_tax_id?: string | null;
+      p_phone?: string | null;
+      p_status?: string | null;
+      p_from?: string | null;
+      p_to?: string | null;
+      p_cursor?: string | null;
+      p_limit?: number | null;
+      p_q?: string | null;
+      p_statuses?: string[] | null;
+    };
+    Returns: Json;
+  };
+  collection_dashboard_summary: {
+    Args: { p_in_progress: string[]; p_ready_for_delivery: string[] };
+    Returns: Json;
+  };
 };
 
 export type Database = Omit<GeneratedDatabase, "public"> & {

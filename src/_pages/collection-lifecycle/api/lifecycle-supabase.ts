@@ -7,7 +7,7 @@ import type { Json } from "@/shared/api/database.types";
 import { getPublicEnvironment } from "@/shared/config/environment";
 
 type LifecycleFunctions = {
-  list_collections: { Args: { p_code: string | null; p_customer: string | null; p_tax_id: string | null; p_phone: string | null; p_status: string | null; p_from: string | null; p_to: string | null; p_cursor: string | null; p_limit: number }; Returns: Json };
+  list_collections: { Args: { p_code: string | null; p_customer: string | null; p_tax_id: string | null; p_phone: string | null; p_status: string | null; p_from: string | null; p_to: string | null; p_cursor: string | null; p_limit: number; p_q: string | null; p_statuses: string[] | null }; Returns: Json };
   get_collection_detail: { Args: { p_collection_id: string }; Returns: Json };
   list_collection_events: { Args: { p_collection_id: string; p_cursor: string | null; p_limit: number }; Returns: Json };
   prepare_collection_upload: { Args: { p_collection_id: string; p_expected_version: number; p_kind: string; p_item_id: string | null; p_content_type: string; p_byte_size: number; p_sha256: string; p_extension: string; p_signer_name?: string | null; p_signer_tax_id?: string | null; p_acceptance_text?: string | null }; Returns: Json };

@@ -6,7 +6,7 @@ import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import type { DashboardActivityItem, DashboardActivityStatus } from "../model/contracts";
-import { countInProgress, countReadyForDelivery, latestActivities } from "../model/contracts";
+import { latestActivities } from "../model/contracts";
 import { signOutAction, initialSignOutState } from "@/shared/auth/actions";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -37,18 +37,26 @@ type Props = Readonly<{
   administrator: AuthenticatedAdministrator;
   settings: CompanySettingsDTO;
   activities: ReadonlyArray<DashboardActivityItem>;
+  inProgressCount: number;
+  readyForDeliveryCount: number;
   loadFailed?: boolean;
   todayLabel: string;
 }>;
 
-export function DashboardPage({ administrator, settings, activities, loadFailed = false, todayLabel }: Props) {
+export function DashboardPage({
+  administrator,
+  settings,
+  activities,
+  inProgressCount,
+  readyForDeliveryCount,
+  loadFailed = false,
+  todayLabel,
+}: Props) {
   const router = useRouter();
   const [, signOutFormAction] = useActionState(signOutAction, initialSignOutState);
   const firstName = (administrator.fullName || administrator.email).split(" ")[0] ?? administrator.email;
   const isSetupComplete = settings.setupStatus === "complete";
 
-  const inProgressCount = countInProgress(activities);
-  const readyCount = countReadyForDelivery(activities);
   const upcomingActivities = latestActivities(activities, 3);
 
   return (
@@ -95,9 +103,9 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
                 {inProgressCount}
               </span>
               <span className="text-[13px] font-normal text-[var(--color-text-muted)]">
-                {readyCount === 0
+                {readyForDeliveryCount === 0
                   ? "Nenhuma pronta para entrega"
-                  : `${readyCount} ${readyCount === 1 ? "pronta" : "prontas"} para entrega`}
+                  : `${readyForDeliveryCount} ${readyForDeliveryCount === 1 ? "pronta" : "prontas"} para entrega`}
               </span>
             </Card>
 

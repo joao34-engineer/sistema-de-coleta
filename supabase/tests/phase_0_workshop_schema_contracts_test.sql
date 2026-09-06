@@ -1,5 +1,5 @@
 begin;
-select plan(20);
+select plan(23);
 
 -- 0.2 — coluna de assinatura de check-in no cabecalho
 select has_column('public', 'collections', 'check_in_signature_path', 'collections carry check_in_signature_path');
@@ -85,11 +85,14 @@ select is((
 select is(has_function_privilege('authenticated', 'public.create_technical_budget(uuid, integer, jsonb, text, uuid, text)', 'execute'), true, 'authenticated can execute create_technical_budget 3b');
 select is(has_function_privilege('authenticated', 'public.update_service_progress(uuid, integer, jsonb, uuid, text)', 'execute'), true, 'authenticated can execute update_service_progress 3b');
 select is(has_function_privilege('authenticated', 'public.get_collection_detail(uuid)', 'execute'), true, 'authenticated can execute get_collection_detail');
-select is(has_function_privilege('authenticated', 'public.list_collections(text, text, text, text, text, timestamptz, timestamptz, text, integer)', 'execute'), true, 'authenticated can execute list_collections');
+select is(has_function_privilege('authenticated', 'public.list_collections(text, text, text, text, text, timestamptz, timestamptz, text, integer, text, text[])', 'execute'), true, 'authenticated can execute list_collections');
+select is(has_function_privilege('authenticated', 'public.collection_dashboard_summary(text[], text[])', 'execute'), true, 'authenticated can execute collection_dashboard_summary');
+select hasnt_function('public', 'list_collections', array['text', 'text', 'text', 'text', 'text', 'timestamptz', 'timestamptz', 'text', 'integer'], 'old 9-arg list_collections is gone');
 select is(has_function_privilege('anon', 'public.create_technical_budget(uuid, integer, jsonb, text, uuid, text)', 'execute'), false, 'anon cannot execute create_technical_budget');
 select is(has_function_privilege('anon', 'public.update_service_progress(uuid, integer, jsonb, uuid, text)', 'execute'), false, 'anon cannot execute update_service_progress');
 select is(has_function_privilege('anon', 'public.get_collection_detail(uuid)', 'execute'), false, 'anon cannot execute get_collection_detail');
-select is(has_function_privilege('anon', 'public.list_collections(text, text, text, text, text, timestamptz, timestamptz, text, integer)', 'execute'), false, 'anon cannot execute list_collections');
+select is(has_function_privilege('anon', 'public.list_collections(text, text, text, text, text, timestamptz, timestamptz, text, integer, text, text[])', 'execute'), false, 'anon cannot execute list_collections');
+select is(has_function_privilege('anon', 'public.collection_dashboard_summary(text[], text[])', 'execute'), false, 'anon cannot execute collection_dashboard_summary');
 
 -- Sem UPDATE de tabela em collections para authenticated (RPCs sao SECURITY DEFINER)
 select is(has_table_privilege('authenticated', 'public.collections', 'update'), false, 'authenticated has no table UPDATE on collections');

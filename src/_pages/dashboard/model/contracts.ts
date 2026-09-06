@@ -1,4 +1,12 @@
+import { z } from "zod";
 import { type CollectionStatus, isReadyForDelivery } from "@/shared/model/collection-status";
+
+export const dashboardSummarySchema = z.object({
+  inProgress: z.number().int().nonnegative(),
+  readyForDelivery: z.number().int().nonnegative(),
+});
+
+export type DashboardSummaryDTO = z.output<typeof dashboardSummarySchema>;
 
 export type DashboardActivityStatus = CollectionStatus;
 

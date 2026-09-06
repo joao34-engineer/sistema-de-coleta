@@ -45,12 +45,26 @@ function isValidCpf(value: string): boolean {
 
 const taxIdSchema = z.string().trim().transform(normalizeDigits).refine((value) => isValidCpf(value) || isValidCnpj(value), "Informe um CPF ou CNPJ válido.");
 
+export const collectionsListFilterSchema = z.enum(["all", "collected", "in_repair", "ready"]);
+
+const statusesFromQuery = z.preprocess((value: unknown) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    return value.split(",").map((part) => part.trim()).filter((part) => part.length > 0);
+  }
+  return value;
+}, z.array(collectionStatusSchema).optional());
+
 export const collectionQuerySchema = z.object({
   code: z.string().trim().max(32).optional(),
   customer: z.string().trim().max(160).optional(),
   taxId: z.string().trim().transform(normalizeDigits).pipe(z.string().max(14)).optional(),
   phone: z.string().trim().transform(normalizeDigits).pipe(z.string().max(15)).optional(),
   status: collectionStatusSchema.optional(),
+  q: z.string().trim().max(160).optional(),
+  filter: collectionsListFilterSchema.optional(),
+  statuses: statusesFromQuery,
   from: z.iso.datetime({ offset: true }).optional(),
   to: z.iso.datetime({ offset: true }).optional(),
   cursor: cursorSchema.optional(),
@@ -72,6 +86,7 @@ export const collectionListItemSchema = z.object({
 export const collectionListResultSchema = z.object({
   items: z.array(collectionListItemSchema),
   nextCursor: cursorSchema.nullable(),
+  totalCount: z.number().int().nonnegative(),
 });
 
 export const collectionDetailSchema = z.object({
@@ -115,6 +130,7 @@ export const signatureCommandResultSchema = z.object({ collectionId: uuidSchema,
 export const lifecycleCommandResultSchema = z.object({ collectionId: uuidSchema, officialCode: z.string().regex(/^MJT-\d{4}-\d{6}$/), status: collectionStatusSchema, rowVersion: z.number().int().positive(), document: z.object({ id: uuidSchema, version: z.number().int().positive(), status: z.literal("snapshot_ready") }) });
 
 export type CollectionListQuery = z.output<typeof collectionQuerySchema>;
+export type CollectionListResultDTO = z.output<typeof collectionListResultSchema>;
 export type CollectionListItemDTO = z.output<typeof collectionListItemSchema>;
 export type CollectionDetailDTO = z.output<typeof collectionDetailSchema>;
 export type CollectionEventDTO = z.output<typeof collectionEventSchema>;
