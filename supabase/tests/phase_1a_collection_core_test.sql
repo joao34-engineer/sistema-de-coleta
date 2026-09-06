@@ -62,5 +62,88 @@ select throws_ok($$select id from public.signatures$$, '42501', 'permission deni
 select throws_ok($$insert into public.collection_events (organization_id, collection_id, event_type) values (1, gen_random_uuid(), 'forbidden')$$, '42501', 'permission denied for table collection_events', 'anon cannot append audit events');
 reset role;
 
+-- Fase 5.11: lifecycle cancel -> reopen deve limpar canceled_at.
+-- Setup como superusuário para bypassar RLS; a execução dos comandos usa
+-- role authenticated + request.jwt.claims, espelhando a sessão real.
+create temporary table if not exists test_lifecycle_ctx (
+  collection_id uuid,
+  user_id uuid
+);
+
+do $$
+declare
+  test_org_id bigint;
+  test_user_id uuid;
+  test_customer_id uuid;
+  test_collection_id uuid;
+  test_official_code text;
+begin
+  select id into test_org_id from public.organizations where code = 'mjt' limit 1;
+  if test_org_id is null then
+    insert into public.organizations (code, display_name) values ('mjt', 'MJT') returning id into test_org_id;
+  end if;
+
+  test_user_id := gen_random_uuid();
+  insert into auth.users (id, email)
+  values (test_user_id, 'lifecycle-test-' || test_user_id::text || '@example.com');
+
+  insert into public.organization_memberships (organization_id, user_id, role_code)
+  values (test_org_id, test_user_id, 'administrator');
+
+  insert into public.customers (organization_id, legal_name, tax_id, phone, created_by)
+  values (test_org_id, 'Lifecycle Test Customer', '52998224725', '11987654321', test_user_id)
+  returning id into test_customer_id;
+
+  test_official_code := 'MJT-2026-' || lpad(floor(random() * 1000000)::integer::text, 6, '0');
+
+  insert into public.collections (
+    organization_id, customer_id, customer_snapshot, status, official_code,
+    issued_year, sequence_number, created_by
+  ) values (
+    test_org_id, test_customer_id,
+    jsonb_build_object(
+      'id', test_customer_id,
+      'legal_name', 'Lifecycle Test Customer',
+      'tax_id', '52998224725',
+      'phone', '11987654321'
+    ),
+    'collected', test_official_code, 2026, 1, test_user_id
+  ) returning id into test_collection_id;
+
+  insert into test_lifecycle_ctx (collection_id, user_id)
+  values (test_collection_id, test_user_id);
+end $$;
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub', (select user_id::text from test_lifecycle_ctx))::text,
+  true
+);
+
+select public.cancel_collection(
+  (select collection_id from test_lifecycle_ctx),
+  1,
+  'lifecycle cancel reason',
+  gen_random_uuid(),
+  repeat('0', 64)
+);
+
+select public.reopen_collection(
+  (select collection_id from test_lifecycle_ctx),
+  2,
+  'lifecycle reopen reason',
+  gen_random_uuid(),
+  repeat('0', 64)
+);
+
+reset role;
+
+select is(
+  (select canceled_at from public.collections where id = (select collection_id from test_lifecycle_ctx)),
+  null::timestamptz,
+  'lifecycle cancel then reopen leaves canceled_at null'
+);
+
 select * from finish();
 rollback;
