@@ -33,7 +33,7 @@ export async function signInAction(_previousState: LoginActionState, formData: F
   }
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient({ cookieMutation: "required" });
     const { error } = await supabase.auth.signInWithPassword({
       email: parsed.data.email.toLowerCase(),
       password: parsed.data.password,

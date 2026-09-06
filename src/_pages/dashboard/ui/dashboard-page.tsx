@@ -1,12 +1,13 @@
 "use client";
 
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import type { DashboardActivityItem, DashboardActivityStatus } from "../model/contracts";
 import { countInProgress, countReadyForDelivery, latestActivities } from "../model/contracts";
-import { signOutAction } from "@/shared/auth/actions";
+import { signOutAction, initialSignOutState } from "@/shared/auth/actions";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
@@ -42,6 +43,7 @@ type Props = Readonly<{
 
 export function DashboardPage({ administrator, settings, activities, loadFailed = false, todayLabel }: Props) {
   const router = useRouter();
+  const [, signOutFormAction] = useActionState(signOutAction, initialSignOutState);
   const firstName = (administrator.fullName || administrator.email).split(" ")[0] ?? administrator.email;
   const isSetupComplete = settings.setupStatus === "complete";
 
@@ -56,7 +58,7 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
         title={`Olá, ${firstName}`}
         subtitle="Operação de hoje"
         badge={
-          <form action={signOutAction}>
+          <form action={signOutFormAction}>
             <Button variant="secondary" size="sm" type="submit">
               Sair
             </Button>
@@ -181,19 +183,6 @@ export function DashboardPage({ administrator, settings, activities, loadFailed 
       </div>
 
       <MobileBottomNav />
-    </main>
-  );
-}
-
-export function AccessDeniedPage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <Card className="max-w-md p-6 text-center">
-        <h1 className="text-xl font-bold text-[var(--color-text)]">Acesso não autorizado</h1>
-        <p className="mt-2 text-xs text-[var(--color-muted)]">
-          Esta conta não possui um vínculo administrativo ativo com a MJT.
-        </p>
-      </Card>
     </main>
   );
 }
