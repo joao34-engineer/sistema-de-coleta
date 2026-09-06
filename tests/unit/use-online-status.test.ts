@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, renderHook } from "@testing-library/react";
-import { useOnlineStatus } from "@/shared/lib/use-online-status";
+import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
 
 describe("useOnlineStatus", () => {
   afterEach(() => cleanup());

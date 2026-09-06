@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AccessDeniedPage } from "../../src/_pages/dashboard/ui/access-denied-page";
 
 const mockSignOutAction = vi.fn();
@@ -10,6 +10,8 @@ vi.mock("@/shared/auth/actions", () => ({
 }));
 
 describe("AccessDeniedPage", () => {
+  afterEach(() => cleanup());
+
   it("renders the unauthorized title and explanation", () => {
     render(<AccessDeniedPage />);
     expect(screen.getByRole("heading", { name: /Acesso não autorizado/i })).toBeInTheDocument();

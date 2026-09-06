@@ -7,6 +7,7 @@ const finalizeCollectionWithSignatureAction = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/coletas/rascunho",
 }));
 
 vi.mock("@/shared/ui/signature-pad", () => ({

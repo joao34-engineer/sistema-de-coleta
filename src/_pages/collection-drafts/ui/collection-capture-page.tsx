@@ -38,7 +38,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
-import { useOnlineStatus } from "@/shared/lib/use-online-status";
+import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
 import { EditItemModal } from "./edit-item-modal";
 import type { DraftItemDTO } from "../model/draft";
 

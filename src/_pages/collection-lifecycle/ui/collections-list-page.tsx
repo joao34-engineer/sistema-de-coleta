@@ -50,13 +50,19 @@ export function CollectionsListPage({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [syncedSearchTerm, setSyncedSearchTerm] = useState(searchTerm);
+  const [syncedItems, setSyncedItems] = useState(initialItems);
+  const [syncedCursor, setSyncedCursor] = useState(nextCursor);
 
-  useEffect(() => {
+  if (searchTerm !== syncedSearchTerm || initialItems !== syncedItems || nextCursor !== syncedCursor) {
+    setSyncedSearchTerm(searchTerm);
+    setSyncedItems(initialItems);
+    setSyncedCursor(nextCursor);
     setDraftQ(searchTerm);
     setItems(initialItems);
     setCursor(nextCursor);
     setLoadMoreFailed(false);
-  }, [initialItems, nextCursor, searchTerm]);
+  }
 
   useEffect(() => {
     const handle = window.setTimeout(() => {

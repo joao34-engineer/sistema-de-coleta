@@ -13,7 +13,7 @@ import type { CaptureActor } from "../model/capture-actor";
 import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
 import { cadastralAddressForSync, isIncompleteCadastral } from "../model/cadastral-address-for-sync";
 import { createLocalDraft, normalizeTaxId } from "../model/offline-capture";
-import { useOnlineStatus } from "@/shared/lib/use-online-status";
+import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
 import { offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { SyncStatusChip } from "./sync-status-chip";

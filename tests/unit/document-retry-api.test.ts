@@ -33,7 +33,7 @@ vi.mock("@/_pages/collection-documents/api/delivery/index.server", async (import
   };
 });
 
-vi.mock("@/_app/lib/schedule-document-render-kick", () => ({
+vi.mock("@/_pages/collection-documents/api/schedule-document-render-kick", () => ({
   scheduleDocumentRenderKick: () => {
     testState.kickCalls += 1;
   },

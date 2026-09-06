@@ -1,14 +1,12 @@
 "use server";
 
-import { getDraft, patchDraft, addItem, patchItem, removeItem } from "./drafts.server";
-import { getCollectionDetail } from "@/_pages/collection-lifecycle/api/queries";
+import { collectionExists, getDraft, patchDraft, addItem, patchItem, removeItem } from "./drafts.server";
 import type { DraftDTO, DraftItemDTO } from "../model/draft";
 import { toActionFailureCode } from "@/shared/lib/action-failure-code";
 
 export async function collectionExistsAction(collectionId: string): Promise<boolean> {
   try {
-    const detail = await getCollectionDetail(collectionId);
-    return detail !== null;
+    return await collectionExists(collectionId);
   } catch {
     return false;
   }

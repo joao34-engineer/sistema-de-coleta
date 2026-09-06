@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
 import { renderHook } from "@testing-library/react";
-import { useHydrated } from "@/shared/lib/use-hydrated";
+import { useHydrated } from "@/shared/lib/pwa/use-hydrated";
 
 function HydrationProbe() {
   const hydrated = useHydrated();

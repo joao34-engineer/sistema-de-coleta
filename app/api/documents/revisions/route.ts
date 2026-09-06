@@ -1,5 +1,5 @@
 import { deliveryErrorResponse, reviseCollectionDocument, revisionSchema } from "@/_pages/collection-documents/api/delivery/index.server";
-import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
+import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
 import { idempotencyKeyState, jsonBody, noStoreJson } from "@/_pages/collection-lifecycle/api/http-response";
 
 export const dynamic = "force-dynamic";

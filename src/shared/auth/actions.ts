@@ -10,6 +10,7 @@ export const initialSignOutState: SignOutActionState = { status: "idle" };
 export async function signOutAction(
   _previous: SignOutActionState = initialSignOutState,
 ): Promise<SignOutActionState> {
+  void _previous;
   const supabase = await createServerSupabaseClient({ cookieMutation: "required" });
   const { error } = await supabase.auth.signOut();
   if (error) {

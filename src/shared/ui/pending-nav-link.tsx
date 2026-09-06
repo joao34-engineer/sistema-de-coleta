@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLinkStatus } from "next/link";
 import type { Route } from "next";
 import type { ReactNode } from "react";
-import { useHydrated } from "@/shared/lib/use-hydrated";
+import { useHydrated } from "@/shared/lib/pwa/use-hydrated";
 
 const DEFAULT_PENDING_CLASS = "opacity-70 ring-2 ring-[var(--color-primary)]/30";
 

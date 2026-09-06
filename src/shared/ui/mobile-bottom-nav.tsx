@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
-import { useHydrated } from "@/shared/lib/use-hydrated";
+import { useHydrated } from "@/shared/lib/pwa/use-hydrated";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 type IconComponent = (props: { className?: string }) => ReactNode;

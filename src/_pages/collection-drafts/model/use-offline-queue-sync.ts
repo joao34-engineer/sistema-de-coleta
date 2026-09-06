@@ -7,7 +7,7 @@ import type { OfflineDraftRecord } from "./offline-records";
 import { ensureOfflineDraftStore } from "./offline-port";
 import { runAuthenticatedDrain } from "./run-authenticated-drain";
 import type { DrainPendingResult } from "./offline-runner";
-import { useOnlineStatus } from "@/shared/lib/use-online-status";
+import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
 
 export function useOfflineQueueSync(actor: CaptureActor): {
   online: boolean;

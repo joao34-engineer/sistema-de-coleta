@@ -15,7 +15,7 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("@supabase/ssr", () => ({
-  createServerClient: <Database = unknown>(
+  createServerClient: (
     _url: string,
     _key: string,
     options: {
@@ -26,7 +26,7 @@ vi.mock("@supabase/ssr", () => ({
     },
   ) => {
     testState.capturedSetAll = options.cookies.setAll;
-    return {} as ReturnType<typeof import("@supabase/ssr")["createServerClient"]>;
+    return {};
   },
 }));
 
@@ -39,6 +39,14 @@ vi.mock("@/shared/config/environment", () => ({
 
 import { createServerSupabaseClient } from "../../src/shared/auth/supabase-server";
 
+function capturedSetAll() {
+  const setAll = testState.capturedSetAll;
+  if (setAll === null) {
+    throw new Error("setAll was not captured");
+  }
+  return setAll;
+}
+
 describe("createServerSupabaseClient cookie mutation", () => {
   beforeEach(() => {
     testState.setAllError = null;
@@ -47,17 +55,16 @@ describe("createServerSupabaseClient cookie mutation", () => {
 
   it("swallows cookie write failures in best-effort mode by default", async () => {
     testState.setAllError = new Error("Cannot mutate cookies in a Server Component");
-    const client = await createServerSupabaseClient();
-    expect(client).toBeDefined();
+    await createServerSupabaseClient();
     expect(testState.capturedSetAll).toBeTypeOf("function");
-    testState.capturedSetAll!([{ name: "sb-access-token", value: "x", options: {} }]);
+    expect(() => capturedSetAll()([{ name: "sb-access-token", value: "x", options: {} }])).not.toThrow();
   });
 
   it("throws cookie write failures in required mode", async () => {
     testState.setAllError = new Error("Cannot mutate cookies in a Server Component");
-    const client = await createServerSupabaseClient({ cookieMutation: "required" });
+    await createServerSupabaseClient({ cookieMutation: "required" });
     expect(testState.capturedSetAll).toBeTypeOf("function");
-    expect(() => testState.capturedSetAll!([{ name: "sb-access-token", value: "x", options: {} }])).toThrow(
+    expect(() => capturedSetAll()([{ name: "sb-access-token", value: "x", options: {} }])).toThrow(
       "Cannot mutate cookies in a Server Component",
     );
   });

@@ -7,7 +7,7 @@ describe("list_collections search totals migration", () => {
     __dirname,
     "../../supabase/migrations/20260906190000_phase_5_list_collections_search_totals.sql",
   );
-  const sql = readFileSync(migrationPath, "utf8");
+  const sql = readFileSync(migrationPath, "utf8").replaceAll("\r\n", "\n");
 
   it("drops the 9-arg function then creates the 11-arg signature", () => {
     expect(sql).toMatch(

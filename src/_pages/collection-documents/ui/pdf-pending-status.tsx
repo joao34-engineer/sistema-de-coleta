@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
 import type { DocumentJobStatus } from "../api/delivery/contracts";
 
 const REFRESH_MS = 3000;
@@ -86,7 +85,7 @@ export function PdfPendingStatus({
           disabled={retryBusy}
           className="mt-2 text-[13px] font-semibold text-[var(--color-primary)] disabled:opacity-60"
         >
-          {retryBusy ? offlineCopy.retryBusy : offlineCopy.retry}
+          {retryBusy ? "Tentando novamente…" : "Tentar de novo"}
         </button>
         {retryMessage ? <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">{retryMessage}</p> : null}
       </div>

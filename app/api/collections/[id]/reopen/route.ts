@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { reasonCommandSchema, reopenCollection, toLifecycleApiError } from "@/_pages/collection-lifecycle/index.server";
-import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
+import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
 import { apiErrorResponse, idempotencyKeyRequiredResponse, idempotencyKeyState, jsonBody, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
 import { getRequestId } from "@/shared/lib/server-logger";
 

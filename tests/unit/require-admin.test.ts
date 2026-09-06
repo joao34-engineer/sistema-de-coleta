@@ -20,21 +20,21 @@ function buildQuery(table: string) {
     },
     maybeSingle: async () => {
       if (table === "profiles") {
-        if (filters.user_id === testState.userId) return { data: testState.profile };
+        if (filters["user_id"] === testState.userId) return { data: testState.profile };
         return { data: null };
       }
       if (table === "organization_memberships") {
         if (
-          filters.user_id === testState.userId &&
-          filters.status === "active" &&
-          filters.role_code === "administrator"
+          filters["user_id"] === testState.userId &&
+          filters["status"] === "active" &&
+          filters["role_code"] === "administrator"
         ) {
           return { data: testState.membership };
         }
         return { data: null };
       }
       if (table === "organizations") {
-        if (filters.id === String(testState.membership?.organization_id)) return { data: testState.organization };
+        if (filters["id"] === String(testState.membership?.organization_id)) return { data: testState.organization };
         return { data: null };
       }
       return { data: null };

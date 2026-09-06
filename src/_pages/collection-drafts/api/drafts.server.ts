@@ -217,6 +217,20 @@ export async function createDraft(request: Request): Promise<NextResponse> {
   }
 }
 
+export async function collectionExists(collectionId: string): Promise<boolean> {
+  const parsedId = collectionIdSchema.safeParse(collectionId);
+  if (!parsedId.success) return false;
+  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
+  const query = await supabase
+    .from("collections")
+    .select("id")
+    .eq("organization_id", administrator.organizationId)
+    .eq("id", parsedId.data)
+    .maybeSingle();
+  return !query.error && query.data != null;
+}
+
 export async function getDraft(id: string, request?: Request): Promise<NextResponse> {
   try {
     const parsedId = collectionIdSchema.safeParse(id);

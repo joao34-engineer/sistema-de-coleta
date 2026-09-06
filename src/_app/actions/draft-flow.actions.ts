@@ -3,7 +3,7 @@
 import { createDraft, discardCollectionDraft } from "@/_pages/collection-drafts/api/drafts.server";
 import { patchDraftFieldsAction } from "@/_pages/collection-drafts/api/actions";
 import { saveCollectionSignature, finalizeCollection } from "@/_pages/collection-lifecycle/index.server";
-import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
+import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
 import { listCustomers, createCustomer, loadCustomerDto } from "@/_pages/customers/index.server";
 import { toActionFailureCode, toFinalizeActionFailureCode } from "@/shared/lib/action-failure-code";
 import { getRequestId } from "@/shared/lib/server-logger";

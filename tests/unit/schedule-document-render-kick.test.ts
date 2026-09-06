@@ -11,7 +11,7 @@ vi.mock("@/_pages/collection-documents/api/delivery/index.server", () => ({
   processQueuedDocumentRenders,
 }));
 
-import { scheduleDocumentRenderKick } from "@/_app/lib/schedule-document-render-kick";
+import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
 
 describe("scheduleDocumentRenderKick", () => {
   it("schedules the worker after the response without awaiting it", () => {

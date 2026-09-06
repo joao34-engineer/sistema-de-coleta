@@ -145,7 +145,8 @@ describe("Fase 1A hardening contract", () => {
     expect(sql).toMatch(/for insert to authenticated/);
     expect(sql).toMatch(/for update to authenticated/);
     expect(routes).toContain('"/coletas"');
-    expect(proxy).toContain("protectedRoutePrefixes");
+    expect(routes).toContain("protectedRoutePrefixes");
+    expect(proxy).toContain("decideProxyGate");
     expect(nextConfig).toContain("Strict-Transport-Security");
     expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).toContain("toActionFailureCode");
     expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).toContain("toActionFailureCode");
