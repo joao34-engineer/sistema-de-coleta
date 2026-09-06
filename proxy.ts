@@ -2,11 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/shared/api/database.types";
 import { getPublicEnvironment, hasPublicEnvironment } from "@/shared/config/environment";
-import { protectedRoutePrefixes } from "@/shared/config/routes";
-
-function isProtectedPath(pathname: string): boolean {
-  return protectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
+import { decideProxyGate } from "@/shared/config/proxy-gate";
 
 function redirectWithRefreshedCookies(request: NextRequest, response: NextResponse, pathname: string): NextResponse {
   const destination = pathname === "/login" ? "/dashboard" : "/login";
@@ -17,10 +13,30 @@ function redirectWithRefreshedCookies(request: NextRequest, response: NextRespon
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  // Public probe — skip Auth so uptime checks never spend getClaims or cookies.
-  if (pathname === "/api/health") return NextResponse.next();
+  const hasPublicEnv = hasPublicEnvironment();
+  let publicEnvValid = false;
 
-  if (!hasPublicEnvironment()) return NextResponse.next();
+  if (hasPublicEnv) {
+    try {
+      getPublicEnvironment();
+      publicEnvValid = true;
+    } catch {
+      publicEnvValid = false;
+    }
+  }
+
+  if (!hasPublicEnv || !publicEnvValid) {
+    const decision = decideProxyGate({
+      pathname,
+      hasPublicEnv,
+      publicEnvValid,
+      hasIdentity: null,
+    });
+    if (decision.action === "redirect") {
+      return NextResponse.redirect(new URL(decision.pathname, request.url));
+    }
+    return NextResponse.next();
+  }
 
   const environment = getPublicEnvironment();
   let response = NextResponse.next({ request });
@@ -35,11 +51,28 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const hasIdentity = typeof claimsData?.claims?.sub === "string";
+  let hasIdentity = false;
+  try {
+    const { data: claimsData } = await supabase.auth.getClaims();
+    hasIdentity = typeof claimsData?.claims?.sub === "string";
+  } catch {
+    hasIdentity = false;
+  }
 
-  if (!hasIdentity && isProtectedPath(pathname)) return redirectWithRefreshedCookies(request, response, pathname);
-  if (hasIdentity && pathname === "/login") return redirectWithRefreshedCookies(request, response, pathname);
+  const decision = decideProxyGate({
+    pathname,
+    hasPublicEnv,
+    publicEnvValid,
+    hasIdentity,
+  });
+
+  if (decision.action === "redirect") {
+    if (decision.pathname === "/") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return redirectWithRefreshedCookies(request, response, decision.pathname === "/dashboard" ? "/login" : pathname);
+  }
+
   return response;
 }
 
