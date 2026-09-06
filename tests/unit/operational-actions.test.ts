@@ -6,9 +6,11 @@ import {
   isAlreadyDeliveredItem,
 } from "@/_pages/collection-operations/model/delivery-selection";
 import {
+  isWorkshopSegmentAllowed,
   nextOperationalAction,
   operationalActionsForStatus,
   secondaryOperationalAction,
+  type OperationalSegment,
 } from "@/_pages/collection-operations/model/operational-actions";
 
 const expectedPrimary: Readonly<Partial<Record<CollectionStatus, { segment: string; label: string }>>> = {
@@ -93,6 +95,35 @@ describe("operationalActionsForStatus (B14)", () => {
     expect(nextOperationalAction("invoiced")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
     expect(nextOperationalAction("partial_delivery")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
     expect(nextOperationalAction("delivered")).toBeNull();
+  });
+});
+
+const workshopSegments: ReadonlyArray<OperationalSegment> = [
+  "checkin",
+  "orcamento",
+  "aprovacao",
+  "progresso",
+  "nfe",
+  "entrega",
+  "reabrir",
+  "cancelar",
+];
+
+describe("isWorkshopSegmentAllowed (5.17)", () => {
+  it("matches the hub CTA matrix for every status and segment", () => {
+    for (const status of collectionStatuses) {
+      const pair = operationalActionsForStatus(status);
+      for (const segment of workshopSegments) {
+        const allowedByCta = pair.primary?.segment === segment || pair.secondary?.segment === segment;
+        expect(isWorkshopSegmentAllowed(status, segment)).toBe(allowedByCta);
+      }
+    }
+  });
+
+  it("refuses check-in on draft and delivered", () => {
+    expect(isWorkshopSegmentAllowed("draft", "checkin")).toBe(false);
+    expect(isWorkshopSegmentAllowed("delivered", "checkin")).toBe(false);
+    expect(isWorkshopSegmentAllowed("collected", "checkin")).toBe(true);
   });
 });
 

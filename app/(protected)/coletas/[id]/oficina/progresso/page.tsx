@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ServiceProgressRoute({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const [collection, budgetItems] = await Promise.all([loadCollectionForOperation(id), getBudgetItems(id)]);
+  const [collection, budgetItems] = await Promise.all([loadCollectionForOperation(id, "progresso"), getBudgetItems(id)]);
 
   const progressItems = collection.items.map((collectionItem) => {
     const budgetItem = budgetItems.find((item) => item.collectionItemId === collectionItem.id);

@@ -73,3 +73,9 @@ export function nextOperationalAction(status: CollectionStatus): OperationalActi
 export function secondaryOperationalAction(status: CollectionStatus): OperationalAction | null {
   return operationalActionsForStatus(status).secondary;
 }
+
+/** Inverso da matriz de CTAs do hub: a URL de oficina só é válida se o hub ofereceria esse segmento. */
+export function isWorkshopSegmentAllowed(status: CollectionStatus, segment: OperationalSegment): boolean {
+  const { primary, secondary } = operationalActionsForStatus(status);
+  return primary?.segment === segment || secondary?.segment === segment;
+}

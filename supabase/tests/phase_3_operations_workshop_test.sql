@@ -34,23 +34,23 @@ select is((
     and confrelid = 'public.collections'::regclass
 ), 1, 'service_orders references collections with composite FK');
 
--- 5. RPCs existem com assinaturas corretas
-select has_function('public', 'workshop_check_in', array['uuid', 'integer', 'text', 'text', 'jsonb', 'text'], 'workshop check-in RPC exists');
-select has_function('public', 'create_technical_budget', array['uuid', 'integer', 'jsonb', 'text'], 'technical budget RPC exists');
-select has_function('public', 'approve_technical_budget', array['uuid', 'integer', 'boolean', 'text', 'text', 'text'], 'budget approval RPC exists');
-select has_function('public', 'update_service_progress', array['uuid', 'integer', 'jsonb'], 'service progress RPC exists');
-select has_function('public', 'register_invoice_reference', array['uuid', 'integer', 'text', 'text', 'date', 'numeric', 'text'], 'invoice reference RPC exists');
-select has_function('public', 'deliver_to_customer', array['uuid', 'integer', 'uuid[]', 'text', 'text', 'text', 'text'], 'customer delivery RPC exists');
-select has_function('public', 'cancel_or_reopen_collection', array['uuid', 'integer', 'text', 'text'], 'cancel/reopen RPC exists');
+-- 5. RPCs existem com assinaturas corretas (3b: intent/uuid + idempotency_key + request_hash)
+select has_function('public', 'workshop_check_in', array['uuid', 'integer', 'text', 'text', 'jsonb', 'uuid', 'uuid', 'text'], 'workshop check-in RPC exists');
+select has_function('public', 'create_technical_budget', array['uuid', 'integer', 'jsonb', 'text', 'uuid', 'text'], 'technical budget RPC exists');
+select has_function('public', 'approve_technical_budget', array['uuid', 'integer', 'boolean', 'text', 'text', 'text', 'uuid', 'text'], 'budget approval RPC exists');
+select has_function('public', 'update_service_progress', array['uuid', 'integer', 'jsonb', 'uuid', 'text'], 'service progress RPC exists');
+select has_function('public', 'register_invoice_reference', array['uuid', 'integer', 'text', 'text', 'date', 'numeric', 'text', 'uuid', 'text'], 'invoice reference RPC exists');
+select has_function('public', 'deliver_to_customer', array['uuid', 'integer', 'uuid[]', 'text', 'text', 'text', 'uuid', 'uuid', 'text'], 'customer delivery RPC exists');
+select has_function('public', 'cancel_or_reopen_collection', array['uuid', 'integer', 'text', 'text', 'uuid', 'text'], 'cancel/reopen RPC exists');
 
 -- 6. Todas as RPCs sao security definer com search_path fixo
-select is((select prosecdef from pg_proc where oid = 'public.workshop_check_in(uuid, integer, text, text, jsonb, text)'::regprocedure), true, 'workshop_check_in is security definer');
-select is((select prosecdef from pg_proc where oid = 'public.create_technical_budget(uuid, integer, jsonb, text)'::regprocedure), true, 'create_technical_budget is security definer');
-select is((select prosecdef from pg_proc where oid = 'public.approve_technical_budget(uuid, integer, boolean, text, text, text)'::regprocedure), true, 'approve_technical_budget is security definer');
-select is((select prosecdef from pg_proc where oid = 'public.update_service_progress(uuid, integer, jsonb)'::regprocedure), true, 'update_service_progress is security definer');
-select is((select prosecdef from pg_proc where oid = 'public.register_invoice_reference(uuid, integer, text, text, date, numeric, text)'::regprocedure), true, 'register_invoice_reference is security definer');
-select is((select prosecdef from pg_proc where oid = 'public.deliver_to_customer(uuid, integer, uuid[], text, text, text, text)'::regprocedure), true, 'deliver_to_customer is security definer');
-select is((select prosecdef from pg_proc where oid = 'public.cancel_or_reopen_collection(uuid, integer, text, text)'::regprocedure), true, 'cancel_or_reopen_collection is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.workshop_check_in(uuid, integer, text, text, jsonb, uuid, uuid, text)'::regprocedure), true, 'workshop_check_in is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.create_technical_budget(uuid, integer, jsonb, text, uuid, text)'::regprocedure), true, 'create_technical_budget is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.approve_technical_budget(uuid, integer, boolean, text, text, text, uuid, text)'::regprocedure), true, 'approve_technical_budget is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.update_service_progress(uuid, integer, jsonb, uuid, text)'::regprocedure), true, 'update_service_progress is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.register_invoice_reference(uuid, integer, text, text, date, numeric, text, uuid, text)'::regprocedure), true, 'register_invoice_reference is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.deliver_to_customer(uuid, integer, uuid[], text, text, text, uuid, uuid, text)'::regprocedure), true, 'deliver_to_customer is security definer');
+select is((select prosecdef from pg_proc where oid = 'public.cancel_or_reopen_collection(uuid, integer, text, text, uuid, text)'::regprocedure), true, 'cancel_or_reopen_collection is security definer');
 
 -- 7. Constraints de status expandidos em collections e collection_events
 select is((
@@ -79,8 +79,8 @@ reset role;
 
 -- 10. Anon nao pode chamar RPCs da oficina
 set local role anon;
-select throws_ok($$select public.workshop_check_in(gen_random_uuid(), 1, 'a', '52998224725', '[]'::jsonb, 'sig')$$, '42501', 'permission denied for function workshop_check_in', 'anon cannot call workshop_check_in');
-select throws_ok($$select public.cancel_or_reopen_collection(gen_random_uuid(), 1, 'cancel', 'motivo')$$, '42501', 'permission denied for function cancel_or_reopen_collection', 'anon cannot call cancel_or_reopen_collection');
+select throws_ok($$select public.workshop_check_in(gen_random_uuid(), 1, 'a', '52998224725', '[]'::jsonb, gen_random_uuid(), gen_random_uuid(), repeat('a', 64))$$, '42501', 'permission denied for function workshop_check_in', 'anon cannot call workshop_check_in');
+select throws_ok($$select public.cancel_or_reopen_collection(gen_random_uuid(), 1, 'cancel', 'motivo', gen_random_uuid(), repeat('a', 64))$$, '42501', 'permission denied for function cancel_or_reopen_collection', 'anon cannot call cancel_or_reopen_collection');
 reset role;
 
 -- 11. Eventos de coleta sao imutaveis
@@ -115,15 +115,12 @@ select is(has_table_privilege('authenticated', 'public.invoice_references', 'del
 select is(has_table_privilege('authenticated', 'public.delivery_items', 'delete'), false, 'authenticated cannot delete delivery_items');
 
 -- 14. Grants de RPC para authenticated (papel correto tem acesso)
-select is(has_function_privilege('authenticated', 'public.workshop_check_in(uuid, integer, text, text, jsonb, text)', 'execute'), true, 'authenticated can call workshop_check_in');
-select is(has_function_privilege('authenticated', 'public.budget_approval(uuid, integer, boolean, text, text, text)', 'execute'), true, 'authenticated can call budget approval');
-select is(has_function_privilege('authenticated', 'public.deliver_to_customer(uuid, integer, uuid[], text, text, text, text)', 'execute'), true, 'authenticated can call customer delivery');
+select is(has_function_privilege('authenticated', 'public.workshop_check_in(uuid, integer, text, text, jsonb, uuid, uuid, text)', 'execute'), true, 'authenticated can call workshop_check_in');
+select is(has_function_privilege('authenticated', 'public.approve_technical_budget(uuid, integer, boolean, text, text, text, uuid, text)', 'execute'), true, 'authenticated can call budget approval');
+select is(has_function_privilege('authenticated', 'public.deliver_to_customer(uuid, integer, uuid[], text, text, text, uuid, uuid, text)', 'execute'), true, 'authenticated can call customer delivery');
 
--- 15. Nota: a migration Fase 3 (20260822125100) NAO amplia o ledger de
---     idempotencia nem usa idempotency_key/request_hash nas RPCs — as transicoes
---     sao validadas via row_version otimista em vez de replay idempotent.
---     Idempotencia via ledger e intents privados para assinatura ficam como
---     backlog de refinamento (Sessao 3b+), preservando compatibilidade com 1A.
+-- 15. Sessao 3b (20260823000001) ampliou as RPCs com p_idempotency_key + p_request_hash
+--     e o ledger de idempotency_requests. transicoes continuam com row_version.
 select is(has_table('public', 'idempotency_requests'), true, 'idempotency ledger retained from phase 1');
 
 -- 16. Chat 3: EXECUTE revogado de anon; GRANT so authenticated; policies sem ALL/DELETE

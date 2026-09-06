@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CustomerDeliveryRoute({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const [collection, terms] = await Promise.all([loadCollectionForOperation(id), getDeliveryTerms(id)]);
+  const [collection, terms] = await Promise.all([loadCollectionForOperation(id, "entrega"), getDeliveryTerms(id)]);
   const termItems = (await Promise.all(terms.map((term) => getDeliveryTermItems(term.id)))).flat();
 
   return (

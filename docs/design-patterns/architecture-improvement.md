@@ -168,7 +168,7 @@ Cópias quase literais entre slices:
 | :--- | :--- |
 | `digestSha256` / `digestLifecycleRequest` / `validatePngSignature` | `collection-lifecycle/api/commands.ts` e `collection-operations/api/commands.ts` |
 | Client Supabase + cookies | `supabase-server.ts`, `lifecycle-supabase.ts`, `operations-supabase.ts`, verificação pública |
-| `verifyCollectionDocument` | `collection-documents/api/public-verification.ts` **e** `api/public/verification.ts` |
+| `verifyCollectionDocument` | `collection-documents/api/public/verification.ts` |
 | Helpers HTTP (`noStore`, parse JSON, idempotency) | `http-response.ts` vs funções locais em drafts/customers |
 | Mapeamento de erro de domínio → mensagem | `lifecycle-errors.ts` vs `action-error.ts` vs `operations-errors.ts` |
 
