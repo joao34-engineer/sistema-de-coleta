@@ -147,8 +147,10 @@ describe("Fase 1A hardening contract", () => {
     expect(routes).toContain('"/coletas"');
     expect(proxy).toContain("protectedRoutePrefixes");
     expect(nextConfig).toContain("Strict-Transport-Security");
-    expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).toContain("toSafeActionError");
-    expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).toContain("toSafeActionError");
+    expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).toContain("toActionFailureCode");
+    expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).toContain("toActionFailureCode");
+    expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).not.toContain("toSafeActionError");
+    expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).not.toContain("toSafeActionError");
     expect(readRepositoryFile("src/_app/actions/draft-flow.actions.ts")).not.toMatch(/error instanceof Error \? error\.message/);
     expect(readRepositoryFile("src/_pages/collection-drafts/api/actions.ts")).not.toMatch(/error instanceof Error \? error\.message/);
     expect(readRepositoryFile("src/_pages/collection-lifecycle/api/http-response.ts")).toMatch(/actorId:\s*error\.actorId/);

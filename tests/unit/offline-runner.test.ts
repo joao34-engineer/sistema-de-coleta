@@ -184,6 +184,34 @@ describe("offline drain runner", () => {
     expect(fetchDraft).toHaveBeenCalled();
   });
 
+  it("does not retry when patch_draft returns legacy Portuguese stale text", async () => {
+    const portugueseStale =
+      "A coleta foi atualizada por outra operação. Recarregue a página e revise os dados.";
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverCustomerId: customerId, serverRowVersion: 1 }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { collectionLocation: "Rua B" },
+    });
+    const patchDraft = vi.fn(async () => ({ ok: false as const, error: portugueseStale }));
+    const fetchDraft = vi.fn(async () => ({
+      ok: true as const,
+      draft: { ...sampleDraft, rowVersion: 3 },
+      items: [sampleItem],
+      hasSignature: false,
+    }));
+    await drainCollectionQueue({
+      store,
+      commands: commands({ patchDraft, fetchDraft }),
+      actor,
+      collectionId,
+    });
+    expect(patchDraft).toHaveBeenCalledTimes(1);
+    expect(fetchDraft).not.toHaveBeenCalled();
+  });
+
   it("does not purge local data on authentication_required", async () => {
     const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
     await store.putDraft(draftRecord());
