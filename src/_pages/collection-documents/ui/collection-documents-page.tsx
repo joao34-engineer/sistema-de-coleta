@@ -81,7 +81,7 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
                     collectionId={collectionId}
                     documentId={doc.id}
                     hasPdf={hasPdf}
-                    pdfJobStatus={doc.pdfJobStatus}
+                    {...(doc.pdfJobStatus === undefined ? {} : { pdfJobStatus: doc.pdfJobStatus })}
                   />
                 </div>
 

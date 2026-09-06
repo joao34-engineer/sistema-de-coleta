@@ -12,7 +12,7 @@ const testState = vi.hoisted(() => ({
     jobId: "33333333-3333-4333-8333-333333333333",
     documentId: "22222222-2222-4222-8222-222222222222",
     jobType: "render_pdf" as const,
-    status: "queued" as const,
+    status: "queued" as "queued" | "succeeded",
     alreadyReady: false,
   },
   kickCalls: 0,

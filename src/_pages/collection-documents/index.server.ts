@@ -38,6 +38,6 @@ export async function CollectionDocumentViewerRoute({
     collectionId,
     documentId,
     hasPdf,
-    pdfJobStatus: document?.pdfJobStatus,
+    ...(document?.pdfJobStatus === undefined ? {} : { pdfJobStatus: document.pdfJobStatus }),
   });
 }

@@ -70,7 +70,7 @@ export function DocumentViewerPage({ collectionId, documentId, hasPdf, pdfJobSta
                 collectionId={collectionId}
                 documentId={documentId}
                 hasPdf={hasPdf}
-                pdfJobStatus={pdfJobStatus}
+                {...(pdfJobStatus === undefined ? {} : { pdfJobStatus })}
               />
             </div>
           )}
