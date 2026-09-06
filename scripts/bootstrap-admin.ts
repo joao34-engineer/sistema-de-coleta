@@ -1,13 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/shared/api/database.types";
 import { getBootstrapEnvironment } from "@/shared/config/environment";
-
-function projectRefFromUrl(value: string): string {
-  const hostname = new URL(value).hostname;
-  const [ref] = hostname.split(".");
-  if (!ref) throw new Error("Não foi possível identificar o project ref.");
-  return ref;
-}
+import { projectRefFromUrl } from "@/shared/config/project-ref";
 
 async function main(): Promise<void> {
   const environment = getBootstrapEnvironment();

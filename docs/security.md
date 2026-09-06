@@ -63,6 +63,10 @@ Observabilidade (Chat 4 / ADR 0008): 500 disparam o mesmo `transaction_failure` 
 
 Login depende de `DOCUMENT_RATE_LIMIT_SECRET` (>=32), `SUPABASE_SECRET_KEY` e `SUPABASE_CONFIRM_PROJECT_REF` no servidor. A RPC `consume_document_rate_limit` precisa aceitar o scope `auth_login` (migration `20260829010000_phase_4_auth_login_rate_limit_scope.sql`); sem isso o login falha fechado com "Não foi possível concluir o login agora."
 
+## Atualização (06/09/2026) — B24/B25
+
+`SUPABASE_SECRET_KEY` é obrigatória no servidor Vercel (rate limit + worker de documentos). Nunca `NEXT_PUBLIC_*`, nunca no cliente, nunca commitada. `getServiceEnvironment` recusa `SUPABASE_CONFIRM_PROJECT_REF` que não coincida com o project ref do host de `NEXT_PUBLIC_SUPABASE_URL` (`ServiceEnvironmentMismatchError`). Login continua fail-closed: a cópia das cinco ações não muda. Falha de ambiente/RPC registra só códigos allow-listed (`rate_limit_secret_missing`, `service_env_invalid`, `service_project_ref_mismatch`, `rate_limit_rpc_failed`) com nomes de variável, sem e-mail, senha ou segredo. Quota de login consome antes do Auth; sucesso chama `reset_document_rate_limit` (apaga a janela corrente). Lockout ativo não chega no Auth. Reset com falha ainda redireciona e registra `rate_limit_reset_failed`.
+
 ## Checklist operacional ainda humano
 
 - Ativar leaked-password protection no painel Auth (Fase 0, ainda aberto).

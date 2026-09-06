@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/shared/api/database.types";
 import { getServiceEnvironment } from "@/shared/config/environment";
+import { projectRefFromUrl } from "@/shared/config/project-ref";
 import { cleanupExpiredCollectionUploads, type UploadCleanupClient } from "@/_pages/collection-lifecycle/api/upload-cleanup.server";
 import { getRequestId, logTransactionFailure } from "@/shared/lib/server-logger";
 
@@ -8,13 +9,6 @@ import { getRequestId, logTransactionFailure } from "@/shared/lib/server-logger"
 // object through storage.from(bucket).remove(paths), then acknowledges it with
 // ack_collection_upload_cleanup. Keeping this contract explicit makes the
 // scheduled entry point auditable without exposing any object or actor data.
-
-function projectRefFromUrl(value: string): string {
-  const hostname = new URL(value).hostname;
-  const [ref] = hostname.split(".");
-  if (!ref) throw new Error("Não foi possível identificar o projeto Supabase.");
-  return ref;
-}
 
 async function main(): Promise<void> {
   const environment = getServiceEnvironment();

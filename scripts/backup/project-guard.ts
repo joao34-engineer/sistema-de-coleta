@@ -1,9 +1,6 @@
-export function projectRefFromUrl(value: string): string {
-  const hostname = new URL(value).hostname;
-  const [ref] = hostname.split(".");
-  if (!ref) throw new Error("Não foi possível identificar o project ref.");
-  return ref;
-}
+import { projectRefFromUrl } from "@/shared/config/project-ref";
+
+export { projectRefFromUrl };
 
 export type RestoreGuardInput = Readonly<{
   sourceProjectRef: string;

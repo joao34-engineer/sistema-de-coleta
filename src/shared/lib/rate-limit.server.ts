@@ -4,7 +4,7 @@ import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { getServiceEnvironment } from "@/shared/config/environment";
+import { assertServiceProjectRef, getServiceEnvironment } from "@/shared/config/environment";
 
 const rateLimitResultRowSchema = z.object({
   allowed: z.boolean(),
@@ -26,6 +26,23 @@ type RateLimitDatabase = {
           p_limit: number;
         }>;
         Returns: unknown;
+      };
+      peek_document_rate_limit: {
+        Args: Readonly<{
+          p_scope: string;
+          p_subject_hash: string;
+          p_window_seconds: number;
+          p_limit: number;
+        }>;
+        Returns: unknown;
+      };
+      reset_document_rate_limit: {
+        Args: Readonly<{
+          p_scope: string;
+          p_subject_hash: string;
+          p_window_seconds: number;
+        }>;
+        Returns: undefined;
       };
     };
     Enums: Record<never, never>;
@@ -73,9 +90,16 @@ export class DocumentRateLimitUnavailableError extends Error {
   }
 }
 
+export class DocumentRateLimitSecretMissingError extends DocumentRateLimitUnavailableError {
+  constructor() {
+    super();
+    this.name = "DocumentRateLimitSecretMissingError";
+  }
+}
+
 export function getDocumentRateLimitSecret(): string {
   const secret = process.env["DOCUMENT_RATE_LIMIT_SECRET"];
-  if (typeof secret !== "string" || secret.length < 32) throw new DocumentRateLimitUnavailableError();
+  if (typeof secret !== "string" || secret.length < 32) throw new DocumentRateLimitSecretMissingError();
   return secret;
 }
 
@@ -103,9 +127,16 @@ export function requestIpRateLimitSubject(request: Pick<Request, "headers">): st
 
 function createRateLimitClient() {
   const environment = getServiceEnvironment();
+  assertServiceProjectRef(environment);
   return createClient<RateLimitDatabase>(environment.supabaseUrl, environment.supabaseSecretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+}
+
+function loginRateLimitSubject(request: Pick<Request, "headers">, email: string): string {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail.length === 0) throw new TypeError("document_rate_limit_subject_invalid");
+  return `${requestIpRateLimitSubject(request)}:${normalizedEmail}`;
 }
 
 export async function enforceDocumentRateLimit(rule: DocumentRateLimitRule, subject: string): Promise<void> {
@@ -133,10 +164,38 @@ export async function enforceShareDownloadRateLimit(request: Pick<Request, "head
 }
 
 export async function enforceLoginRateLimit(request: Pick<Request, "headers">, email: string): Promise<void> {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (normalizedEmail.length === 0) throw new TypeError("document_rate_limit_subject_invalid");
-  await enforceDocumentRateLimit(
-    documentRateLimitRules.login,
-    `${requestIpRateLimitSubject(request)}:${normalizedEmail}`,
-  );
+  await enforceDocumentRateLimit(documentRateLimitRules.login, loginRateLimitSubject(request, email));
+}
+
+export async function peekDocumentRateLimit(rule: DocumentRateLimitRule, subject: string): Promise<void> {
+  const subjectHash = hashDocumentRateLimitSubject(subject, getDocumentRateLimitSecret());
+  const { data, error } = await createRateLimitClient().rpc("peek_document_rate_limit", {
+    p_scope: rule.scope,
+    p_subject_hash: subjectHash,
+    p_window_seconds: rule.windowSeconds,
+    p_limit: rule.limit,
+  });
+
+  if (error) throw new DocumentRateLimitUnavailableError();
+  const parsed = rateLimitResultSchema.safeParse(data);
+  if (!parsed.success) throw new DocumentRateLimitUnavailableError();
+  const result = parsed.data[0];
+  if (!result.allowed) throw new DocumentRateLimitExceededError(result.retry_after_seconds);
+}
+
+export async function resetDocumentRateLimit(
+  rule: Pick<DocumentRateLimitRule, "scope" | "windowSeconds">,
+  subject: string,
+): Promise<void> {
+  const subjectHash = hashDocumentRateLimitSubject(subject, getDocumentRateLimitSecret());
+  const { error } = await createRateLimitClient().rpc("reset_document_rate_limit", {
+    p_scope: rule.scope,
+    p_subject_hash: subjectHash,
+    p_window_seconds: rule.windowSeconds,
+  });
+  if (error) throw new DocumentRateLimitUnavailableError();
+}
+
+export async function resetLoginRateLimit(request: Pick<Request, "headers">, email: string): Promise<void> {
+  await resetDocumentRateLimit(documentRateLimitRules.login, loginRateLimitSubject(request, email));
 }
