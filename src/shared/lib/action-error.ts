@@ -5,6 +5,8 @@ const failureMessages: Readonly<Record<string, string>> = {
   administrator_access_denied: "Você não tem permissão para esta operação.",
   stale_version: "A coleta foi atualizada por outra operação. Recarregue a página e revise os dados.",
   idempotency_conflict: "Esta operação já foi enviada com outros dados. Atualize a página antes de tentar de novo.",
+  duplicate_workshop_item: "O mesmo item da coleta foi informado mais de uma vez no check-in.",
+  workshop_checkin_items_incomplete: "O check-in de oficina deve incluir todos os itens da coleta.",
   workshop_checkin_not_collected: "A coleta precisa estar no status 'coletada' para o check-in de oficina.",
   budget_not_in_workshop: "A coleta precisa estar 'em oficina' para registrar o orçamento.",
   budget_not_in_budget: "A coleta precisa estar 'em orçamento' para aprovar ou rejeitar.",
@@ -30,6 +32,10 @@ export function toSafeActionError(error: unknown): SafeActionFailure {
   if (typeof code === "string") {
     const mapped = failureMessages[code];
     if (mapped) return { ok: false, error: mapped };
+    const message = (error as Readonly<{ message?: unknown }>).message;
+    if (typeof message === "string" && failureMessages[message]) {
+      return { ok: false, error: failureMessages[message] };
+    }
     if (code === "P0001") return { ok: false, error: "A coleta não atende aos requisitos desta operação." };
     if (code === "40001") return { ok: false, error: failureMessages["stale_version"] ?? "Recarregue a página e tente novamente." };
   }

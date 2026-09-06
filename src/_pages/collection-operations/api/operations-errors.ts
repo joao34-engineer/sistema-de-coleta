@@ -28,6 +28,8 @@ function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorI
     if (error.code === "P0001" && error.message === "service_order_item_not_found") return { status: 404, code: "service_order_item_not_found", message: "Item da ordem de serviço não encontrado." };
     if (error.code === "P0001" && error.message === "collection_item_not_found") return { status: 404, code: "collection_item_not_found", message: "Item da coleta não encontrado ou já removido." };
     if (error.code === "P0001" && error.message === "invalid_workshop_checkin_request") return { status: 422, code: "validation_error", message: "Dados do check-in de oficina inválidos." };
+    if (error.code === "P0001" && error.message === "duplicate_workshop_item") return { status: 422, code: "duplicate_workshop_item", message: "O mesmo item da coleta foi informado mais de uma vez no check-in." };
+    if (error.code === "P0001" && error.message === "workshop_checkin_items_incomplete") return { status: 422, code: "workshop_checkin_items_incomplete", message: "O check-in de oficina deve incluir todos os itens da coleta." };
     if (error.code === "P0001" && error.message === "invalid_budget_request") return { status: 422, code: "validation_error", message: "Dados do orçamento técnico inválidos." };
     if (error.code === "P0001" && error.message === "invalid_budget_item") return { status: 422, code: "validation_error", message: "Item do orçamento inválido." };
     if (error.code === "P0001" && error.message === "invalid_approval_request") return { status: 422, code: "validation_error", message: "Dados de aprovação/rejeição inválidos." };
