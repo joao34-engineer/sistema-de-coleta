@@ -50,7 +50,7 @@ select is((
   where conrelid = 'public.service_orders'::regclass
     and contype = 'c'
     and conname = 'service_orders_status_check'
-), '(status = ANY (ARRAY[\'draft\'::text, \'budgeted\'::text, \'approved\'::text, \'in_service\'::text, \'ready\'::text, \'canceled\'::text, \'rejected\'::text]))', 'service_orders status includes rejected');
+), '(status = ANY (ARRAY[\'draft\'::text, \'budgeted\'::text, \'approved\'::text, \'in_service\'::text, \'ready\'::text, \'canceled\'::text, \'rejected\'::text, \'delivered\'::text]))', 'service_orders status includes rejected');
 
 -- 0.6 — unique por coleta removido; unique (id, org) e indice permanecem
 select is((

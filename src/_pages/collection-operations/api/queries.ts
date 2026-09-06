@@ -24,7 +24,7 @@ export const serviceOrderSchema = z.object({
   laborBrl: z.number(),
   partsBrl: z.number(),
   dueDays: z.number().int().positive(),
-  status: z.enum(["draft", "budgeted", "approved", "in_service", "ready", "canceled", "rejected"]),
+  status: z.enum(["draft", "budgeted", "approved", "in_service", "ready", "canceled", "rejected", "delivered"]),
   approvalSignerName: z.string().nullable(),
   approvalSignerTaxId: z.string().nullable(),
   checkInSignaturePath: z.string().nullable(),
