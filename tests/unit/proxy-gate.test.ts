@@ -19,6 +19,28 @@ describe("decideProxyGate", () => {
     ).toEqual({ action: "next" });
   });
 
+  it("passes POST /api/auth/sign-out through without env or identity", () => {
+    expect(
+      decideProxyGate({
+        pathname: "/api/auth/sign-out",
+        hasPublicEnv: false,
+        publicEnvValid: false,
+        hasIdentity: null,
+      }),
+    ).toEqual({ action: "next" });
+  });
+
+  it("does not bounce an authenticated POST /api/auth/sign-out to the dashboard", () => {
+    expect(
+      decideProxyGate({
+        pathname: "/api/auth/sign-out",
+        hasPublicEnv: true,
+        publicEnvValid: true,
+        hasIdentity: true,
+      }),
+    ).toEqual({ action: "next" });
+  });
+
   it("redirects protected HTML to / when public env is missing", () => {
     expect(
       decideProxyGate({
@@ -110,6 +132,7 @@ describe("decideProxyGate", () => {
   it("only redirects to /, /login, or /dashboard", () => {
     const scenarios = [
       { pathname: "/api/health", hasPublicEnv: false, publicEnvValid: false, hasIdentity: null },
+      { pathname: "/api/auth/sign-out", hasPublicEnv: true, publicEnvValid: true, hasIdentity: true },
       { pathname: "/dashboard", hasPublicEnv: false, publicEnvValid: false, hasIdentity: null },
       { pathname: "/login", hasPublicEnv: false, publicEnvValid: false, hasIdentity: null },
       { pathname: "/coletas/x", hasPublicEnv: true, publicEnvValid: false, hasIdentity: null },

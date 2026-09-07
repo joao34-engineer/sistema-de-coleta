@@ -1,13 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { AccessDeniedPage } from "../../src/_pages/dashboard/ui/access-denied-page";
-
-const mockSignOutAction = vi.fn();
-
-vi.mock("@/shared/auth/actions", () => ({
-  signOutAction: (...args: unknown[]) => mockSignOutAction(...args),
-  initialSignOutState: { status: "idle" },
-}));
 
 describe("AccessDeniedPage", () => {
   afterEach(() => cleanup());
@@ -18,25 +11,11 @@ describe("AccessDeniedPage", () => {
     expect(screen.getByText(/Esta conta não possui um vínculo administrativo ativo com a MJT./i)).toBeInTheDocument();
   });
 
-  it("renders a Sair button that submits the sign-out action", async () => {
-    mockSignOutAction.mockResolvedValue({ status: "idle" });
+  it("posts Sair to the sign-out route instead of a Server Action", () => {
     render(<AccessDeniedPage />);
-
     const button = screen.getByRole("button", { name: /Sair/i });
     expect(button).toBeInTheDocument();
-
-    fireEvent.click(button);
-    await waitFor(() => expect(mockSignOutAction).toHaveBeenCalled());
-  });
-
-  it("displays an alert when sign-out returns an error", async () => {
-    mockSignOutAction.mockResolvedValue({ status: "error", message: "Não foi possível encerrar a sessão. Tente novamente." });
-    render(<AccessDeniedPage />);
-
-    const button = screen.getByRole("button", { name: /Sair/i });
-    fireEvent.click(button);
-
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/Não foi possível encerrar a sessão/i);
+    expect(button.closest("form")).toHaveAttribute("action", "/api/auth/sign-out");
+    expect(button.closest("form")).toHaveAttribute("method", "post");
   });
 });

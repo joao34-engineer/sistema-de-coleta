@@ -6,3 +6,4 @@ export {
   AdministratorAccessDeniedError,
 } from "./require-admin";
 export { signOutAction } from "./actions";
+export { endSession } from "./end-session";

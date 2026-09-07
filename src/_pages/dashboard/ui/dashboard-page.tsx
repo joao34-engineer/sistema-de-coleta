@@ -1,17 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import type { DashboardActivityItem, DashboardActivityStatus } from "../model/contracts";
 import { latestActivities } from "../model/contracts";
-import { signOutAction, initialSignOutState } from "@/shared/auth/actions";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
-import { Button, buttonClassName } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/ui/button";
+import { SignOutForm } from "@/shared/ui/sign-out-form";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Card, CardHeader, CardFooter } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -54,7 +53,6 @@ export function DashboardPage({
   todayLabel,
 }: Props) {
   const router = useRouter();
-  const [, signOutFormAction] = useActionState(signOutAction, initialSignOutState);
   const firstName = operatorGivenName(administrator.fullName);
   const isSetupComplete = settings.setupStatus === "complete";
 
@@ -67,11 +65,7 @@ export function DashboardPage({
         title={`Olá, ${firstName}`}
         subtitle="Operação de hoje"
         badge={
-          <form action={signOutFormAction}>
-            <Button variant="secondary" size="sm" type="submit">
-              Sair
-            </Button>
-          </form>
+          <SignOutForm />
         }
       />
 

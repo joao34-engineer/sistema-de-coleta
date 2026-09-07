@@ -1,8 +1,12 @@
-import { isProtectedPath } from "@/shared/config/routes";
+import { isProtectedPath, routes } from "@/shared/config/routes";
 
 export type ProxyGateDecision =
   | { action: "next" }
   | { action: "redirect"; pathname: "/" | "/login" | "/dashboard" };
+
+export function isProxyIdentityExemptPath(pathname: string): boolean {
+  return pathname === "/api/health" || pathname === routes.signOut;
+}
 
 export function decideProxyGate(input: Readonly<{
   pathname: string;
@@ -10,7 +14,7 @@ export function decideProxyGate(input: Readonly<{
   publicEnvValid: boolean;
   hasIdentity: boolean | null;
 }>): ProxyGateDecision {
-  if (input.pathname === "/api/health") return { action: "next" };
+  if (isProxyIdentityExemptPath(input.pathname)) return { action: "next" };
   if (!input.hasPublicEnv || !input.publicEnvValid) {
     return isProtectedPath(input.pathname)
       ? { action: "redirect", pathname: "/" }

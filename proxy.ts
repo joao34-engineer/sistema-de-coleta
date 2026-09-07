@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/shared/api/database.types";
 import { getPublicEnvironment, hasPublicEnvironment } from "@/shared/config/environment";
-import { decideProxyGate } from "@/shared/config/proxy-gate";
+import { decideProxyGate, isProxyIdentityExemptPath } from "@/shared/config/proxy-gate";
 
 function redirectWithRefreshedCookies(request: NextRequest, response: NextResponse, pathname: string): NextResponse {
   const destination = pathname === "/login" ? "/dashboard" : "/login";
@@ -13,6 +13,9 @@ function redirectWithRefreshedCookies(request: NextRequest, response: NextRespon
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  if (isProxyIdentityExemptPath(pathname)) {
+    return NextResponse.next();
+  }
   const hasPublicEnv = hasPublicEnvironment();
   let publicEnvValid = false;
 

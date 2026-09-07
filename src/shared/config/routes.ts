@@ -3,6 +3,7 @@ export const routes = {
   login: "/login",
   dashboard: "/dashboard",
   companySettings: "/configuracoes/empresa",
+  signOut: "/api/auth/sign-out",
 } as const;
 
 export const protectedRoutePrefixes = [routes.dashboard, "/configuracoes", "/coletas"] as const;

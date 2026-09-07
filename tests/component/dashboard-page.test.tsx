@@ -13,11 +13,6 @@ vi.mock("next/image", () => ({
   default: (props: Readonly<{ alt: string }>) => <span>{props.alt}</span>,
 }));
 
-vi.mock("@/shared/auth/actions", () => ({
-  signOutAction: vi.fn(async () => ({ status: "idle" as const })),
-  initialSignOutState: { status: "idle" as const },
-}));
-
 const administrator: AuthenticatedAdministrator = {
   userId: "11111111-1111-1111-1111-111111111111",
   email: "joaomarceloferreiratrader@gmail.com",
@@ -67,6 +62,7 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("heading", { name: "Olá, Coletor" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /gmail\.com/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sair" }).closest("form")).toHaveAttribute("action", "/api/auth/sign-out");
   });
 
   it("greets with the given name from the profile", () => {

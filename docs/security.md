@@ -53,6 +53,7 @@ Revisar permissao por papel, migration/RLS, Storage, env, CSP/cabecalhos, rate l
 | `GET /api/public/collections/[token]` | anon | `verify_collection_document` | ja existe | 404 generico |
 | `GET /d/{token}/download` | token | `consume_document_share` | HTTP 429 | 404 generico |
 | `signInAction` | n/a | Auth | estado da action, nao 429 | `unexpected_error` via logger |
+| `POST /api/auth/sign-out` | same-origin; `signOut` no Auth | `auth.refresh_tokens` (revoke) | nenhum | `sign_out` / `unexpected_error` |
 | `GET`/`HEAD /api/health` | anon | n/a (Auth+REST probe) | nenhum | n/a; corpo minimo |
 | `onRequestError` | n/a | n/a | n/a | so `routePath` template |
 | Worker interno | secret 32+ timing-safe (rota HTTP/cron); kick in-process após finalize não usa secret | service_role | n/a | sem segredo |

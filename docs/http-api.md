@@ -230,6 +230,17 @@ Abuso do download é limitado por `document_share_download` (30 requisições / 
 
 `signInAction` não é rota HTTP. Códigos estáveis do estado: `validation_error`, `invalid_credentials`, `rate_limit_exceeded`, `temporarily_unavailable`, `unexpected_error`. Rate limit (`auth_login`, 5 falhas na janela UTC de 900 s por IP+e-mail HMAC) ocorre antes de `signInWithPassword`; login com sucesso zera a quota (scan 3.3). Não há HTTP 429 no login. Credencial inválida não revela se o e-mail existe. Falha inesperada no `catch` registra `logTransactionFailure` (`operation: sign_in`, `status: 500`) sem PII.
 
+## Logout
+
+### `POST /api/auth/sign-out`
+
+Encerra a sessão no Auth (`signOut` global, revoga o refresh token) e responde `303` para `/login`. Não é Server Action: o POST HTTP evita re-render paralelo do layout autenticado, que disparava vários `grant_type=refresh_token` no mesmo refresh token (`token_revoked` em `auth.refresh_tokens`).
+
+- Same-origin obrigatório (`Origin` ou `Referer` igual ao host do pedido). Cruzado responde `403` sem chamar Auth.
+- O proxy não chama `getClaims` nesta rota (igual a `/api/health`), para não renovar a sessão no caminho do logout.
+- Falha ao gravar cookie ou no Auth responde `500` `no-store`, sem Location.
+- `Cache-Control: private, no-store`. Sem corpo JSON.
+
 ## Saúde (Fase 4 Chat 4)
 
 ### `GET /api/health` e `HEAD /api/health`
