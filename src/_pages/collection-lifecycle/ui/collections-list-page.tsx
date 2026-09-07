@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
@@ -12,6 +12,7 @@ import {
   type CollectionsListFilter,
 } from "../model/status-filters";
 import { loadMoreCollectionsAction } from "../api/actions";
+import { CollectionsListFilterChip } from "./collections-list-filter-chip";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
@@ -33,6 +34,13 @@ type Props = Readonly<{
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+const LIST_FILTER_CHIPS = [
+  { id: "all", label: "Todos" },
+  { id: "collected", label: "Coletadas" },
+  { id: "in_repair", label: "Em reparo" },
+  { id: "ready", label: "Prontas" },
+] as const satisfies ReadonlyArray<{ id: CollectionsListFilter; label: string }>;
+
 export function CollectionsListPage({
   initialItems,
   searchTerm = "",
@@ -50,6 +58,7 @@ export function CollectionsListPage({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [pendingChipCount, setPendingChipCount] = useState(0);
   const [syncedSearchTerm, setSyncedSearchTerm] = useState(searchTerm);
   const [syncedItems, setSyncedItems] = useState(initialItems);
   const [syncedCursor, setSyncedCursor] = useState(nextCursor);
@@ -74,6 +83,15 @@ export function CollectionsListPage({
     return () => window.clearTimeout(handle);
   }, [draftQ, pathname, router, searchTerm, selectedFilter]);
 
+  const handleChipPendingChange = useCallback((pending: boolean) => {
+    setPendingChipCount((count) => {
+      const next = count + (pending ? 1 : -1);
+      return next < 0 ? 0 : next;
+    });
+  }, []);
+
+  const listBusy = isPending || pendingChipCount > 0;
+
   if (loadFailed) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
@@ -91,12 +109,6 @@ export function CollectionsListPage({
         <MobileBottomNav />
       </main>
     );
-  }
-
-  function replaceListQuery(next: Readonly<{ q: string; filter: CollectionsListFilter }>) {
-    startTransition(() => {
-      router.replace(buildCollectionsListHref(pathname, next));
-    });
   }
 
   async function loadMore() {
@@ -134,90 +146,80 @@ export function CollectionsListPage({
 
         {showStatusFilters ? (
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {(
-              [
-                { id: "all", label: "Todos" },
-                { id: "collected", label: "Coletadas" },
-                { id: "in_repair", label: "Em reparo" },
-                { id: "ready", label: "Prontas" },
-              ] as const
-            ).map((chip) => {
-              const isActive = selectedFilter === chip.id;
-              return (
-                <button
-                  key={chip.id}
-                  type="button"
-                  onClick={() => replaceListQuery({ q: draftQ, filter: chip.id })}
-                  className={`flex h-[36px] shrink-0 items-center justify-center rounded-full px-4 text-[12px] font-semibold transition-colors ${
-                    isActive
-                      ? "bg-[var(--color-text-primary)] text-white shadow-xs"
-                      : "bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
-                  }`}
-                >
-                  {chip.label}
-                </button>
-              );
-            })}
+            {LIST_FILTER_CHIPS.map((chip) => (
+              <CollectionsListFilterChip
+                key={chip.id}
+                href={buildCollectionsListHref(pathname, { q: draftQ, filter: chip.id })}
+                label={chip.label}
+                isCurrent={selectedFilter === chip.id}
+                onPendingChange={handleChipPendingChange}
+              />
+            ))}
           </div>
         ) : null}
 
-        {items.length === 0 ? (
-          <MobileStatePanel
-            type="empty"
-            title="Nenhuma coleta encontrada"
-            subtitle={
-              searchTerm.trim() || selectedFilter !== "all"
-                ? "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta."
-                : "Você ainda não registrou nenhuma coleta. Crie a primeira para começar."
-            }
-            actionText="Nova coleta"
-            onAction={() => router.push("/coletas/nova" as Route)}
-          />
-        ) : (
-          <div className="flex flex-col gap-3">
-            {items.map((item) => (
-              <PendingNavLink
-                key={item.id}
-                href={
-                  item.status === "draft"
-                    ? (`/coletas/${item.id}/itens` as Route)
-                    : (`/coletas/${item.id}` as Route)
-                }
-                className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
-                contentClassName="flex w-full items-center justify-between"
-                pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
-              >
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {item.officialCode ?? "Rascunho"}
-                  </h2>
-                  <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-                    {item.customerName ?? "Cliente não informado"}
-                  </p>
-                </div>
-
-                <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
-              </PendingNavLink>
-            ))}
-
-            {cursor ? (
-              <div className="flex flex-col items-center gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  isLoading={loadingMore || isPending}
-                  onClick={() => void loadMore()}
+        <div
+          aria-busy={listBusy}
+          className={listBusy ? "opacity-60 transition-opacity" : "transition-opacity"}
+        >
+          {items.length === 0 ? (
+            <MobileStatePanel
+              type="empty"
+              title="Nenhuma coleta encontrada"
+              subtitle={
+                searchTerm.trim() || selectedFilter !== "all"
+                  ? "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta."
+                  : "Você ainda não registrou nenhuma coleta. Crie a primeira para começar."
+              }
+              actionText="Nova coleta"
+              onAction={() => router.push("/coletas/nova" as Route)}
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {items.map((item) => (
+                <PendingNavLink
+                  key={item.id}
+                  href={
+                    item.status === "draft"
+                      ? (`/coletas/${item.id}/itens` as Route)
+                      : (`/coletas/${item.id}` as Route)
+                  }
+                  className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
+                  contentClassName="flex w-full items-center justify-between"
+                  pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
                 >
-                  Carregar mais
-                </Button>
-                {loadMoreFailed ? (
-                  <p className="text-[12px] text-[var(--color-text-muted)]">Não foi possível carregar a próxima página.</p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        )}
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+                      {item.officialCode ?? "Rascunho"}
+                    </h2>
+                    <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
+                      {item.customerName ?? "Cliente não informado"}
+                    </p>
+                  </div>
+
+                  <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
+                </PendingNavLink>
+              ))}
+
+              {cursor ? (
+                <div className="flex flex-col items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    isLoading={loadingMore}
+                    onClick={() => void loadMore()}
+                  >
+                    Carregar mais
+                  </Button>
+                  {loadMoreFailed ? (
+                    <p className="text-[12px] text-[var(--color-text-muted)]">Não foi possível carregar a próxima página.</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
 
       <MobileBottomNav />

@@ -2,10 +2,10 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `planned` — Fases 2–7; **Fase 1 entregue** (shells + pending Link + CTAs) |
+| **Status** | `planned` — Fases 2–7; **Fase 1 entregue** (shells + pending Link + CTAs + chips da lista) |
 | **Authority** | `informative` |
 | **Owner** | product / sistema-coleta |
-| **Last verified** | 2026-08-29 |
+| **Last verified** | 2026-09-07 |
 | **Escopo** | Somente `sistema-coleta/` |
 | **Pedido** | Análise explícita do humano (atraso ao tocar botões + varredura de desempenho) |
 | **Método** | Revisão estática do código. Sem profiler de produção, sem tempos medidos em campo. |
@@ -28,7 +28,7 @@ O atraso que o operador sente ao tocar **qualquer botão de navegação** é rea
 
 Há um segundo atraso, nos botões de **mutação**: a UI espera a Server Action (e às vezes a fila offline inteira) **antes** de `router.push`.
 
-O service worker **não** é o culpado. Listas locais (filtro/busca de coletas) já são instantâneas. Oficina já tem o único skeleton do app — é o padrão a copiar.
+O service worker **não** é o culpado. A busca da lista debounceia no cliente; os chips Todos / Coletadas / Em reparo / Prontas são `Link` com `useLinkStatus` (Fase 1.5). Oficina já tinha skeleton — o padrão a copiar.
 
 ---
 
@@ -40,8 +40,8 @@ O service worker **não** é o culpado. Listas locais (filtro/busca de coletas) 
 | PDF | Gerado no servidor (`collection-documents`). |
 | `next/image` | Já usado em logo e login. |
 | Hub `/coletas/[id]` | Os quatro reads já vão em `Promise.all`. |
-| Filtro da lista | Busca e chips em `CollectionsListPage` são estado local. |
-| `oficina/loading.tsx` | Único `loading.tsx` do app. Copiar o chrome (header + pulse). |
+| Filtro da lista | Chips são URL + `listCollections` no servidor (paginação). O tap pinta o pill via `useLinkStatus`; não filtrar os 25 cards locais. Busca continua draft local + debounce para a URL. |
+| Shells de `loading.tsx` | `(protected)`, dashboard, coletas, hub, documentos e oficina. Copiar o chrome (header + pulse). |
 | Páginas autenticadas dinâmicas | `cookies()` + RLS exigem render no request. O ganho **não** é “tornar o dashboard estático”. |
 
 ---
@@ -304,7 +304,7 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 ---
 
-### Fase 1 — Feedback instantâneo de navegação — **feito**
+### Fase 1 — Feedback instantâneo de navegação — **feito** (1.5 em 2026-09-07)
 
 **Objetivo:** o tap troca o chrome **antes** do dado chegar. É o P0 que o humano descreveu.
 
@@ -333,6 +333,14 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 **Faz:** dashboard — **Nova coleta** e **Configurações da Empresa** como `PendingNavLink` com `buttonClassName` (P2-5).
 
 **Aceite:** um único elemento focável; sem `<button>` dentro de `<a>`.
+
+#### Passo 1.5 — Chips de filtro da lista — **feito** (2026-09-07)
+
+**Sintoma:** Todos / Coletadas / Em reparo / Prontas eram `button` + `router.replace`. O pill só mudava depois do RSC (`listCollections`). `loading.tsx` de `/coletas` não cobre troca de `?filter=` na mesma rota.
+
+**Faz:** `CollectionsListFilterChip` — `Link` + `useLinkStatus` (mesmo padrão da 1.3). O chip corrente é texto com `aria-current`; os outros navegam com `prefetch={false}` e `scroll={false}`. A lista fica `aria-busy` e com opacity enquanto o destino carrega. A query continua no servidor (URL + DAL). Sem filtrar `initialItems` no cliente.
+
+**Aceite:** o pill selecionado muda no mesmo frame; a lista dimmed até os itens novos; paginação/`limit` 25 intactos.
 
 ---
 
@@ -520,7 +528,7 @@ Sem ADR novo: não há mudança de plataforma. Se a Fase 4.2 alterar a regra “
 
 O app está mais rápido **para o operador** quando:
 
-1. Tocar bottom nav, card ou Voltar **mostra shell no mesmo instante** (Fase 1).
+1. Tocar bottom nav, card, Voltar **ou chip de filtro da lista** mostra feedback no mesmo instante (Fase 1, incl. 1.5).
 2. Um request autenticado resolve o administrador **uma** vez (Fase 2).
 3. Trocar de tela **não** dispara `drainAllPending` sozinho (Fase 3).
 4. Confirmar oficina / finalizar coleta **não** prende a UI na form até o hub inteiro pintar (Fases 1 + 4).
@@ -537,5 +545,5 @@ Se um PR não move esses ponteiros, não é trabalho de performance — é ruíd
 - Next.js — [Authentication (DAL + `cache()`)](https://nextjs.org/docs/app/guides/authentication)
 - Next.js — [`useLinkStatus`](https://nextjs.org/docs/app/api-reference/functions/use-link-status)
 - Next.js — [Data Security / Data Access Layer](https://nextjs.org/docs/app/guides/data-security)
-- Local: revisão de `proxy.ts`, `(protected)/layout.tsx`, `require-admin.ts`, `next.config.ts`, `collection-capture-page.tsx`, `workshop-checkin-page.tsx`, `offline-pending-banner.tsx`, `queries.ts` (lifecycle e operations)
-- Data da revisão: 2026-08-29
+- Local: revisão de `proxy.ts`, `(protected)/layout.tsx`, `require-admin.ts`, `next.config.ts`, `collection-capture-page.tsx`, `workshop-checkin-page.tsx`, `offline-pending-banner.tsx`, `queries.ts` (lifecycle e operations), `collections-list-page.tsx`
+- Data da revisão: 2026-08-29; chips da lista atualizados em 2026-09-07

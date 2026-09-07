@@ -6,6 +6,7 @@ const jsdomUnitFiles = [
   "tests/unit/button-class-name.test.tsx",
   "tests/unit/dashboard-cta-links.test.tsx",
   "tests/unit/pending-nav-link.test.tsx",
+  "tests/unit/collections-list-filter-chip.test.tsx",
   "tests/unit/use-hydrated.test.ts",
   "tests/unit/use-online-status.test.ts",
   "tests/unit/service-worker-registration.test.ts",
