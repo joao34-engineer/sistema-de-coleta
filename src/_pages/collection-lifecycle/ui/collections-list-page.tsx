@@ -101,7 +101,7 @@ export function CollectionsListPage({
 
   if (loadFailed) {
     return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+      <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-28">
         <MobilePageHeader
           logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
           title="Coletas"
@@ -139,7 +139,7 @@ export function CollectionsListPage({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
         logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
         title="Coletas"

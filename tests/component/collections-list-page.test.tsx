@@ -87,6 +87,7 @@ describe("CollectionsListPage filter chips", () => {
     );
     expect(screen.getByText("Maria Silva")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Buscar por número ou cliente")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveClass("max-w-md");
   });
 
   it("preserves the search term on filter hrefs", () => {

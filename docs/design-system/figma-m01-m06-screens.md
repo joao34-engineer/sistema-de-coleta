@@ -30,6 +30,7 @@ Este lote adicionou **duas** telas do protótipo. Nenhuma outra frame do canvas 
 - Prefetch e `pendingFilter` da Fase 1 de performance mantidos.
 - Linhas 88px; rascunho `sem número oficial`; status em texto.
 - Chip **Pronta** = só `ready`; na linha o texto é **Pronto**.
+- Largura da página alinhada ao Início (`max-w-md`), para o header e a nav ocuparem a mesma faixa da tela.
 
 ## Chrome que não foi reescrito
 

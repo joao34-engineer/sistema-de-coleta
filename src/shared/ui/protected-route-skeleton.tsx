@@ -79,7 +79,7 @@ function HubBody() {
 export function ProtectedRouteSkeleton({ variant }: Props) {
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[390px] animate-pulse bg-[var(--color-surface-bg)] pb-28"
+      className="mx-auto min-h-screen w-full max-w-md animate-pulse bg-[var(--color-surface-bg)] pb-28"
       role="status"
       aria-label="Carregando"
     >
