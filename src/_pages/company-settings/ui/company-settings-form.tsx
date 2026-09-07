@@ -105,10 +105,13 @@ export function CompanySettingsForm({ settings }: Props) {
 
   return (
     <div className="space-y-8">
+      <p className="text-sm text-muted">
+        Estes dados identificam a MJT na guia de coleta (PDF) e destravam a emissão do número oficial.
+      </p>
       <IssuerSetupBanner settings={settings} />
 
       <form action={formAction} className="space-y-6" noValidate>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4">
           <Field name="legalName" label="Razão social" required={isRequired("legalName")} value={formState.values.legalName} onChange={(value) => dispatch({ type: "update_field", field: "legalName", value })} error={state.fieldErrors?.["legalName"]} maxLength={160} autoComplete="organization" />
           <Field name="taxId" label="CNPJ" required={isRequired("taxId")} value={formState.values.taxId} onChange={(value) => dispatch({ type: "update_field", field: "taxId", value })} error={state.fieldErrors?.["taxId"]} inputMode="numeric" maxLength={18} />
           <Field name="phone" label="Telefone" required={isRequired("phone")} value={formState.values.phone} onChange={(value) => dispatch({ type: "update_field", field: "phone", value })} error={state.fieldErrors?.["phone"]} maxLength={30} autoComplete="tel" />

@@ -17,7 +17,7 @@ import {
   type CustomerDeliveryDTO,
   type CancelReopenDTO,
 } from "@/_pages/collection-operations/model/contracts";
-import { parseJsonFormField } from "@/_pages/collection-operations/model/workshop-rpc-items";
+import { parseJsonFormField, customerDeliveryFormValues } from "@/_pages/collection-operations/model/workshop-rpc-items";
 import {
   workshopCheckIn,
   saveTechnicalBudget,
@@ -148,16 +148,7 @@ export async function deliverToCustomerAction(collectionId: string, formData: Fo
     if (!(signatureFile instanceof File)) {
       return { ok: false, error: "Desenhe a assinatura antes de confirmar." };
     }
-    const deliveredItemIds = parseJsonFormField(formData.get("deliveredItemIds"));
-    const parsed = customerDeliverySchema.safeParse({
-      collectionId,
-      expectedVersion: Number(formData.get("expectedVersion")),
-      deliveredItemIds,
-      receiverName: formData.get("receiverName"),
-      receiverTaxId: formData.get("receiverTaxId"),
-      notes: formData.get("notes") || undefined,
-      signatureIntentId: formData.get("signatureIntentId"),
-    });
+    const parsed = customerDeliverySchema.safeParse(customerDeliveryFormValues(collectionId, formData));
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "Revise os dados da entrega." };
     }

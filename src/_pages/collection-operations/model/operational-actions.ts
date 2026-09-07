@@ -89,12 +89,28 @@ export function operationalItemFactsFrom(
     if (status === "pronto" && !alreadyDeliveredItemIds.includes(itemId)) {
       hasUndeliveredReadyItem = true;
     }
-    if (status === "em_reparo") {
+    if (status === "em_reparo" && !alreadyDeliveredItemIds.includes(itemId)) {
       hasInRepairItem = true;
     }
   }
 
   return { hasUndeliveredReadyItem, hasInRepairItem };
+}
+
+function primaryActionForStatus(
+  status: CollectionStatus,
+  itemFacts: OperationalItemFacts | undefined,
+): OperationalAction | null {
+  if (status === "partial_delivery" && itemFacts !== undefined) {
+    if (itemFacts.hasUndeliveredReadyItem) {
+      return primaryByStatus.partial_delivery ?? null;
+    }
+    if (itemFacts.hasInRepairItem) {
+      return updateProgressAction;
+    }
+    return null;
+  }
+  return primaryByStatus[status] ?? null;
 }
 
 function extraActionForStatus(
@@ -105,7 +121,11 @@ function extraActionForStatus(
   if (status === "in_service" && itemFacts.hasUndeliveredReadyItem) {
     return deliverReadyItemsAction;
   }
-  if (status === "partial_delivery" && itemFacts.hasInRepairItem) {
+  if (
+    status === "partial_delivery" &&
+    itemFacts.hasUndeliveredReadyItem &&
+    itemFacts.hasInRepairItem
+  ) {
     return updateProgressAction;
   }
   return null;
@@ -125,7 +145,7 @@ export function operationalActionsForStatus(
   }
 
   return {
-    primary: primaryByStatus[status] ?? null,
+    primary: primaryActionForStatus(status, itemFacts),
     secondary: statusesWithCancel.has(status) ? cancelAction : null,
     extra: extraActionForStatus(status, itemFacts),
   };

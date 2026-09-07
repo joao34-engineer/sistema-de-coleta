@@ -39,16 +39,16 @@ const baseSettings: CompanySettingsDTO = {
 describe("CompanySettingsPage", () => {
   afterEach(() => cleanup());
 
-  it("renders mobile chrome instead of the desktop typography block", () => {
-    render(<CompanySettingsPage settings={baseSettings} />);
+  it("renders mobile chrome with issuer copy under the header", () => {
+    render(<CompanySettingsPage settings={baseSettings} backHref="/dashboard" />);
     expect(screen.getByRole("heading", { name: "Empresa" })).toBeInTheDocument();
     expect(screen.getByText("Dados institucionais")).toBeInTheDocument();
+    expect(screen.getByText(/guia de coleta \(PDF\)/i)).toBeInTheDocument();
     expect(screen.queryByText(/futuramente/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/guia de coleta \(PDF\)/i)).not.toBeInTheDocument();
   });
 
   it("shows the pending issuer banner for an incomplete profile", () => {
-    render(<CompanySettingsPage settings={baseSettings} />);
+    render(<CompanySettingsPage settings={baseSettings} backHref="/dashboard" />);
     const banner = screen.getByRole("status");
     expect(banner).toHaveTextContent("Emissão da guia ainda não habilitada.");
     expect(banner).toHaveTextContent("Razão social");
@@ -78,6 +78,7 @@ describe("CompanySettingsPage", () => {
           logoPath: "1/company-logo/logo.png",
           setupStatus: "complete",
         }}
+        backHref="/configuracoes"
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent("Emissão habilitada");

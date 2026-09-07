@@ -1,4 +1,3 @@
-import { getBudgetItems } from "@/_pages/collection-operations/api/queries";
 import { loadCollectionForOperation } from "../../load-operation";
 import { ServiceProgressPage } from "@/_pages/collection-operations/ui/service-progress-page";
 
@@ -6,17 +5,20 @@ export const dynamic = "force-dynamic";
 
 export default async function ServiceProgressRoute({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const [collection, budgetItems] = await Promise.all([loadCollectionForOperation(id, "progresso"), getBudgetItems(id)]);
+  const { collection, budgetItems, alreadyDeliveredItemIds } = await loadCollectionForOperation(id, "progresso");
 
-  const progressItems = collection.items.map((collectionItem) => {
-    const budgetItem = budgetItems.find((item) => item.collectionItemId === collectionItem.id);
-    return {
-      itemId: collectionItem.id,
-      itemDescription: collectionItem.description,
-      status: (budgetItem?.status ?? "em_reparo") as "em_reparo" | "pronto",
-      notes: budgetItem?.notes ?? null,
-    };
-  });
+  const deliveredItemIds = new Set(alreadyDeliveredItemIds);
+  const progressItems = collection.items
+    .filter((collectionItem) => !deliveredItemIds.has(collectionItem.id))
+    .map((collectionItem) => {
+      const budgetItem = budgetItems.find((item) => item.collectionItemId === collectionItem.id);
+      return {
+        itemId: collectionItem.id,
+        itemDescription: collectionItem.description,
+        status: (budgetItem?.status ?? "em_reparo") as "em_reparo" | "pronto",
+        notes: budgetItem?.notes ?? null,
+      };
+    });
 
   return (
     <ServiceProgressPage

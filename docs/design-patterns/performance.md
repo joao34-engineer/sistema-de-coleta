@@ -28,7 +28,7 @@ O atraso que o operador sente ao tocar **qualquer botão de navegação** é rea
 
 Há um segundo atraso, nos botões de **mutação**: a UI espera a Server Action (e às vezes a fila offline inteira) **antes** de `router.push`.
 
-O service worker **não** é o culpado. A busca da lista debounceia no cliente; os chips Todos / Coletadas / Em reparo / Prontas são `Link` com `useLinkStatus` (Fase 1.5). Oficina já tinha skeleton — o padrão a copiar.
+O service worker **não** é o culpado. A busca da lista debounceia no cliente; os chips Todos / Coletadas / Em reparo / Prontas pintam o selecionado no tap (`pendingFilter`) e fazem prefetch da query (Fase 1.5). Oficina já tinha skeleton — o padrão a copiar.
 
 ---
 
@@ -40,7 +40,7 @@ O service worker **não** é o culpado. A busca da lista debounceia no cliente; 
 | PDF | Gerado no servidor (`collection-documents`). |
 | `next/image` | Já usado em logo e login. |
 | Hub `/coletas/[id]` | Os quatro reads já vão em `Promise.all`. |
-| Filtro da lista | Chips são URL + `listCollections` no servidor (paginação). O tap pinta o pill via `useLinkStatus`; não filtrar os 25 cards locais. Busca continua draft local + debounce para a URL. |
+| Filtro da lista | Chips são URL + `listCollections` no servidor (paginação). Um único pill preto no tap (`pendingFilter`); prefetch dos outros filtros. Sem blur da lista. Sem filtrar os 25 cards locais. Busca continua draft local + debounce para a URL. |
 | Shells de `loading.tsx` | `(protected)`, dashboard, coletas, hub, documentos e oficina. Copiar o chrome (header + pulse). |
 | Páginas autenticadas dinâmicas | `cookies()` + RLS exigem render no request. O ganho **não** é “tornar o dashboard estático”. |
 
@@ -338,9 +338,11 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 **Sintoma:** Todos / Coletadas / Em reparo / Prontas eram `button` + `router.replace`. O pill só mudava depois do RSC (`listCollections`). `loading.tsx` de `/coletas` não cobre troca de `?filter=` na mesma rota.
 
-**Faz:** `CollectionsListFilterChip` — `Link` + `useLinkStatus` (mesmo padrão da 1.3). O chip corrente é texto com `aria-current`; os outros navegam com `prefetch={false}` e `scroll={false}`. A lista fica `aria-busy` e com opacity enquanto o destino carrega. A query continua no servidor (URL + DAL). Sem filtrar `initialItems` no cliente.
+**Não faz:** `useLinkStatus` no chip corrente (deixava dois pills pretos). Não aplica opacity na lista. Não usa `prefetch={false}`.
 
-**Aceite:** o pill selecionado muda no mesmo frame; a lista dimmed até os itens novos; paginação/`limit` 25 intactos.
+**Faz:** um `pendingFilter` local — só o pill tocado fica selecionado. Os outros são `Link` com `prefetch={true}` + `router.prefetch` no mount. `scroll={false}`. A query continua no servidor (URL + DAL). Sem filtrar `initialItems` no cliente.
+
+**Aceite:** um único pill preto no tap; a lista não embaça; o destino já foi prefetchado; paginação/`limit` 25 intactos.
 
 ---
 

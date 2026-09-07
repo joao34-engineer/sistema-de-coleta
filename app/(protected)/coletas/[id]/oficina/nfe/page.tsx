@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 export default async function InvoiceReferenceRoute({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const [collection, invoice] = await Promise.all([loadCollectionForOperation(id, "nfe"), getInvoiceReference(id).catch(() => null)]);
+  const { collection } = await loadCollectionForOperation(id, "nfe");
+  const invoice = await getInvoiceReference(id).catch(() => null);
 
   return (
     <InvoiceReferencePage

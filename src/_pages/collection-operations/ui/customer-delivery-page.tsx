@@ -124,10 +124,11 @@ export function CustomerDeliveryPage({
     });
   }
 
-  const selectableCount = items.filter((item) =>
-    isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds),
-  ).length;
-  const isPartialSelection = deliveredItemIds.length > 0 && deliveredItemIds.length < selectableCount;
+  const selectedCount = deliveredItemIds.filter((itemId) => {
+    const item = items.find((candidate) => candidate.id === itemId);
+    return item !== undefined && isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds);
+  }).length;
+  const isPartialSelection = selectedCount > 0 && selectedCount < items.length;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
@@ -197,7 +198,7 @@ export function CustomerDeliveryPage({
 
         {isPartialSelection ? (
           <p className="text-center text-[12px] font-semibold text-[var(--color-text-muted)]">
-            {deliveredItemIds.length} de {selectableCount} itens serão entregues
+            {selectedCount} de {items.length} itens serão entregues
           </p>
         ) : null}
 

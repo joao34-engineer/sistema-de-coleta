@@ -1,4 +1,3 @@
-import { getBudgetItems } from "@/_pages/collection-operations/api/queries";
 import { seedBudgetItemsFromCollection } from "@/_pages/collection-operations/model/budget-seed";
 import { loadCollectionForOperation } from "../../load-operation";
 import { budgetTotalOf } from "../budget-total";
@@ -8,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TechnicalBudgetRoute({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const [collection, budgetItems] = await Promise.all([loadCollectionForOperation(id, "orcamento"), getBudgetItems(id)]);
+  const { collection, budgetItems } = await loadCollectionForOperation(id, "orcamento");
 
   const budgetItemsForForm = seedBudgetItemsFromCollection({
     collectionItems: collection.items,

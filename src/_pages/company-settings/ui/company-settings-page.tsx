@@ -4,18 +4,18 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { CompanySettingsForm } from "./company-settings-form";
 
-type Props = Readonly<{ settings: CompanySettingsDTO }>;
+type Props = Readonly<{ settings: CompanySettingsDTO; backHref: Route }>;
 
-export function CompanySettingsPage({ settings }: Props) {
+export function CompanySettingsPage({ settings, backHref }: Props) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
       <MobilePageHeader
         title="Empresa"
         subtitle="Dados institucionais"
-        backHref={"/dashboard" as Route}
+        backHref={backHref}
       />
 
-      <div className="flex flex-col gap-4 px-4">
+      <div className="flex flex-col gap-4 px-4 pt-4">
         <CompanySettingsForm settings={settings} />
       </div>
 

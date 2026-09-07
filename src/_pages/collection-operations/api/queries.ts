@@ -1,6 +1,8 @@
 import "server-only";
 
 import { z } from "zod";
+import { alreadyDeliveredCollectionItemIds } from "../model/delivery-selection";
+import { parseOperationsRows } from "../model/operations-row-parse";
 import { createOperationsSupabaseClient } from "./operations-supabase";
 
 const uuidSchema = z.uuid();
@@ -90,7 +92,7 @@ export async function getBudgetItems(collectionId: string) {
     .select("*")
     .eq("collection_id", collectionId);
   if (error) throw error;
-  return z.array(budgetItemSchema).safeParse(normalizeOperationsPayload(data)).data ?? [];
+  return parseOperationsRows(budgetItemSchema, normalizeOperationsPayload(data));
 }
 
 export async function getDeliveryTerms(collectionId: string) {
@@ -114,6 +116,12 @@ export async function getDeliveryTermItems(deliveryTermId: string) {
   return z.array(deliveryTermItemSchema).safeParse(normalizeOperationsPayload(data)).data ?? [];
 }
 
+export async function loadAlreadyDeliveredItemIds(collectionId: string): Promise<readonly string[]> {
+  const terms = await getDeliveryTerms(collectionId);
+  const termItems = (await Promise.all(terms.map((term) => getDeliveryTermItems(term.id)))).flat();
+  return alreadyDeliveredCollectionItemIds(termItems);
+}
+
 export async function getInvoiceReference(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
@@ -126,6 +134,14 @@ export async function getInvoiceReference(collectionId: string) {
   return invoiceReferenceViewSchema.safeParse(normalizeOperationsPayload(data)).data ?? null;
 }
 
+export const workshopCheckInItemViewSchema = z.object({
+  id: uuidSchema,
+  collectionItemId: uuidSchema,
+  quantityObserved: z.number().positive(),
+  conditionObserved: z.string(),
+  divergenceNotes: z.string().nullable(),
+});
+
 export async function getWorkshopCheckInItems(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
@@ -133,15 +149,5 @@ export async function getWorkshopCheckInItems(collectionId: string) {
     .select("*")
     .eq("collection_id", collectionId);
   if (error) throw error;
-  return z
-    .array(
-      z.object({
-        id: uuidSchema,
-        collectionItemId: uuidSchema,
-        quantityObserved: z.number().positive(),
-        conditionObserved: z.string(),
-        divergenceNotes: z.string().nullable(),
-      })
-    )
-    .safeParse(normalizeOperationsPayload(data)).data ?? [];
+  return parseOperationsRows(workshopCheckInItemViewSchema, normalizeOperationsPayload(data));
 }

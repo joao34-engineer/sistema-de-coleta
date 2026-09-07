@@ -2,7 +2,14 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por PR. PR 1 a PR 4 **completos** (migrations `20260907000000` / `20260907010000` **aplicadas** no remoto em 07/09/2026, validação verde); PR 5 **bloqueado** (Figma O02) |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos** em código; L1 **código completo** 07/09/2026 (`20260907020000`); **L3 e L7 código completo** 07/09/2026; leftover **L2 decisão fechada** (código ainda não — próxima sessão, sozinho); PR 5 **bloqueado** (Figma O02). **C1:** migrations `20260907000000` / `07010000` / `07020000` estão **commitadas localmente**; push remoto **não confirmado** nesta máquina |
+| **Authority** | `informative` até o humano pedir um PR |
+| **Owner** | product / sistema-coleta |
+| **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
+| **Escopo** | Somente `sistema-coleta/`. **Não** 5.7 / 5.12 / 5.13. **Não** e-mail Resend. **Não** `db reset` |
+| **Figma** | [Protótipo navegável](https://www.figma.com/design/akpo5W8c3ViA1hvjeqg9YJ/Sistema-de-Coleta-MJT-%E2%80%94-Design-System-e-Fluxos?node-id=23-107) (`fileKey` `akpo5W8c3ViA1hvjeqg9YJ`, canvas `23:107`) |
+| **App** | Production `https://sistema-de-coleta.vercel.app` |
+| **Line budget** | Manter este arquivo abaixo de 500 linhas |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -23,7 +30,7 @@ Buraco 5.6 (mesmo eixo): `prepare_delivery_signature_intent` só aceitava `invoi
 
 Isso contradizia o produto (`vision-and-scope.md` decisão 16, `mobile-workflows.md` entrega) **e** o Figma.
 
-**Estado 2026-09-07:** resolvido. PR 3 implementa o conjunto deliverable com `in_service` nos dois RPCs de entrega; migration **aplicada** no remoto. O parágrafo acima é o registro do bug; produção já **não** se comporta assim.
+**Estado 2026-09-07:** resolvido em código. PR 3 implementa o conjunto deliverable com `in_service` nos dois RPCs de entrega (`20260907000000` **commitada**; C1 — push remoto ainda não confirmado nesta máquina).
 
 ---
 
@@ -47,11 +54,18 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | --- | --- | --- | --- | --- |
 | 1 | Trap `/configuracoes/empresa` | não | — | **completo** 2026-09-07 |
 | 2 | Backfills (só `SELECT`; UPDATE se count > 0) | talvez `UPDATE` pontual | OK humano | **completo** 2026-09-06 (remoto limpo; sem UPDATE) |
-| 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** 2026-09-07; `20260907000000` **aplicada** no remoto; validação verde |
-| 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** 2026-09-07; `20260907010000` **aplicada** no remoto; validação verde |
-| 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02; SQL sobre o corpo shipped do PR 3 | **bloqueado** (Figma O02; decisões de modelo fechadas 2026-09-07) |
+| 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** em código 2026-09-07; `20260907000000` **commitada**; C1 pendente |
+| 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** em código 2026-09-07; `20260907010000` **commitada**; C1 pendente |
+| 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02; SQL sobre o corpo shipped pós-L4 | **bloqueado** (Figma O02; decisões de modelo fechadas 2026-09-07) |
+| L1 | Matriz `partial_delivery` + progresso sem item entregue (A2+A3+A12) | sim, `update_service_progress` | PR 3 | **código completo** 2026-09-07 (`20260907020000`); C1 pendente |
+| L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **decisão fechada** 2026-09-07; **código ainda não**. Próxima sessão, sozinho. Não perguntar de novo |
+| L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
+| L4 | Invariantes de item (A5+A6) | sim | L2 | **não**. Depois de L2. PR 5 espera este bloco `remaining` |
+| L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **não** |
+| L6 | Reopen fallback OS (A7+A8) | sim | L1 | **não** |
+| L7 | REST entrega + O04 counter + settings D1–D3 | não | — | **completo** 2026-09-07 |
 
-Não juntar 3+5. Não juntar 3+4.
+Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 com PR 5.
 
 ---
 
@@ -126,7 +140,7 @@ WHERE c.status = 'canceled' AND so.status <> 'canceled';
 
 ## 6. PR 3 — Entrega de itens Pronto com outros ainda em reparo
 
-**Estado 2026-09-07:** completo. Migration `20260907000000_phase_5_deliver_mid_repair.sql` **aplicada** no remoto. Validação verde (lint, typecheck, 521 testes, Steiger).
+**Estado 2026-09-07:** completo em código. Migration `20260907000000_phase_5_deliver_mid_repair.sql` **commitada**. C1: push remoto não confirmado nesta máquina. Validação TypeScript verde (lint/typecheck/testes da época).
 
 Contrato canônico (Figma O04, decisão 16, `data-and-rules.md` §entrega): entregar só **prontos**; resto continua no fluxo operacional; coleta vai a `entrega_parcial` quando ainda há pendentes.
 
@@ -143,20 +157,20 @@ Conjunto **deliverable** (`deliver_to_customer` e `prepare_delivery_signature_in
    - ainda há pendentes → coleta **`partial_delivery`** (não ficar em `in_service` depois de existir termo; filtros/hub já usam esse balde).
    - OS: se algum restante `em_reparo` → `in_service`; se todos restantes `pronto` → `ready`; nenhum restante → `delivered`. (Antes o RPC punha OS `ready` em qualquer parcial — errado para mid-repair.)
 5. **`update_service_progress`**: alargar guard para `approved | in_service | partial_delivery` para o restante continuar em reparo. Sem isto, `partial_delivery` trava o progresso. Não aceitar `ready`/`invoiced`/`delivered`.
-6. **Hub / 5.17:** `in_service` com algum Pronto não entregue: primary **Atualizar progresso**, extra **Entregar itens prontos**. `partial_delivery`: primary **Entregar ao cliente**; extra **Atualizar progresso** se ainda houver `em_reparo`. `isWorkshopSegmentAllowed` segue a matriz.
+6. **Hub / 5.17:** `in_service` com algum Pronto não entregue: primary **Atualizar progresso**, extra **Entregar itens prontos**. `partial_delivery`: primary **Entregar ao cliente** só quando ainda houver Pronto não entregue; extra **Atualizar progresso** nesse caso se restar `em_reparo`. Sem Pronto pendente e com item ainda em reparo: primary **Atualizar progresso** (não duplicar no extra). Sem os dois fatos: sem CTA de oficina. `isWorkshopSegmentAllowed` segue a matriz. Progresso lista só itens ainda não entregues; `update_service_progress` recusa id já em `delivery_items` com `item_already_delivered`.
 7. **Copy:** `item_not_ready` em `operations-errors.ts` / `action-error.ts`. Manter código `collection_not_invoiced` (só alargar o `IN`). Overlay `database.types.ts` se types remote não entrar no PR.
 
 **Não:** forçar todos os itens a Pronto para destravar. **Não:** filtrar só no cliente. **Não:** deixar coleta em `in_service` após termo (workaround para não tocar o progresso).
 
 **Owns:** uma migration com os três `CREATE OR REPLACE` (assinaturas iguais); `operational-actions.ts` + testes; `customer-delivery-page.tsx`; `entrega/page.tsx`; `delivery-selection.ts`; `commands.ts` já encadeia prepare→deliver; `data-and-rules.md` / `mobile-workflows.md` (conjunto deliverable).
 
-**Aceite:** `in_service` 1/2 Pronto → hub mostra Entregar itens prontos → só o Pronto selecionável → termo gravado → coleta `partial_delivery`, OS `in_service` → progresso ainda abre no item restante. Entregar `em_reparo` via action = 422. Caminho 5.6 (`ready` → prepare → deliver) passa a funcionar.
+**Aceite:** `in_service` 1/2 Pronto → hub mostra Entregar itens prontos → só o Pronto selecionável → termo gravado → coleta `partial_delivery`, OS `in_service` → hub primary **Atualizar progresso**; progresso abre só no item restante. Entregar `em_reparo` via action = 422. Caminho 5.6 (`ready` → prepare → deliver) passa a funcionar.
 
 ---
 
 ## 7. PR 4 — Cancelar rascunho vs cancelar OS
 
-**Estado 2026-09-07:** completo. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **aplicada** no remoto. Validação verde; erro mapeado como HTTP **409** (consistente com os demais guards de status de coleta). Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection` (este segundo caminho entra porque o cancel agora põe a OS em `canceled`).
+**Estado 2026-09-07:** completo em código. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **commitada**. C1 pendente. Erro mapeado como HTTP **409**. Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection`.
 
 Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem `DROP FUNCTION`; re-`GRANT EXECUTE` no REPLACE.
 
@@ -220,9 +234,37 @@ Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
 ## 9. Fora deste plano
 
 - 5.7 SignaturePad na aprovação; 5.12 `/clientes`; 5.13 contatos/veículos.
-- NF-e depois de `delivered` (eixo separado; não misturar com PR 3).
+- NF-e **depois de `delivered`** (eixo separado; não misturar com PR 3 nem com L2). Distinto da decisão L2 abaixo.
 - Apagar `draft-items-page` / `draft-review-page` (cleanup morto; PR próprio se pedido).
 - Enable `DOCUMENT_EMAIL_SEND_ENABLED`.
+
+### L2 — NF-e em entrega parcial (A1+A9) — decisão fechada 2026-09-07
+
+**Não perguntar de novo.** Humano 07/09/2026: nota fiscal **continua disponível** em `partial_delivery`. Mid-repair e NF-e coexistem. **Não** aceitar NF-e em `in_service`.
+
+1. `register_invoice_reference` aceita `ready | partial_delivery` (hoje só `ready` → `collection_not_ready`). Evento `previous_status` = status real (não hardcoded `'ready'`).
+2. Hub: `optionalInvoiceAction` também em `partial_delivery` (hoje só `ready`). Não em `invoiced`.
+3. A9: se a coleta já está `invoiced` e `remaining > 0`, o status **permanece `invoiced`**.
+4. **Derivado (obrigatório):** `update_service_progress` aceita `invoiced`; matriz de CTA de `invoiced` igual à de `partial_delivery`. Sem isto A9 reabre A2.
+5. `CREATE OR REPLACE` nas assinaturas atuais. Sem `DROP FUNCTION`. Não misturar com L1 / L3 / L7 / PR 5 / “NF-e depois de `delivered`”.
+
+**Ainda não implementado.** Próxima sessão: implementar **só** L2. C1 antes do `db push`.
+
+### L3 — DAL parse por linha (A4+C5) — completo 2026-09-07
+
+`parseOperationsRows` em `operations-row-parse.ts`: skip `collectionItemId` null; throw no resto. `getBudgetItems` / `getWorkshopCheckInItems` usam o helper. Hub não engole mais `getBudgetItems` com `.catch(() => [])`. `loadCollectionForOperation` devolve `{ collection, budgetItems, alreadyDeliveredItemIds }` (entrega/progresso/orçamento/aprovação sem double-fetch). `quantityObserved` continua `.positive()` até o PR 5.
+
+### L7 — REST + O04 + settings (A10, A11, D1–D3) — completo 2026-09-07
+
+`customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). D4/D5 fora.
+
+### L4 / L5 / L6 — depois de L2 (não nesta sessão)
+
+- **L4:** `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS). Sem OS não bloqueia `delivered`. Unique parcial em `service_order_items`; `item_not_ready` = todas as linhas `pronto`; budget rejeita `item_id` duplicado. PR 5 herda este bloco.
+- **L5:** pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`.
+- **L6:** fallback reopen: `partial_delivery` deriva OS como o PR 3 (`in_service` se restar `em_reparo`); `awaiting_approval` → `budgeted`; `else` raise; não deixar OS `canceled`.
+
+**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`). **C6:** última run completa da auditoria = 532 passed / 18 skipped; L3/L7 acrescentaram testes unitários/componente.
 
 ---
 

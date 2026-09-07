@@ -17,6 +17,7 @@ export type CollectionDetailHubProps = Readonly<{
   events: ReadonlyArray<CollectionEventSummary>;
   serviceOrder: ServiceOrder | null;
   budgetItems: ReadonlyArray<BudgetItem>;
+  alreadyDeliveredItemIds: ReadonlyArray<string>;
 }>;
 
 function formatBrl(value: number): string {
@@ -28,7 +29,13 @@ function formatDate(value: string | null): string | null {
   return formatDateTimePtBr(value);
 }
 
-export function CollectionDetailHub({ collection, events, serviceOrder, budgetItems }: CollectionDetailHubProps) {
+export function CollectionDetailHub({
+  collection,
+  events,
+  serviceOrder,
+  budgetItems,
+  alreadyDeliveredItemIds,
+}: CollectionDetailHubProps) {
   const budgetTotal = budgetItems.reduce((total, item) => total + item.laborCostBrl + item.partsCostBrl, 0);
 
   const collectedAt = formatDate(collection.collectedAt);
@@ -62,6 +69,7 @@ export function CollectionDetailHub({ collection, events, serviceOrder, budgetIt
           itemFacts={operationalItemFactsFrom(
             collection.items.map((item) => item.id),
             budgetItems,
+            alreadyDeliveredItemIds,
           )}
         />
 

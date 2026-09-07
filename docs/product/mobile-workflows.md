@@ -32,7 +32,7 @@ A entrada exige a conferencia item a item. A administradora confirma quantidade 
 5. Registrar data, hora, administradora responsavel e itens efetivamente entregues.
 6. Emitir a versao do documento e disponibilizar visualizar, baixar, imprimir e compartilhar.
 
-Se apenas parte dos itens estiver pronta, a entrega parcial e permitida. Os itens restantes permanecem na coleta com o estado operacional correspondente; a coleta somente fica totalmente **Entregue** quando todos os itens forem entregues.
+Se apenas parte dos itens estiver pronta, a entrega parcial e permitida. Os itens restantes permanecem na coleta com o estado operacional correspondente; a coleta somente fica totalmente **Entregue** quando todos os itens forem entregues. Depois do primeiro termo, se so restar item em reparo, o hub oferece **Atualizar progresso** (nao **Entregar ao cliente**). A tela de progresso mostra so o restante; itens ja no termo nao voltam a ser editaveis.
 
 ## Regras de interface
 

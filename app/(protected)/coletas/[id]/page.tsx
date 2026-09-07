@@ -1,7 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { getCollectionDetail, getCollectionEvents } from "@/_pages/collection-lifecycle/api/queries";
-import { getServiceOrder, getBudgetItems } from "@/_pages/collection-operations/api/queries";
+import {
+  getServiceOrder,
+  getBudgetItems,
+  loadAlreadyDeliveredItemIds,
+} from "@/_pages/collection-operations/api/queries";
 import { CollectionDetailHub } from "@/_pages/collection-operations/ui/collection-detail-hub";
 
 export const dynamic = "force-dynamic";
@@ -12,11 +16,12 @@ export default async function CollectionDetailRoute({ params }: Readonly<{ param
   const { id } = await params;
   if (!collectionIdSchema.safeParse(id).success) notFound();
 
-  const [collection, eventsResult, serviceOrder, budgetItems] = await Promise.all([
+  const [collection, eventsResult, serviceOrder, budgetItems, alreadyDeliveredItemIds] = await Promise.all([
     getCollectionDetail(id),
     getCollectionEvents(id, null, 50),
     getServiceOrder(id).catch(() => null),
-    getBudgetItems(id).catch(() => []),
+    getBudgetItems(id),
+    loadAlreadyDeliveredItemIds(id),
   ]);
 
   if (!collection) redirect(`/coletas/${id}/itens`);
@@ -48,6 +53,7 @@ export default async function CollectionDetailRoute({ params }: Readonly<{ param
       events={eventSummaries}
       serviceOrder={serviceOrder}
       budgetItems={budgetItems}
+      alreadyDeliveredItemIds={alreadyDeliveredItemIds}
     />
   );
 }

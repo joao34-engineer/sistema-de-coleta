@@ -64,7 +64,7 @@ export function CollectorProfilePage({ administrator }: Props) {
             </p>
           </CardHeader>
           <CardFooter>
-            <Link href={"/configuracoes/empresa" as Route} className="w-full">
+            <Link href={"/configuracoes/empresa?from=/configuracoes" as Route} className="w-full">
               <Button variant="secondary" size="md">
                 Editar Perfil Institucional
               </Button>

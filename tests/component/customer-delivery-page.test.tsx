@@ -101,14 +101,22 @@ describe("CustomerDeliveryPage (5.5)", () => {
     expect(screen.getByRole("checkbox", { name: "Motor WEG 15HP" })).toBeEnabled();
   });
 
-  it("counts only deliverable items in the partial-selection counter", () => {
+  it("shows the Figma O04 counter against the full roster", () => {
+    renderDeliveryPage([], [
+      { id: pendingItemId, description: "Motor WEG 15HP", quantity: 1, serviceOrderStatus: "pronto" },
+      { id: inRepairItemId, description: "Gerador 20kVA", quantity: 1, serviceOrderStatus: "em_reparo" },
+    ]);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Motor WEG 15HP" }));
+    expect(screen.getByText("1 de 2 itens serão entregues")).toBeInTheDocument();
+  });
+
+  it("counts selected deliverable items against every line on the screen", () => {
     renderDeliveryPage([], [
       { id: pendingItemId, description: "Motor WEG 15HP", quantity: 1, serviceOrderStatus: "pronto" },
       { id: secondReadyItemId, description: "Compressor 10bar", quantity: 1, serviceOrderStatus: "pronto" },
       { id: inRepairItemId, description: "Gerador 20kVA", quantity: 1, serviceOrderStatus: "em_reparo" },
     ]);
     fireEvent.click(screen.getByRole("checkbox", { name: "Motor WEG 15HP" }));
-    expect(screen.getByText("1 de 2 itens serão entregues")).toBeInTheDocument();
-    expect(screen.queryByText(/de 3 itens/)).not.toBeInTheDocument();
+    expect(screen.getByText("1 de 3 itens serão entregues")).toBeInTheDocument();
   });
 });

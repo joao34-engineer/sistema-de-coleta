@@ -155,10 +155,33 @@ describe("operationalActionsForStatus (B14)", () => {
     ).toBeNull();
   });
 
-  it("adds Atualizar progresso only on partial_delivery with an item still in repair", () => {
+  it("adds Atualizar progresso as primary on partial_delivery when only remaining items are in repair", () => {
     expect(
       operationalActionsForStatus("partial_delivery", {
         hasUndeliveredReadyItem: false,
+        hasInRepairItem: true,
+      }),
+    ).toEqual({
+      primary: { segment: "progresso", label: "Atualizar progresso" },
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: null,
+    });
+    expect(
+      operationalActionsForStatus("partial_delivery", {
+        hasUndeliveredReadyItem: true,
+        hasInRepairItem: false,
+      }),
+    ).toEqual({
+      primary: { segment: "entrega", label: "Entregar ao cliente" },
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: null,
+    });
+  });
+
+  it("keeps Entregar as primary on partial_delivery when an undelivered Pronto remains", () => {
+    expect(
+      operationalActionsForStatus("partial_delivery", {
+        hasUndeliveredReadyItem: true,
         hasInRepairItem: true,
       }),
     ).toEqual({
@@ -166,12 +189,19 @@ describe("operationalActionsForStatus (B14)", () => {
       secondary: { segment: "cancelar", label: "Cancelar" },
       extra: { segment: "progresso", label: "Atualizar progresso" },
     });
+  });
+
+  it("hides both workshop CTAs on partial_delivery when nothing remains deliverable or in repair", () => {
     expect(
       operationalActionsForStatus("partial_delivery", {
-        hasUndeliveredReadyItem: true,
+        hasUndeliveredReadyItem: false,
         hasInRepairItem: false,
-      }).extra,
-    ).toBeNull();
+      }),
+    ).toEqual({
+      primary: null,
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: null,
+    });
   });
 
   it.each(["ready", "invoiced", "collected", "approved", "delivered"] as const)(
@@ -255,6 +285,12 @@ describe("isWorkshopSegmentAllowed (5.17)", () => {
         hasInRepairItem: false,
       }),
     ).toBe(false);
+    expect(
+      isWorkshopSegmentAllowed("partial_delivery", "entrega", {
+        hasUndeliveredReadyItem: false,
+        hasInRepairItem: true,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -276,6 +312,20 @@ describe("operationalItemFactsFrom", () => {
         [deliveredReadyId],
         [{ collectionItemId: deliveredReadyId, status: "pronto" }],
         [deliveredReadyId],
+      ),
+    ).toEqual({
+      hasUndeliveredReadyItem: false,
+      hasInRepairItem: false,
+    });
+  });
+
+  it("does not count an already-delivered item still marked em_reparo as in repair", () => {
+    const deliveredInRepairId = "44444444-4444-4444-8444-444444444444";
+    expect(
+      operationalItemFactsFrom(
+        [deliveredInRepairId],
+        [{ collectionItemId: deliveredInRepairId, status: "em_reparo" }],
+        [deliveredInRepairId],
       ),
     ).toEqual({
       hasUndeliveredReadyItem: false,

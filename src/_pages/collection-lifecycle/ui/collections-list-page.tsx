@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
@@ -57,8 +57,8 @@ export function CollectionsListPage({
   const [cursor, setCursor] = useState(nextCursor);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [pendingChipCount, setPendingChipCount] = useState(0);
+  const [, startTransition] = useTransition();
+  const [pendingFilter, setPendingFilter] = useState<CollectionsListFilter | null>(null);
   const [syncedSearchTerm, setSyncedSearchTerm] = useState(searchTerm);
   const [syncedItems, setSyncedItems] = useState(initialItems);
   const [syncedCursor, setSyncedCursor] = useState(nextCursor);
@@ -73,6 +73,12 @@ export function CollectionsListPage({
     setLoadMoreFailed(false);
   }
 
+  if (pendingFilter !== null && pendingFilter === selectedFilter) {
+    setPendingFilter(null);
+  }
+
+  const displayedFilter = pendingFilter ?? selectedFilter;
+
   useEffect(() => {
     const handle = window.setTimeout(() => {
       if (draftQ.trim() === searchTerm.trim()) return;
@@ -83,14 +89,12 @@ export function CollectionsListPage({
     return () => window.clearTimeout(handle);
   }, [draftQ, pathname, router, searchTerm, selectedFilter]);
 
-  const handleChipPendingChange = useCallback((pending: boolean) => {
-    setPendingChipCount((count) => {
-      const next = count + (pending ? 1 : -1);
-      return next < 0 ? 0 : next;
-    });
-  }, []);
-
-  const listBusy = isPending || pendingChipCount > 0;
+  useEffect(() => {
+    for (const chip of LIST_FILTER_CHIPS) {
+      if (chip.id === selectedFilter) continue;
+      router.prefetch(buildCollectionsListHref(pathname, { q: searchTerm, filter: chip.id }));
+    }
+  }, [pathname, router, searchTerm, selectedFilter]);
 
   if (loadFailed) {
     return (
@@ -151,75 +155,70 @@ export function CollectionsListPage({
                 key={chip.id}
                 href={buildCollectionsListHref(pathname, { q: draftQ, filter: chip.id })}
                 label={chip.label}
-                isCurrent={selectedFilter === chip.id}
-                onPendingChange={handleChipPendingChange}
+                isSelected={displayedFilter === chip.id}
+                onSelect={() => setPendingFilter(chip.id)}
               />
             ))}
           </div>
         ) : null}
 
-        <div
-          aria-busy={listBusy}
-          className={listBusy ? "opacity-60 transition-opacity" : "transition-opacity"}
-        >
-          {items.length === 0 ? (
-            <MobileStatePanel
-              type="empty"
-              title="Nenhuma coleta encontrada"
-              subtitle={
-                searchTerm.trim() || selectedFilter !== "all"
-                  ? "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta."
-                  : "Você ainda não registrou nenhuma coleta. Crie a primeira para começar."
-              }
-              actionText="Nova coleta"
-              onAction={() => router.push("/coletas/nova" as Route)}
-            />
-          ) : (
-            <div className="flex flex-col gap-3">
-              {items.map((item) => (
-                <PendingNavLink
-                  key={item.id}
-                  href={
-                    item.status === "draft"
-                      ? (`/coletas/${item.id}/itens` as Route)
-                      : (`/coletas/${item.id}` as Route)
-                  }
-                  className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
-                  contentClassName="flex w-full items-center justify-between"
-                  pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
-                >
-                  <div className="flex flex-col gap-1">
-                    <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                      {item.officialCode ?? "Rascunho"}
-                    </h2>
-                    <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-                      {item.customerName ?? "Cliente não informado"}
-                    </p>
-                  </div>
-
-                  <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
-                </PendingNavLink>
-              ))}
-
-              {cursor ? (
-                <div className="flex flex-col items-center gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    isLoading={loadingMore}
-                    onClick={() => void loadMore()}
-                  >
-                    Carregar mais
-                  </Button>
-                  {loadMoreFailed ? (
-                    <p className="text-[12px] text-[var(--color-text-muted)]">Não foi possível carregar a próxima página.</p>
-                  ) : null}
+        {items.length === 0 ? (
+          <MobileStatePanel
+            type="empty"
+            title="Nenhuma coleta encontrada"
+            subtitle={
+              searchTerm.trim() || selectedFilter !== "all"
+                ? "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta."
+                : "Você ainda não registrou nenhuma coleta. Crie a primeira para começar."
+            }
+            actionText="Nova coleta"
+            onAction={() => router.push("/coletas/nova" as Route)}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {items.map((item) => (
+              <PendingNavLink
+                key={item.id}
+                href={
+                  item.status === "draft"
+                    ? (`/coletas/${item.id}/itens` as Route)
+                    : (`/coletas/${item.id}` as Route)
+                }
+                className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
+                contentClassName="flex w-full items-center justify-between"
+                pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
+              >
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+                    {item.officialCode ?? "Rascunho"}
+                  </h2>
+                  <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
+                    {item.customerName ?? "Cliente não informado"}
+                  </p>
                 </div>
-              ) : null}
-            </div>
-          )}
-        </div>
+
+                <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
+              </PendingNavLink>
+            ))}
+
+            {cursor ? (
+              <div className="flex flex-col items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  isLoading={loadingMore}
+                  onClick={() => void loadMore()}
+                >
+                  Carregar mais
+                </Button>
+                {loadMoreFailed ? (
+                  <p className="text-[12px] text-[var(--color-text-muted)]">Não foi possível carregar a próxima página.</p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <MobileBottomNav />

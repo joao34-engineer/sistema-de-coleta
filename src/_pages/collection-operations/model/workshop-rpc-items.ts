@@ -60,3 +60,15 @@ export function parseJsonFormField(value: unknown): unknown {
     return null;
   }
 }
+
+export function customerDeliveryFormValues(collectionId: string, formData: FormData) {
+  return {
+    collectionId,
+    expectedVersion: Number(formData.get("expectedVersion")),
+    deliveredItemIds: parseJsonFormField(formData.get("deliveredItemIds")),
+    receiverName: formData.get("receiverName"),
+    receiverTaxId: formData.get("receiverTaxId"),
+    notes: formData.get("notes") || undefined,
+    signatureIntentId: formData.get("signatureIntentId"),
+  };
+}
