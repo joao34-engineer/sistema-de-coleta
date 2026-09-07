@@ -15,27 +15,27 @@ Preflight de cada PR: `docs/feature-first-posture.md` (repo raiz) → `AGENTS.md
 
 ---
 
-## 1. Resposta direta: entrega hoje
+## 1. Resposta direta: entrega (bug original, pré-PR 3)
 
-Sim: **hoje só dá para entregar quando a coleta inteira está `ready` / `invoiced` / `partial_delivery`.** `deliver_to_customer` recusa `in_service`. O progresso só promove a coleta a `ready` quando **todos** os `service_order_items` estão `pronto`. Não existe entrega de 1 item Pronto enquanto outro continua `em_reparo`.
+**Arquivo — 2026-09-06.** Só dava para entregar quando a coleta inteira estava `ready` / `invoiced` / `partial_delivery`. `deliver_to_customer` recusava `in_service`. O progresso só promovia a coleta a `ready` quando **todos** os `service_order_items` estavam `pronto`. Não existia entrega de 1 item Pronto enquanto outro continuava `em_reparo`.
 
-Buraco 5.6 (mesmo eixo): `prepare_delivery_signature_intent` ainda só aceita `invoiced | partial_delivery` (`20260823000000`). A UI chama esse RPC **antes** de `deliver_to_customer`. Entregar a partir de `ready` (já no remoto) pode falhar com `collection_not_invoiced` no prepare. PR 3 alarga o mesmo conjunto nos dois RPCs.
+Buraco 5.6 (mesmo eixo): `prepare_delivery_signature_intent` só aceitava `invoiced | partial_delivery` (`20260823000000`). A UI chama esse RPC **antes** de `deliver_to_customer`. Entregar a partir de `ready` podia falhar com `collection_not_invoiced` no prepare.
 
-Isso contradiz o produto (`vision-and-scope.md` decisão 16, `mobile-workflows.md` entrega) **e** o Figma.
+Isso contradizia o produto (`vision-and-scope.md` decisão 16, `mobile-workflows.md` entrega) **e** o Figma.
 
-**Estado 2026-09-07:** resolvido. PR 3 implementa o conjunto deliverable com `in_service`; migration **aplicada** no remoto, que já **não** se comporta como este parágrafo descreve (mantido como registro do bug original).
+**Estado 2026-09-07:** resolvido. PR 3 implementa o conjunto deliverable com `in_service` nos dois RPCs de entrega; migration **aplicada** no remoto. O parágrafo acima é o registro do bug; produção já **não** se comporta assim.
 
 ---
 
 ## 2. O que o Figma já desenha (canvas `23:107`)
 
-| Frame | Node | O que mostra | Código hoje |
+| Frame | Node | O que mostra | Código hoje (07/09/2026) |
 | --- | --- | --- | --- |
-| **O04 · Entrega ao cliente** | `229:1343` | Subtítulo **Somente itens prontos**. Item 1 ✓ “Pronta para retirada”. Item 2 □ “Continua em reparo”. “1 de 2 itens serão entregues”. | Lista todos os `collection.items`; RPC não olha `pronto`; CTA Entregar só em `ready`/`invoiced`/`partial_delivery` |
-| **M14 · Serviço** | `229:1546` | “Itens prontos 1 de 2”; um item Pronto e outro Em reparo no mesmo progresso | Progresso existe; não destrava entrega |
-| **O02 · Entrada na oficina** | `229:1266` | Só **Conferido** e **Divergência**, ambos com qtd observada 1. **Não há** “não chegou” / qtd 0 | CHECK `quantity_observed > 0` + conjunto completo (5.8) |
-| **O05 · Cancelar** | `229:1377` | Cancelar guia emitida; histórico preservado | Hub não cancela `draft`; RPC de oficina ainda aceita `draft` e estoura CHECK |
-| **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | Production: layout desktop, **sem** `MobilePageHeader`, **sem** `MobileBottomNav` → trap |
+| **O04 · Entrega ao cliente** | `229:1343` | Subtítulo **Somente itens prontos**. Item 1 ✓ “Pronta para retirada”. Item 2 □ “Continua em reparo”. “1 de 2 itens serão entregues”. | **PR 3.** Só `pronto` selecionável; `em_reparo` visível, desabilitado, **Continua em reparo**. RPC recusa o resto com `item_not_ready` (422). Conjunto deliverable: `in_service` \| `ready` \| `invoiced` \| `partial_delivery`. |
+| **M14 · Serviço** | `229:1546` | “Itens prontos 1 de 2”; um item Pronto e outro Em reparo no mesmo progresso | **PR 3.** `in_service` com Pronto não entregue: extra **Entregar itens prontos**. Progresso continua no restante (`partial_delivery` não volta a `ready`). |
+| **O02 · Entrada na oficina** | `229:1266` | Só **Conferido** e **Divergência**, ambos com qtd observada 1. **Não há** “não chegou” / qtd 0 | **PR 5 bloqueado.** CHECK `quantity_observed > 0` + conjunto completo (5.8); UI ainda três inputs livres, sem toggle “Não chegou”. |
+| **O05 · Cancelar** | `229:1377` | Cancelar guia emitida; histórico preservado | **PR 4.** Hub ainda esconde Cancel em `draft`. RPC recusa `draft` com `collection_not_cancelable_draft` (P0001 → HTTP **409**). OS vai a `canceled` e os dois reopens restauram. |
+| **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | **PR 1.** `MobilePageHeader` (Empresa / Dados institucionais, Voltar → `/dashboard`) + `MobileBottomNav`. Figma não pede chevron; o header usa o par do hub. |
 
 O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não chegou” (ausente no protótipo). Esse eixo precisa de tela nova alinhada a O02, não de relaxar o CHECK.
 
@@ -59,7 +59,7 @@ Não juntar 3+5. Não juntar 3+4.
 
 **Estado 2026-09-07:** **completo**.
 
-**Quebra:** não é “header sem `backHref`”. `CompanySettingsPage` **não tem chrome mobile nenhum** (`MobilePageHeader` / `MobileBottomNav` ausentes). Layout desktop `max-w-4xl`. O dashboard deep-linka em `routes.companySettings` (`/configuracoes/empresa`). O hub `/configuracoes` (`CollectorProfilePage`) já tem header + nav; a trap é só a folha empresa.
+**Quebra (antes do PR 1):** não era “header sem `backHref`”. `CompanySettingsPage` não tinha chrome mobile nenhum (`MobilePageHeader` / `MobileBottomNav` ausentes). Layout desktop `max-w-4xl`. O dashboard deep-linka em `routes.companySettings` (`/configuracoes/empresa`). O hub `/configuracoes` (`CollectorProfilePage`) já tinha header + nav; a trap era só a folha empresa.
 
 **Correção (própria, não workaround):** copiar o par do hub, sem inventar widget.
 
@@ -112,7 +112,7 @@ WHERE status <> 'canceled' AND canceled_at IS NOT NULL;
 
 Nunca tocar linha `canceled` viva. Nunca `partial_delivery`. Sem migration se count = 0.
 
-Inventário opcional (não é backfill; vira 0 depois do PR 4):
+Inventário opcional (não é backfill; medido `count = 0` no scan 06/09/2026; PR 4 impede o caso novo):
 
 ```sql
 SELECT c.id, c.official_code, c.status, so.status AS so_status
@@ -130,18 +130,18 @@ WHERE c.status = 'canceled' AND so.status <> 'canceled';
 
 Contrato canônico (Figma O04, decisão 16, `data-and-rules.md` §entrega): entregar só **prontos**; resto continua no fluxo operacional; coleta vai a `entrega_parcial` quando ainda há pendentes.
 
-Conjunto **deliverable** (os três RPCs, mesma lista): `in_service` | `ready` | `invoiced` | `partial_delivery`.
+Conjunto **deliverable** (`deliver_to_customer` e `prepare_delivery_signature_intent`): `in_service` | `ready` | `invoiced` | `partial_delivery`. `update_service_progress` usa outro guard: `approved` | `in_service` | `partial_delivery` (§6.5).
 
 1. **Seleção UI:** só `service_order_items.status = 'pronto'` e ainda não entregues. `em_reparo` visíveis, **desabilitados**, copy **Continua em reparo**. Já entregues: **já entregue**.
 2. **`deliver_to_customer`** (9 args, `CREATE OR REPLACE` a partir de `20260906210000`):
-   - Aceitar o conjunto deliverable (hoje recusa `in_service`).
+   - Aceitar o conjunto deliverable (antes recusava `in_service`).
    - Cada id em `p_delivered_item_ids` tem linha de OS com `status = 'pronto'`. Senão `item_not_ready` (422). Recusar `em_reparo` / item sem OS.
    - Guards 5.5 intactos (`duplicate_delivery_item`, `item_already_delivered`).
 3. **`prepare_delivery_signature_intent`** (mesma assinatura, `CREATE OR REPLACE` do corpo `20260823000000`): `delivery_term` aceita o **mesmo** conjunto. Sem isto, UI quebra em `ready` **e** em `in_service` antes de chegar ao deliver.
 4. **Status depois do termo:**
    - `remaining = 0` → coleta + OS `delivered` (5.9).
    - ainda há pendentes → coleta **`partial_delivery`** (não ficar em `in_service` depois de existir termo; filtros/hub já usam esse balde).
-   - OS: se algum restante `em_reparo` → `in_service`; se todos restantes `pronto` → `ready`; nenhum restante → `delivered`. (Hoje o RPC põe OS `ready` em qualquer parcial — errado para mid-repair.)
+   - OS: se algum restante `em_reparo` → `in_service`; se todos restantes `pronto` → `ready`; nenhum restante → `delivered`. (Antes o RPC punha OS `ready` em qualquer parcial — errado para mid-repair.)
 5. **`update_service_progress`**: alargar guard para `approved | in_service | partial_delivery` para o restante continuar em reparo. Sem isto, `partial_delivery` trava o progresso. Não aceitar `ready`/`invoiced`/`delivered`.
 6. **Hub / 5.17:** `in_service` com algum Pronto não entregue: primary **Atualizar progresso**, extra **Entregar itens prontos**. `partial_delivery`: primary **Entregar ao cliente**; extra **Atualizar progresso** se ainda houver `em_reparo`. `isWorkshopSegmentAllowed` segue a matriz.
 7. **Copy:** `item_not_ready` em `operations-errors.ts` / `action-error.ts`. Manter código `collection_not_invoiced` (só alargar o `IN`). Overlay `database.types.ts` se types remote não entrar no PR.
@@ -162,13 +162,13 @@ Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem
 
 ### 4a. Draft
 
-O ramo `cancel` só recusa `delivered`/`canceled`. `draft` passa, o `UPDATE` para `canceled` sem `official_code`/snapshot viola `collections_issued_identity_check` (`23514` opaco). Hub já esconde Cancel (`operational-actions.ts` devolve null/null; 5.17 redireciona). Caminho morto: Server Action / RPC direto.
+**Antes:** o ramo `cancel` só recusava `delivered`/`canceled`. `draft` passava, o `UPDATE` para `canceled` sem `official_code`/snapshot violava `collections_issued_identity_check` (`23514` opaco). Hub já escondia Cancel (`operational-actions.ts` devolve null/null; 5.17 redireciona). Caminho morto: Server Action / RPC direto.
 
-**Correção:** antes do UPDATE, `status = 'draft'` → `P0001` `collection_not_cancelable_draft`. Mapear 422: “Descarte o rascunho; coleta emitida é que se cancela.” Caminho certo: `discard_collection_draft` (`20260905020000`). Lifecycle `cancel_collection` já recusa não-`collected` — não misturar nesse PR.
+**Shipped:** antes do UPDATE, `status = 'draft'` → `P0001` `collection_not_cancelable_draft`. Mapear **409** (não 422 — alinhado aos demais guards de status de coleta): “A coleta em rascunho não pode ser cancelada. Descarte o rascunho.” Caminho certo: `discard_collection_draft` (`20260905020000`). Lifecycle `cancel_collection` já recusa não-`collected` — não misturar nesse PR.
 
 ### 4b. OS `canceled`
 
-CHECK da OS já inclui `canceled`; o RPC **não** toca `service_orders`. Cancelar `in_workshop`/`in_service` deixa OS viva. OS só existe após orçamento.
+CHECK da OS já inclui `canceled`. **Antes** o RPC não tocava `service_orders`: cancelar `in_workshop`/`in_service` deixava OS viva. OS só existe após orçamento.
 
 **Correção:** coluna aditiva `service_orders.previous_status_before_cancellation` (nullable; CHECK = status da OS excepto `canceled`). Não gravar só em `collection_events.metadata` (reopen fica opaco). No cancel, se existir OS: gravar previous, `status = 'canceled'`. No reopen: restaurar previous e limpar a coluna; se previous null, mapear a partir do status restaurado da coleta (`in_budget→budgeted`, `approved→approved`, `in_service→in_service`, `ready|invoiced|partial_delivery→ready`, `rejected→rejected`; `collected`/`in_workshop` sem OS = no-op). Sem OS → no-op.
 
