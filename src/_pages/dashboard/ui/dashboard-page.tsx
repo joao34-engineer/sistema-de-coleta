@@ -15,6 +15,7 @@ import { Button, buttonClassName } from "@/shared/ui/button";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Card, CardHeader, CardFooter } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
+import { operatorGivenName } from "@/shared/auth/operator-display-name";
 
 const statusLabels: Readonly<Record<DashboardActivityStatus, string>> = {
   draft: "Rascunho",
@@ -54,13 +55,13 @@ export function DashboardPage({
 }: Props) {
   const router = useRouter();
   const [, signOutFormAction] = useActionState(signOutAction, initialSignOutState);
-  const firstName = (administrator.fullName || administrator.email).split(" ")[0] ?? administrator.email;
+  const firstName = operatorGivenName(administrator.fullName);
   const isSetupComplete = settings.setupStatus === "complete";
 
   const upcomingActivities = latestActivities(activities, 3);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-[calc(5.25rem+env(safe-area-inset-bottom,0px)+1.5rem)]">
       <MobilePageHeader
         logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
         title={`Olá, ${firstName}`}

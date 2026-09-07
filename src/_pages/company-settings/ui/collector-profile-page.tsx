@@ -5,6 +5,7 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { operatorDisplayName } from "@/shared/auth/operator-display-name";
 
 type Props = Readonly<{
   administrator: AuthenticatedAdministrator;
@@ -36,7 +37,7 @@ export function CollectorProfilePage({ administrator }: Props) {
               Operador Autenticado
             </span>
             <h3 className="text-[16px] font-semibold text-[var(--color-text)]">
-              {administrator.fullName || "Coletor MJT"}
+              {operatorDisplayName(administrator.fullName)}
             </h3>
           </CardHeader>
 

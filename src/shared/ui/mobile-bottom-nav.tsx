@@ -59,7 +59,7 @@ export function MobileBottomNav() {
   const hydrated = useHydrated();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex h-[84px] w-full max-w-md items-center justify-around rounded-t-[18px] border-t border-[var(--color-border)] bg-[var(--color-surface)] px-2 shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex min-h-[84px] w-full max-w-md items-center justify-around rounded-t-[18px] border-t border-[var(--color-border)] bg-[var(--color-surface)] px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] shadow-lg">
       {navItems.map((item) => {
         const isActive = hydrated && (pathname ?? "").startsWith(item.matchPrefix);
         const Icon = item.icon;

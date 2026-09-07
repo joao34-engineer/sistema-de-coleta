@@ -29,7 +29,7 @@ export function MobilePageHeader({
   return (
     <header className="sticky top-0 z-30 flex min-h-[80px] w-full flex-col justify-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-xs">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {backHref ? (
             <PendingNavLink
               href={backHref}
@@ -56,19 +56,19 @@ export function MobilePageHeader({
             </div>
           )}
 
-          <div className="flex flex-col">
-            <h1 className="text-[18px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h1 className="truncate text-[18px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
               {title}
             </h1>
             {subtitle ? (
-              <p className="text-[12px] font-normal leading-tight text-[var(--color-text-muted)]">
+              <p className="truncate text-[12px] font-normal leading-tight text-[var(--color-text-muted)]">
                 {subtitle}
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {stepText ? (
             <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">
               {stepText}
