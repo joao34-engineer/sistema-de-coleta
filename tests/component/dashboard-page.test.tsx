@@ -37,7 +37,11 @@ describe("DashboardPage", () => {
     );
     expect(screen.getByRole("heading", { name: "Olá, Coletor" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /gmail\.com/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sair" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sair" }).closest("form")).toHaveAttribute(
+      "action",
+      "/api/auth/sign-out",
+    );
     expect(screen.getByRole("img", { name: "Logo MJT Tornearia" })).toHaveAttribute(
       "src",
       "/logo/Logo_-_MJT-removebg-preview.png",

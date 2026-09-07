@@ -16,11 +16,11 @@ Este lote adicionou **duas** telas do protótipo. Nenhuma outra frame do canvas 
 
 **M01 · Início (`/dashboard`)**
 
-- Header com o logo PNG da login (`/logo/Logo_-_MJT-removebg-preview.png`), o mesmo que já estava em Início.
+- Header com o logo PNG da login (`/logo/Logo_-_MJT-removebg-preview.png`), o mesmo que já estava em Início, e o botão **Sair**.
 - Data sem ano, headline `Organize a rota` / `sem perder o controle.`
 - Card de resumo, CTA **Nova coleta** à esquerda (`PendingNavLink`).
 - Duas atividades (pílula → código → cliente). Pílula **Pronto** para `ready`.
-- Sem Ver rascunhos, card emissor ou Sair no header.
+- Sem Ver rascunhos ou card emissor.
 
 **M06 · Lista de coletas (`/coletas`)**
 

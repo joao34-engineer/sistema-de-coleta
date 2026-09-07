@@ -11,6 +11,7 @@ import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { buttonClassName } from "@/shared/ui/button";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Card } from "@/shared/ui/card";
+import { SignOutForm } from "@/shared/ui/sign-out-form";
 import { operatorGivenName } from "@/shared/auth/operator-display-name";
 
 type Props = Readonly<{
@@ -46,6 +47,7 @@ export function DashboardPage({
         logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
         title={`Olá, ${firstName}`}
         subtitle="Operação de hoje"
+        badge={<SignOutForm />}
       />
 
       <div className="flex flex-col px-6 pt-4">
