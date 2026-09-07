@@ -3,13 +3,11 @@ import { documentRenderInputSchema, type RenderedDocument } from "./contracts";
 import { canonicalizeSnapshot, hashCanonicalSnapshot, sha256Hex } from "./canonical-json";
 import { createQrPayload } from "./qr-payload";
 import { renderVerificationQrPng } from "./qr-png.server";
-import { hashPdf, renderCollectionPdf } from "./pdf";
 
 export { canonicalizeSnapshot, hashCanonicalSnapshot, sha256Hex } from "./canonical-json";
 export { documentRenderInputSchema } from "./contracts";
 export { createQrPayload, createVerificationUrl } from "./qr-payload";
 export { renderVerificationQrPng } from "./qr-png.server";
-export { hashPdf, renderCollectionPdf } from "./pdf";
 export type { CollectionDocumentSnapshot, DocumentRenderInput, FrozenDocumentAssets, FrozenDocumentImage, RenderedDocument } from "./contracts";
 
 function assertFrozenAssetHashes(input: ReturnType<typeof documentRenderInputSchema.parse>): void {
@@ -37,6 +35,7 @@ export async function renderCollectionDocument(input: unknown): Promise<Rendered
   const snapshotHash = hashCanonicalSnapshot(parsed.snapshot);
   const qrPayload = createQrPayload(parsed);
   const qrPng = await renderVerificationQrPng(qrPayload);
+  const { hashPdf, renderCollectionPdf } = await import("./pdf");
   const pdfBytes = await renderCollectionPdf(parsed.snapshot, parsed.documentVersion, qrPayload, snapshotHash, qrPng, parsed.frozenAssets);
   return {
     documentVersion: parsed.documentVersion,

@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { LoginForm } from "@/_pages/login/ui/login-form";
+
+vi.mock("@/_pages/login/api/actions", () => ({
+  signInAction: vi.fn(),
+}));
 
 describe("LoginForm", () => {
   it("renders accessible credentials fields and toggle button", () => {
