@@ -50,6 +50,7 @@ Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS
 | 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |
 | 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Chats 1–5 ferramentas; prova humana de restore adiada; faltam campo e go-live formal |
 | — | [Pending panel leftover discard](execution/vercel-pending-panel-dead-actions-fix-prompt.md) | Closed 2026-09-06: panel + `immutable_record` purge on Production |
-| — | [Fase 3 auth + leftovers + Fase 5](execution/fase3-5-ready-to-implement-fix-plan.md) | **Closed** 2026-09-06 (`30d8621`). **5.6** entrega desde Pronto (migration local `20260906210000`). 5.7 / 5.12 / 5.13 adiados |
+| — | [Fase 3 auth + leftovers + Fase 5](execution/fase3-5-ready-to-implement-fix-plan.md) | **Closed** 2026-09-06 (`30d8621`). **5.6** no remoto + Production (`20260906210000`). Cursor `20260906220000` no remoto. 5.7 / 5.12 / 5.13 adiados |
+| — | [Entrega parcial em reparo + leftovers](execution/workshop-partial-delivery-leftovers.md) | **Active** 2026-09-06. Figma O04 mid-repair; trap settings; cancel OS; check-in missing. Um eixo por PR |
 
 Nenhum documento de execucao deve ultrapassar 500 linhas. Novas decisoes devem ser registradas em `decisions/` ou no documento tematico correspondente, nao diluidas em prompts ou codigo.

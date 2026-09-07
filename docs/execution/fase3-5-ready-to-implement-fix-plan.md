@@ -7,9 +7,9 @@
 | **Owner** | product / sistema-coleta |
 | **Escopo** | Somente `sistema-coleta/`. Os 13 PRs abaixo + close-out + cheap cleanup 5.14–5.18 |
 | **Bug IDs shipped** | B23–B27, B13, B30, 5.1–5.5, 5.8–5.18 |
-| **Still open (not this plan)** | **5.6 feito** (entrega desde Pronto). **5.7 / 5.12 / 5.13 adiados** 06/09/2026 |
+| **Still open (not this plan)** | **5.6 feito** (remoto + Production 06/09/2026). **5.7 / 5.12 / 5.13 adiados**. Cursor `20260906220000` no remoto (fora deste plano). |
 | **App** | Production `https://sistema-de-coleta.vercel.app` · local `http://localhost:3000` |
-| **Last verified** | 2026-09-06 (`origin/main` `30d8621`) |
+| **Last verified** | 2026-09-06 (`origin/main` `30d8621` + 5.6 Production; cursor `20260906220000` no remoto) |
 | **Line budget** | Exceeds the 500-line cap of [`docs/README.md`](../README.md). Do **not** rewrite §4–§10 to implement again. |
 
 **Already done — do not redo.** Sections §4–§10 are the original spec. Code is on `main`. Scan absorbed §11 errata on 2026-09-06.
@@ -988,4 +988,4 @@ Do **not** pick a PR from §3 to implement. This plan is closed.
 4. Validate: scoped `npm run test` on the owned tests, then `npm run lint` and `npm run typecheck`, plus `npm run architecture` whenever FSD imports moved. Run `npm run check` before asking to merge.
 5. For any migration: `supabase db push --dry-run`, show the plan to the human, then a manual push, then `npm run db:types:remote` and commit the regenerated types.
 6. Ask the human before commit, push, and any Production deploy. Deploy a **new** SHA, never a redeploy of the old one.
-7. **Done 2026-09-06.** Metadata closed, SHAs recorded above, scan §5 struck, §11 errata absorbed into [`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md). Next work is only 5.6 / 5.7 / 5.12 / 5.13 if the human asks, or recertification listed in the scan.
+7. **Done 2026-09-06.** Metadata closed, SHAs recorded above, scan §5 struck, §11 errata absorbed into [`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md). 5.6 applied remotely and live in Production. Cursor encoder `20260906220000` applied remotely. Next **code** only if the human asks: 5.7 / 5.12 / 5.13, NF-e after delivery, or delivery Pronto filter. Recertification remains in the scan.

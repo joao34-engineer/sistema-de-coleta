@@ -14,7 +14,7 @@ Autorizar o uso real em campo, incluindo operacao com internet instavel, recuper
 - Migrations locais e remotas alinhadas ate Chat 3 ACL; em 29/08/2026 aplicadas `20260829010000` + `20260829020000` (scope `auth_login` na RPC e no CHECK da tabela de rate limit — corrige login apos Chat 3).
 - Ainda faltam: prova humana do Chat 5 (adiada), testes de campo (Chat 6) e treino/go-live formal (Chat 7).
 - Os 4 gates remotos da Fase 1A (RLS cruzada, concorrencia, storage privado, cleanup real) permanecem ADIADOS — ver `phase-1-collection-core.md`.
-- Scan de bugs ([`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md)): codigo das Fases 0–4 e 5.1–5.5/5.8–5.18 fechado em `30d8621`. Chats 5–7 desta fase **nao** sao eixos daquele inventario.
+- Scan de bugs ([`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md)): codigo das Fases 0–4 e 5.1–5.6/5.8–5.18 fechado; 5.6 e cursor `20260906220000` no remoto 06/09/2026. Chats 5–7 desta fase **nao** sao eixos daquele inventario.
 
 Organizacao em chats (26/08/2026): os 10 passos abaixo **nao** se executam num unico chat. Ver [Disciplina de chat](#disciplina-de-chat).
 

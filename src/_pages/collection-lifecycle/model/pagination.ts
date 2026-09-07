@@ -30,4 +30,3 @@ export type CollectionCursor = z.infer<typeof cursorPayloadSchema>;
 export function encodeCollectionCursor(cursor: CollectionCursor): string {
   return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
 }
-

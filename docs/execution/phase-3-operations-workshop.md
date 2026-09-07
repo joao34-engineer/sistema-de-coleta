@@ -26,7 +26,8 @@ sessão em 12:51), validada e aplicada no remoto. O que existe agora:
 O que **ainda** falta (nao reabrir o que o scan marca **feito**):
 
 - **Adiado 06/09/2026:** SignaturePad na aprovacao (**5.7**, nome/CNPJ bastam); UI `/clientes` (**5.12**) e contatos/veiculos (**5.13**).
-- **5.6 feito no codigo:** entrega a partir de Pronto; NF-e opcional. Aplicar `20260906210000_phase_5_deliver_from_ready.sql` no remoto.
+- **5.6 feito no remoto e em Production:** entrega a partir de Pronto; NF-e opcional (`20260906210000`).
+- Cursor de lista/dashboard compacto no remoto (`20260906220000`, 06/09/2026).
 - Relatorios operacionais de volume/ciclo (passo 7 abaixo) — nunca foram eixo do scan.
 - Backfills de OS `delivered` / `canceled_at` obsoleto: `SELECT` + aprovacao humana, nao codigo.
 
