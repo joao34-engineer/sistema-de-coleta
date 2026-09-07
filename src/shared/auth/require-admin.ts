@@ -1,5 +1,7 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
+import { routes } from "@/shared/config/routes";
 import { createServerSupabaseClient } from "./supabase-server";
 
 export type AuthenticatedAdministrator = Readonly<{
@@ -27,9 +29,15 @@ export class AdministratorAccessDeniedError extends Error {
 
 export async function requireAuthenticatedAdministrator(): Promise<AuthenticatedAdministrator> {
   const supabase = await createServerSupabaseClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims && typeof claimsData.claims.sub === "string" ? claimsData.claims.sub : undefined;
-  const email = claimsData?.claims && typeof claimsData.claims.email === "string" ? claimsData.claims.email : undefined;
+  let userId: string | undefined;
+  let email: string | undefined;
+  try {
+    const { data: claimsData } = await supabase.auth.getClaims();
+    userId = claimsData?.claims && typeof claimsData.claims.sub === "string" ? claimsData.claims.sub : undefined;
+    email = claimsData?.claims && typeof claimsData.claims.email === "string" ? claimsData.claims.email : undefined;
+  } catch {
+    throw new AuthenticationRequiredError();
+  }
 
   if (!userId || !email) throw new AuthenticationRequiredError();
 
@@ -53,4 +61,14 @@ export async function requireAuthenticatedAdministrator(): Promise<Authenticated
     fullName: profile.full_name,
     role: "administrator",
   };
+}
+
+/** Page/layout adapter: missing session navigates, it does not hit `error.tsx`. Commands keep throwing. */
+export async function requireAuthenticatedAdministratorForPage(): Promise<AuthenticatedAdministrator> {
+  try {
+    return await requireAuthenticatedAdministrator();
+  } catch (error) {
+    if (error instanceof AuthenticationRequiredError) redirect(routes.login);
+    throw error;
+  }
 }

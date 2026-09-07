@@ -12,7 +12,7 @@ export function AccessDeniedSignOut() {
       <Button type="submit" variant="secondary" size="md">
         Sair
       </Button>
-      {state.status === "error" ? (
+      {state?.status === "error" ? (
         <p role="alert" className="text-xs text-[var(--color-error)]">
           {state.message}
         </p>

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AdministratorAccessDeniedError, AuthenticationRequiredError, requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
+import { AdministratorAccessDeniedError, AuthenticationRequiredError, requireAuthenticatedAdministrator, requireAuthenticatedAdministratorForPage } from "@/shared/auth/require-admin";
 
 const testState = vi.hoisted(() => ({
   userId: undefined as string | undefined,
@@ -7,6 +7,8 @@ const testState = vi.hoisted(() => ({
   profile: null as Readonly<{ full_name: string | null; status: string }> | null,
   membership: null as Readonly<{ organization_id: number; role_code: string; status: string }> | null,
   organization: null as Readonly<{ display_name: string }> | null,
+  getClaimsThrows: false,
+  redirectThrown: false,
 }));
 
 function buildQuery(table: string) {
@@ -44,14 +46,24 @@ function buildQuery(table: string) {
   return chain;
 }
 
+vi.mock("next/navigation", () => ({
+  redirect: () => {
+    testState.redirectThrown = true;
+    throw new Error("redirect");
+  },
+}));
+
 vi.mock("@/shared/auth/supabase-server", () => ({
   createServerSupabaseClient: async () => ({
     auth: {
-      getClaims: async () => ({
-        data: {
-          claims: testState.userId && testState.email ? { sub: testState.userId, email: testState.email } : {},
-        },
-      }),
+      getClaims: async () => {
+        if (testState.getClaimsThrows) throw new Error("jwt_invalid");
+        return {
+          data: {
+            claims: testState.userId && testState.email ? { sub: testState.userId, email: testState.email } : {},
+          },
+        };
+      },
     },
     from: (table: string) => buildQuery(table),
   }),
@@ -64,9 +76,16 @@ describe("requireAuthenticatedAdministrator", () => {
     testState.profile = null;
     testState.membership = null;
     testState.organization = null;
+    testState.getClaimsThrows = false;
+    testState.redirectThrown = false;
   });
 
   it("rejects an anonymous session with 401 semantics", async () => {
+    await expect(requireAuthenticatedAdministrator()).rejects.toBeInstanceOf(AuthenticationRequiredError);
+  });
+
+  it("maps a thrown getClaims failure to authentication required, not a generic render error", async () => {
+    testState.getClaimsThrows = true;
     await expect(requireAuthenticatedAdministrator()).rejects.toBeInstanceOf(AuthenticationRequiredError);
   });
 
@@ -127,5 +146,37 @@ describe("requireAuthenticatedAdministrator", () => {
       fullName: "Administrador",
       role: "administrator",
     });
+  });
+});
+
+describe("requireAuthenticatedAdministratorForPage", () => {
+  beforeEach(() => {
+    testState.userId = undefined;
+    testState.email = undefined;
+    testState.profile = null;
+    testState.membership = null;
+    testState.organization = null;
+    testState.getClaimsThrows = false;
+    testState.redirectThrown = false;
+  });
+
+  it("redirects to login when the session is missing", async () => {
+    await expect(requireAuthenticatedAdministratorForPage()).rejects.toThrow("redirect");
+    expect(testState.redirectThrown).toBe(true);
+  });
+
+  it("redirects to login when getClaims throws", async () => {
+    testState.getClaimsThrows = true;
+    await expect(requireAuthenticatedAdministratorForPage()).rejects.toThrow("redirect");
+    expect(testState.redirectThrown).toBe(true);
+  });
+
+  it("still throws access denied for a signed-in user without administrator membership", async () => {
+    testState.userId = "00000000-0000-0000-0000-000000000099";
+    testState.email = "user@example.com";
+    testState.profile = { full_name: "Operador", status: "active" };
+    testState.membership = null;
+    await expect(requireAuthenticatedAdministratorForPage()).rejects.toBeInstanceOf(AdministratorAccessDeniedError);
+    expect(testState.redirectThrown).toBe(false);
   });
 });
