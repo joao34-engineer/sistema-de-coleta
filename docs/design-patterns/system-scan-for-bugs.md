@@ -5,7 +5,7 @@
 | **Status** | `active` — inventário; **código das Fases 0–5 (exceto 5.7/5.12/5.13 adiados) fechado**; **não autoriza implementação sozinho** |
 | **Authority** | `informative` até o humano pedir um eixo |
 | **Owner** | product / sistema-coleta |
-| **Last verified** | 2026-09-06 (código em `origin/main` `30d8621` + eixo **5.6** local, ainda sem SHA de merge) |
+| **Last verified** | 2026-09-06 (Production: 5.6 + cursor `20260906220000` no remoto; código 5.6 em `origin/main`) |
 | **Escopo** | Somente `sistema-coleta/` |
 | **Tipo** | Inventário. Não reabrir eixos marcados **feito**. |
 
@@ -13,7 +13,7 @@ Este arquivo é o inventário **completo** do scan de 29/08/2026, com status atu
 
 **Aberto de propósito:** nenhum eixo de código do scan. **Adiados 06/09/2026:** **5.7** (SignaturePad na aprovação), **5.12** / **5.13** (UI clientes/contatos/veículos). Fora do scan: Fase 4 chats 5–7 e gates remotos 1A.
 
-**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`.
+**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**active**). PR 1 e PR 2 fechados; PR 3 e PR 4 implementados e revisados (migrations `20260907000000` / `20260907010000` **não aplicadas**); PR 5 bloqueado (Figma O02).
 
 ---
 
@@ -23,9 +23,10 @@ A casca (login, lista, detalhe, wizard offline, PWA) existe. O ciclo de **coleta
 
 O que **ainda** está aberto neste inventário:
 
-1. Recertificação, não código: 1.3 reload/Back; 4.4 429/503 no QR; share WhatsApp; deploy do SHA novo; aplicar a migration 5.6 no remoto.
+1. Recertificação, não código: 1.3 reload/Back; 4.4 429/503 no QR; share WhatsApp.
+2. Fora do scan original, pedido 2026-09-06: ver plano [`workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) — não misturar com 5.7/5.12/5.13.
 
-**Adiado 06/09/2026 (não implementar):** **5.7** SignaturePad na aprovação de orçamento (nome/CNPJ bastam); **5.12** / **5.13** telas de clientes, contatos e veículos.
+**Fechado 06/09/2026 (não reabrir):** 5.6 no remoto (`20260906210000`) e no deploy Production; cursor de paginação compacto (`20260906220000`, incidente dashboard “Não foi possível carregar as coletas”).
 
 **Adiado 06/09/2026 (não implementar):** **5.7** SignaturePad na aprovação de orçamento (nome/CNPJ bastam); **5.12** / **5.13** telas de clientes, contatos e veículos.
 
@@ -363,7 +364,7 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 | 5.3 | **feito** | média | Contagens honestas no servidor; prontas incluem `invoiced` |
 | 5.4 | **feito** | média | Labels de evento pontilhados + `actorName` a partir do perfil/metadata |
 | 5.5 | **feito** | média | Entrega começa vazia; RPC recusa id repetido / já entregue |
-| 5.6 | **feito** | média | Entrega a partir de Pronto; NF-e opcional. Humano 06/09/2026. Migration `20260906210000_phase_5_deliver_from_ready.sql` |
+| 5.6 | **feito** | média | Entrega a partir de Pronto; NF-e opcional. Remoto + Production 06/09/2026 (`20260906210000`) |
 | 5.7 | **adiado** | média | Aprovação de orçamento: nome + CNPJ obrigatórios; SignaturePad **opcional**. Humano 06/09/2026: não implementar o pad agora |
 | 5.8 | **feito** | média | Check-in recusa conjunto incompleto de itens |
 | 5.9 | **feito** | média | OS ganha status terminal `delivered` após entrega total |
@@ -377,7 +378,13 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 | 5.17 | **feito** | baixa | `loadCollectionForOperation` redireciona se o status não permite o segmento |
 | 5.18 | **feito** | baixa | pgTAP Fase 3 alinhado às RPCs 3b (`approve_technical_budget`). Não gated no CI |
 
-**Nota 5.6 — fechada 06/09/2026.** Entrega é permitida em `ready`, `invoiced` e `partial_delivery`. No hub, Pronto mostra **Entregar ao cliente**; **Registrar NF-e (opcional)** continua acessível. O sistema não emite nota fiscal; o registro interno não é pré-requisito da entrega. `register_invoice_reference` ainda só grava NF-e enquanto a coleta está `ready` — lançar NF-e depois de uma entrega completa fica fora deste eixo.
+**Nota 5.6 — fechada 06/09/2026.** Entrega é permitida em `ready`, `invoiced` e `partial_delivery`. No hub, Pronto mostra **Entregar ao cliente**; **Registrar NF-e (opcional)** continua acessível. O sistema não emite nota fiscal; o registro interno não é pré-requisito da entrega. `register_invoice_reference` ainda só grava NF-e enquanto a coleta está `ready` — lançar NF-e depois de uma entrega completa fica fora deste eixo (só com pedido explícito).
+
+**Nota leftovers PR 3 — 07/09/2026, não marcar feito.** Implementado e revisado; migration `20260907000000_phase_5_deliver_mid_repair.sql` **não aplicada** no remoto. Conjunto deliverable `in_service | ready | invoiced | partial_delivery`; `item_not_ready` (P0001 → HTTP 422); OS segue o restante (`delivered` / `in_service` / `ready`).
+
+**Nota leftovers PR 4 — 07/09/2026, não marcar feito.** Implementado e revisado; migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **não aplicada** no remoto. Cancel de `draft` passa a `collection_not_cancelable_draft` (P0001) no lugar do `23514` opaco. Coluna nullable `service_orders.previous_status_before_cancellation`. Os dois caminhos de reopen (`cancel_or_reopen_collection` e `reopen_collection`) restauram a OS — o segundo entra porque o cancel agora põe a OS em `canceled` e, sem restore, ela ficaria presa.
+
+**Incidente cursor 06/09/2026 — fechado.** `encode_collection_cursor` passou a emitir RFC 4648 base64url compacto (`20260906220000`, remoto aplicado). Dashboard / “carregar mais” deixam de falhar quando `nextCursor` existe. Zod e decode permanecem estritos. Não reabrir sanitização no cliente.
 
 ---
 
@@ -388,7 +395,14 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 - Recuperação de senha / SMTP de convite — adiados na Fase 0.
 - E-mail Resend (`DOCUMENT_EMAIL_SEND_ENABLED`) e recertificação WhatsApp/`navigator.share` — decisão de produto, não eixo deste scan.
 - [`architecture-improvement.md`](./architecture-improvement.md) — organização de código (A–H), não correção funcional. Não tratar como bug do scan.
-- Cheiros residuais **sem eixo até pedido**: `draft-items-page` / `draft-review-page` sem rota; cancelar `draft` pelo RPC de oficina vs CHECK de identidade; `service_orders.canceled` no CHECK e nunca escrito; `quantity_observed > 0` (sem “não chegou”); UI de entrega ainda não filtra só **Pronto** (ligado a 5.6); backfills de OS `delivered` / `canceled_at` obsoleto exigem `SELECT` + aprovação humana.
+- Cheiros residuais **sem eixo até pedido explícito**:
+  - UI de entrega lista todos os itens da coleta (já entregues desabilitados); não restringe à progressão **Pronto** do orçamento. A RPC também não exige item `pronto`. **PR 3 07/09/2026 — implementado e revisado, migration `20260907000000` não aplicada:** conjunto deliverable inclui `in_service`; `item_not_ready` (422); OS segue o restante.
+  - `register_invoice_reference` só aceita `status = ready` (NF-e depois de `delivered` / `partial_delivery` impossível).
+  - Check-in: `quantity_observed > 0` + conjunto completo — não dá para registrar “item não chegou”.
+  - Backfills opcionais (OS `ready` com coleta `delivered`; `canceled_at` em coleta reaberta): `SELECT` + OK humano, não código. **Auditado 06/09/2026 no remoto `sistema-coleta-mjt`: remoto limpo** — ambas as sondas `count = 0`, mais o inventário de coleta `canceled` com OS viva também `0`. Nenhum `UPDATE`, nenhuma migration. Reauditar com os mesmos `SELECT` antes de qualquer backfill futuro.
+  - `draft-items-page` / `draft-review-page` sem rota (wizard vivo é `CollectionCapturePage`).
+  - `cancel_or_reopen_collection` aceita cancelar `draft` e quebra o CHECK de identidade; hub não oferece esse CTA. **PR 4 07/09/2026 — implementado e revisado, migration `20260907010000` não aplicada:** `collection_not_cancelable_draft` no lugar do `23514` opaco; aponta para `discard_collection_draft`.
+  - `service_orders.status = 'canceled'` no CHECK, nenhuma RPC grava. **PR 4 07/09/2026 — mesma migration não aplicada:** coluna nullable `previous_status_before_cancellation`; cancel grava e põe a OS em `canceled`; reopen restaura em `cancel_or_reopen_collection` e em `reopen_collection`.
 
 ---
 
@@ -401,7 +415,7 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 | 2 | Crash no sync + retry conclui; finalize online não mente; reconnect no banner — **feito** 05/09/2026 |
 | 3 | Admin entra; não-admin sai; env documentado no deploy — **feito** no código (`30d8621` + PRs auth). Smoke e2e local precisa Chromium |
 | 4 | Share `/d/{token}` não queima cota à toa; verify não 500; issuer incompleto com mensagem clara — **feito** no código. 4.4 / 4.5 recertificados (QR Vercel). Recertificar 429/503 do QR se o humano pedir |
-| 5 | 5.1–5.6 e 5.8–5.18 **feitos**. **5.7 / 5.12 / 5.13 adiados** (06/09/2026). |
+| 5 | 5.1–5.6 e 5.8–5.18 **feitos** (5.6 no remoto + Production). Cursor `20260906220000` no remoto. **5.7 / 5.12 / 5.13 adiados** (06/09/2026). |
 
 Validação de código (quando implementar o que ainda está aberto): `npm run check` em `sistema-coleta`. Schema: permissões admin / não-admin / anon, sem reset do remoto.
 
@@ -458,4 +472,4 @@ Validação de código (quando implementar o que ainda está aberto): `npm run c
 
 Análise de 29/08/2026 sobre `src/`, `app/`, `public/sw.js`, `supabase/migrations/` (1A, 2, 3a/3b, 4 chats 2–3) e docs de execução. Sem alteração de código na sessão do scan.
 
-Status de código relido em 06/09/2026 contra `origin/main` (`30d8621`). Errata do plano [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) §11 já absorvida neste arquivo.
+Status de código relido em 06/09/2026 contra `origin/main` (`30d8621`) + 5.6 Production e cursor remoto `20260906220000`. Errata do plano [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) §11 já absorvida neste arquivo.

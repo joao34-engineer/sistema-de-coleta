@@ -9,6 +9,7 @@ import { Card } from "@/shared/ui/card";
 import { CollectionStatusBadge } from "./collection-status-badge";
 import { CollectionTimeline } from "./collection-timeline";
 import { OperationalActions } from "./operational-actions";
+import { operationalItemFactsFrom } from "../model/operational-actions";
 import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 
 export type CollectionDetailHubProps = Readonly<{
@@ -55,7 +56,14 @@ export function CollectionDetailHub({ collection, events, serviceOrder, budgetIt
         </section>
 
         {/* Ação operacional sugerida */}
-        <OperationalActions collectionId={collection.id} status={collection.status} />
+        <OperationalActions
+          collectionId={collection.id}
+          status={collection.status}
+          itemFacts={operationalItemFactsFrom(
+            collection.items.map((item) => item.id),
+            budgetItems,
+          )}
+        />
 
         {/* Resumo do serviço */}
         {hasBudget ? (

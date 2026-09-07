@@ -52,12 +52,45 @@ describe("safe action errors", () => {
     });
     expect(toSafeActionError(new Error("delivery_not_invoiced"))).toEqual({
       ok: false,
-      error: "A coleta precisa estar pronta, faturada ou em entrega parcial para entregar ao cliente.",
+      error: "A coleta precisa estar em reparo, pronta, faturada ou em entrega parcial para entregar ao cliente.",
     });
     expect(toSafeActionError({ code: "P0001", message: "collection_not_invoiced" })).toEqual({
       ok: false,
-      error: "A coleta precisa estar pronta, faturada ou em entrega parcial para entregar ao cliente.",
+      error: "A coleta precisa estar em reparo, pronta, faturada ou em entrega parcial para entregar ao cliente.",
     });
+    expect(toSafeActionError(new Error("item_not_ready"))).toEqual({
+      ok: false,
+      error: "Somente itens marcados como Pronto podem ser entregues.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "item_not_ready" })).toEqual({
+      ok: false,
+      error: "Somente itens marcados como Pronto podem ser entregues.",
+    });
+  });
+
+  it("maps collection_not_cancelable_draft to Portuguese", () => {
+    expect(toSafeActionError(new Error("collection_not_cancelable_draft"))).toEqual({
+      ok: false,
+      error: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "collection_not_cancelable_draft" })).toEqual({
+      ok: false,
+      error: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
+    });
+  });
+
+  it("keeps collection_not_cancelable_draft distinct from collection_cannot_be_canceled", () => {
+    const draft = toSafeActionError(new Error("collection_not_cancelable_draft"));
+    const cannot = toSafeActionError(new Error("collection_cannot_be_canceled"));
+    expect(draft).toEqual({
+      ok: false,
+      error: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
+    });
+    expect(cannot).toEqual({
+      ok: false,
+      error: "A coleta não pode ser cancelada no status atual.",
+    });
+    expect(draft.error).not.toBe(cannot.error);
   });
 
   it("falls back to the generic P0001 message for unknown business rules", () => {

@@ -25,7 +25,7 @@ A entrada exige a conferencia item a item. A administradora confirma quantidade 
 
 ## Entrega ao cliente
 
-1. Abrir a coleta e selecionar somente os itens com status **Pronto**.
+1. Abrir a coleta e selecionar somente os itens com status **Pronto**. Itens ainda em reparo permanecem visiveis na lista, nao selecionaveis, rotulados `Continua em reparo`; nao os ocultar — o operador precisa ve-los.
 2. Gerar o termo digital de entrega com numero da coleta, itens prontos, quantidades e observacoes relevantes.
 3. Permitir que o cliente confira os itens presencialmente.
 4. Capturar assinatura do cliente com nome e CNPJ.

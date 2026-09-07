@@ -11,12 +11,24 @@ import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { deliverToCustomerAction } from "@/_app/actions/phase3-flow.actions";
 import { customerDeliverySchema } from "../model/contracts";
-import { defaultDeliveredItemIds, isAlreadyDeliveredItem } from "../model/delivery-selection";
+import {
+  defaultDeliveredItemIds,
+  isAlreadyDeliveredItem,
+  isDeliverableItem,
+  type ServiceOrderItemProgress,
+} from "../model/delivery-selection";
+
+type DeliveryPageItem = Readonly<{
+  id: string;
+  description: string;
+  quantity: number;
+  serviceOrderStatus: ServiceOrderItemProgress;
+}>;
 
 type Props = Readonly<{
   collectionId: string;
   officialCode: string | null;
-  items: ReadonlyArray<{ id: string; description: string; quantity: number }>;
+  items: ReadonlyArray<DeliveryPageItem>;
   alreadyDeliveredItemIds: ReadonlyArray<string>;
   rowVersion: number;
 }>;
@@ -45,7 +57,10 @@ export function CustomerDeliveryPage({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   function toggleItem(itemId: string): void {
-    if (isAlreadyDeliveredItem(itemId, alreadyDeliveredItemIds)) return;
+    const item = items.find((candidate) => candidate.id === itemId);
+    if (!item || !isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds)) {
+      return;
+    }
     setDeliveredItemIds((current) =>
       current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]
     );
@@ -55,7 +70,10 @@ export function CustomerDeliveryPage({
     if (isSubmitting) return;
     setErrorMsg(null);
 
-    const selectedIds = deliveredItemIds.filter((itemId) => !isAlreadyDeliveredItem(itemId, alreadyDeliveredItemIds));
+    const selectedIds = deliveredItemIds.filter((itemId) => {
+      const item = items.find((candidate) => candidate.id === itemId);
+      return item !== undefined && isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds);
+    });
     if (selectedIds.length === 0) {
       setErrorMsg("Selecione ao menos um item para entrega.");
       return;
@@ -106,14 +124,16 @@ export function CustomerDeliveryPage({
     });
   }
 
-  const selectableCount = items.filter((item) => !isAlreadyDeliveredItem(item.id, alreadyDeliveredItemIds)).length;
+  const selectableCount = items.filter((item) =>
+    isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds),
+  ).length;
   const isPartialSelection = deliveredItemIds.length > 0 && deliveredItemIds.length < selectableCount;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
         title="Entrega ao cliente"
-        subtitle={officialCode ?? "Coleta"}
+        subtitle={officialCode ? `${officialCode} · Somente itens prontos` : "Somente itens prontos"}
         backHref={`/coletas/${collectionId}` as Route}
       />
 
@@ -130,14 +150,21 @@ export function CustomerDeliveryPage({
           </h2>
           {items.map((item) => {
             const alreadyDelivered = isAlreadyDeliveredItem(item.id, alreadyDeliveredItemIds);
-            const isChecked = alreadyDelivered ? false : deliveredItemIds.includes(item.id);
+            const continuesInRepair = !alreadyDelivered && item.serviceOrderStatus === "em_reparo";
+            const deliverable = isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds);
+            const isChecked = deliverable && deliveredItemIds.includes(item.id);
+            const rowLabel = alreadyDelivered
+              ? `${item.description} já entregue`
+              : continuesInRepair
+                ? `${item.description} Continua em reparo`
+                : item.description;
             return (
               <label
                 key={item.id}
                 className={`flex items-center justify-between gap-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-4 py-3 shadow-xs transition-all ${
-                  alreadyDelivered
-                    ? "cursor-not-allowed opacity-70"
-                    : "cursor-pointer active:scale-[0.99]"
+                  deliverable
+                    ? "cursor-pointer active:scale-[0.99]"
+                    : "cursor-not-allowed opacity-70"
                 }`}
               >
                 <span className="min-w-0 break-words text-[13px] font-medium text-[var(--color-text-primary)]">
@@ -149,13 +176,17 @@ export function CustomerDeliveryPage({
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
                       já entregue
                     </span>
+                  ) : continuesInRepair ? (
+                    <span className="text-[11px] font-semibold tracking-wide text-[var(--color-text-muted)]">
+                      Continua em reparo
+                    </span>
                   ) : null}
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggleItem(item.id)}
-                    disabled={isSubmitting || alreadyDelivered}
-                    aria-label={alreadyDelivered ? `${item.description} já entregue` : item.description}
+                    disabled={isSubmitting || !deliverable}
+                    aria-label={rowLabel}
                     className="h-5 w-5 accent-[var(--color-primary)]"
                   />
                 </span>

@@ -18,6 +18,18 @@ export type OperationalAction = Readonly<{
 export type OperationalActionPair = Readonly<{
   primary: OperationalAction | null;
   secondary: OperationalAction | null;
+  extra: OperationalAction | null;
+}>;
+
+/** Facts the CTA matrix needs beyond collection status. Absent facts must not widen the matrix. */
+export type OperationalItemFacts = Readonly<{
+  hasUndeliveredReadyItem: boolean;
+  hasInRepairItem: boolean;
+}>;
+
+export type OperationalBudgetLine = Readonly<{
+  collectionItemId: string;
+  status: "em_reparo" | "pronto" | null;
 }>;
 
 const primaryByStatus: Readonly<Partial<Record<CollectionStatus, OperationalAction>>> = {
@@ -36,6 +48,16 @@ const primaryByStatus: Readonly<Partial<Record<CollectionStatus, OperationalActi
 
 const cancelAction: OperationalAction = { segment: "cancelar", label: "Cancelar" };
 
+const deliverReadyItemsAction: OperationalAction = {
+  segment: "entrega",
+  label: "Entregar itens prontos",
+};
+
+const updateProgressAction: OperationalAction = {
+  segment: "progresso",
+  label: "Atualizar progresso",
+};
+
 const statusesWithCancel: ReadonlySet<CollectionStatus> = new Set<CollectionStatus>([
   "rejected",
   "collected",
@@ -50,17 +72,62 @@ const statusesWithCancel: ReadonlySet<CollectionStatus> = new Set<CollectionStat
 ]);
 
 /**
+ * Derives CTA item facts from collection lines + service-order progress.
+ * A missing service-order line defaults to `em_reparo`, matching the progresso route.
+ */
+export function operationalItemFactsFrom(
+  collectionItemIds: ReadonlyArray<string>,
+  budgetItems: ReadonlyArray<OperationalBudgetLine>,
+  alreadyDeliveredItemIds: ReadonlyArray<string> = [],
+): OperationalItemFacts {
+  let hasUndeliveredReadyItem = false;
+  let hasInRepairItem = false;
+
+  for (const itemId of collectionItemIds) {
+    const budgetItem = budgetItems.find((item) => item.collectionItemId === itemId);
+    const status = budgetItem?.status ?? "em_reparo";
+    if (status === "pronto" && !alreadyDeliveredItemIds.includes(itemId)) {
+      hasUndeliveredReadyItem = true;
+    }
+    if (status === "em_reparo") {
+      hasInRepairItem = true;
+    }
+  }
+
+  return { hasUndeliveredReadyItem, hasInRepairItem };
+}
+
+function extraActionForStatus(
+  status: CollectionStatus,
+  itemFacts: OperationalItemFacts | undefined,
+): OperationalAction | null {
+  if (itemFacts === undefined) return null;
+  if (status === "in_service" && itemFacts.hasUndeliveredReadyItem) {
+    return deliverReadyItemsAction;
+  }
+  if (status === "partial_delivery" && itemFacts.hasInRepairItem) {
+    return updateProgressAction;
+  }
+  return null;
+}
+
+/**
  * Matriz B14: CTAs do hub de oficina.
  * `reopened` é inalcançável (RPC nunca grava esse status) — retorna null/null.
+ * Extra actions depend on item facts; omitting facts preserves today's matrix.
  */
-export function operationalActionsForStatus(status: CollectionStatus): OperationalActionPair {
+export function operationalActionsForStatus(
+  status: CollectionStatus,
+  itemFacts: OperationalItemFacts | undefined = undefined,
+): OperationalActionPair {
   if (status === "reopened" || status === "delivered" || status === "draft") {
-    return { primary: null, secondary: null };
+    return { primary: null, secondary: null, extra: null };
   }
 
   return {
     primary: primaryByStatus[status] ?? null,
     secondary: statusesWithCancel.has(status) ? cancelAction : null,
+    extra: extraActionForStatus(status, itemFacts),
   };
 }
 
@@ -81,8 +148,14 @@ export function optionalInvoiceAction(status: CollectionStatus): OperationalActi
 }
 
 /** Inverso da matriz de CTAs do hub: a URL de oficina só é válida se o hub ofereceria esse segmento. */
-export function isWorkshopSegmentAllowed(status: CollectionStatus, segment: OperationalSegment): boolean {
-  const { primary, secondary } = operationalActionsForStatus(status);
-  if (primary?.segment === segment || secondary?.segment === segment) return true;
+export function isWorkshopSegmentAllowed(
+  status: CollectionStatus,
+  segment: OperationalSegment,
+  itemFacts: OperationalItemFacts | undefined = undefined,
+): boolean {
+  const { primary, secondary, extra } = operationalActionsForStatus(status, itemFacts);
+  if (primary?.segment === segment || secondary?.segment === segment || extra?.segment === segment) {
+    return true;
+  }
   return optionalInvoiceAction(status)?.segment === segment;
 }

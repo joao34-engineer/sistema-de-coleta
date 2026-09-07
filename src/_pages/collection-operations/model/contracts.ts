@@ -147,10 +147,13 @@ export const budgetApprovalResultSchema = z.object({
 
 export const serviceProgressResultSchema = z.object({
   collectionId: uuidSchema,
-  status: z.enum(["approved", "in_service", "ready"]),
+  status: z.enum(["approved", "in_service", "ready", "partial_delivery"]),
   rowVersion: z.number().int().positive(),
   serviceOrderId: uuidSchema,
 });
+
+export type ServiceProgressResult = z.infer<typeof serviceProgressResultSchema>;
+export type ServiceProgressResultStatus = ServiceProgressResult["status"];
 
 export const invoiceReferenceResultSchema = z.object({
   collectionId: uuidSchema,

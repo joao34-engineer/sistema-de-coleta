@@ -103,7 +103,7 @@ export async function approveBudgetAction(collectionId: string, input: BudgetApp
 }
 
 export type UpdateServiceProgressActionResult =
-  | ActionSuccess<{ status: "approved" | "in_service" | "ready" }>
+  | ActionSuccess<{ status: "approved" | "in_service" | "ready" | "partial_delivery" }>
   | ActionFailure;
 
 export async function updateServiceProgressAction(collectionId: string, input: ServiceProgressDTO, idempotencyKey: string): Promise<UpdateServiceProgressActionResult> {

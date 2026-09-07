@@ -28,4 +28,42 @@ describe("operations API delivery item codes (5.5)", () => {
       code: "workshop_checkin_items_incomplete",
     });
   });
+
+  it("maps item_not_ready to 422 above the generic P0001 fallback", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "item_not_ready" })).toEqual({
+      status: 422,
+      code: "item_not_ready",
+      message: "Somente itens marcados como Pronto podem ser entregues.",
+      actorId: null,
+    });
+  });
+});
+
+describe("operations API cancel draft codes", () => {
+  it("maps collection_not_cancelable_draft to 409 above the generic P0001 fallback", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "collection_not_cancelable_draft" })).toEqual({
+      status: 409,
+      code: "collection_not_cancelable_draft",
+      message: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
+      actorId: null,
+    });
+  });
+
+  it("keeps collection_not_cancelable_draft distinct from collection_cannot_be_canceled", () => {
+    const draft = toOperationsApiError({ code: "P0001", message: "collection_not_cancelable_draft" });
+    const cannot = toOperationsApiError({ code: "P0001", message: "collection_cannot_be_canceled" });
+    expect(draft).toEqual({
+      status: 409,
+      code: "collection_not_cancelable_draft",
+      message: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
+      actorId: null,
+    });
+    expect(cannot).toEqual({
+      status: 409,
+      code: "collection_cannot_be_canceled",
+      message: "A coleta não pode ser cancelada no status atual.",
+      actorId: null,
+    });
+    expect(draft.message).not.toBe(cannot.message);
+  });
 });
