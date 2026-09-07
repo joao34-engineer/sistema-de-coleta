@@ -13,7 +13,7 @@ Este arquivo é o inventário **completo** do scan de 29/08/2026, com status atu
 
 **Aberto de propósito:** nenhum eixo de código do scan. **Adiados 06/09/2026:** **5.7** (SignaturePad na aprovação), **5.12** / **5.13** (UI clientes/contatos/veículos). Fora do scan: Fase 4 chats 5–7 e gates remotos 1A.
 
-**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**active**). PR 1 e PR 2 fechados; PR 3 e PR 4 implementados e revisados (migrations `20260907000000` / `20260907010000` **não aplicadas**); PR 5 bloqueado (Figma O02).
+**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**active**). PR 1 a PR 4 fechados (migrations `20260907000000` / `20260907010000` **aplicadas** no remoto em 07/09/2026); PR 5 bloqueado (Figma O02).
 
 ---
 
@@ -380,9 +380,9 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 
 **Nota 5.6 — fechada 06/09/2026.** Entrega é permitida em `ready`, `invoiced` e `partial_delivery`. No hub, Pronto mostra **Entregar ao cliente**; **Registrar NF-e (opcional)** continua acessível. O sistema não emite nota fiscal; o registro interno não é pré-requisito da entrega. `register_invoice_reference` ainda só grava NF-e enquanto a coleta está `ready` — lançar NF-e depois de uma entrega completa fica fora deste eixo (só com pedido explícito).
 
-**Nota leftovers PR 3 — 07/09/2026, não marcar feito.** Implementado e revisado; migration `20260907000000_phase_5_deliver_mid_repair.sql` **não aplicada** no remoto. Conjunto deliverable `in_service | ready | invoiced | partial_delivery`; `item_not_ready` (P0001 → HTTP 422); OS segue o restante (`delivered` / `in_service` / `ready`).
+**Leftovers PR 3 — feito 07/09/2026.** Implementado, revisado e migration `20260907000000_phase_5_deliver_mid_repair.sql` **aplicada** no remoto. Conjunto deliverable `in_service | ready | invoiced | partial_delivery`; `item_not_ready` (P0001 → HTTP 422); OS segue o restante (`delivered` / `in_service` / `ready`).
 
-**Nota leftovers PR 4 — 07/09/2026, não marcar feito.** Implementado e revisado; migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **não aplicada** no remoto. Cancel de `draft` passa a `collection_not_cancelable_draft` (P0001) no lugar do `23514` opaco. Coluna nullable `service_orders.previous_status_before_cancellation`. Os dois caminhos de reopen (`cancel_or_reopen_collection` e `reopen_collection`) restauram a OS — o segundo entra porque o cancel agora põe a OS em `canceled` e, sem restore, ela ficaria presa.
+**Leftovers PR 4 — feito 07/09/2026.** Implementado, revisado e migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **aplicada** no remoto. Cancel de `draft` passa a `collection_not_cancelable_draft` (P0001) no lugar do `23514` opaco. Coluna nullable `service_orders.previous_status_before_cancellation`. Os dois caminhos de reopen (`cancel_or_reopen_collection` e `reopen_collection`) restauram a OS — o segundo entra porque o cancel agora põe a OS em `canceled` e, sem restore, ela ficaria presa.
 
 **Incidente cursor 06/09/2026 — fechado.** `encode_collection_cursor` passou a emitir RFC 4648 base64url compacto (`20260906220000`, remoto aplicado). Dashboard / “carregar mais” deixam de falhar quando `nextCursor` existe. Zod e decode permanecem estritos. Não reabrir sanitização no cliente.
 
@@ -396,13 +396,13 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 - E-mail Resend (`DOCUMENT_EMAIL_SEND_ENABLED`) e recertificação WhatsApp/`navigator.share` — decisão de produto, não eixo deste scan.
 - [`architecture-improvement.md`](./architecture-improvement.md) — organização de código (A–H), não correção funcional. Não tratar como bug do scan.
 - Cheiros residuais **sem eixo até pedido explícito**:
-  - UI de entrega lista todos os itens da coleta (já entregues desabilitados); não restringe à progressão **Pronto** do orçamento. A RPC também não exige item `pronto`. **PR 3 07/09/2026 — implementado e revisado, migration `20260907000000` não aplicada:** conjunto deliverable inclui `in_service`; `item_not_ready` (422); OS segue o restante.
+  - UI de entrega lista todos os itens da coleta (já entregues desabilitados); não restringe à progressão **Pronto** do orçamento. A RPC também não exige item `pronto`. **PR 3 feito 07/09/2026 — migration `20260907000000` aplicada:** conjunto deliverable inclui `in_service`; `item_not_ready` (422); OS segue o restante.
   - `register_invoice_reference` só aceita `status = ready` (NF-e depois de `delivered` / `partial_delivery` impossível).
   - Check-in: `quantity_observed > 0` + conjunto completo — não dá para registrar “item não chegou”.
   - Backfills opcionais (OS `ready` com coleta `delivered`; `canceled_at` em coleta reaberta): `SELECT` + OK humano, não código. **Auditado 06/09/2026 no remoto `sistema-coleta-mjt`: remoto limpo** — ambas as sondas `count = 0`, mais o inventário de coleta `canceled` com OS viva também `0`. Nenhum `UPDATE`, nenhuma migration. Reauditar com os mesmos `SELECT` antes de qualquer backfill futuro.
   - `draft-items-page` / `draft-review-page` sem rota (wizard vivo é `CollectionCapturePage`).
-  - `cancel_or_reopen_collection` aceita cancelar `draft` e quebra o CHECK de identidade; hub não oferece esse CTA. **PR 4 07/09/2026 — implementado e revisado, migration `20260907010000` não aplicada:** `collection_not_cancelable_draft` no lugar do `23514` opaco; aponta para `discard_collection_draft`.
-  - `service_orders.status = 'canceled'` no CHECK, nenhuma RPC grava. **PR 4 07/09/2026 — mesma migration não aplicada:** coluna nullable `previous_status_before_cancellation`; cancel grava e põe a OS em `canceled`; reopen restaura em `cancel_or_reopen_collection` e em `reopen_collection`.
+  - `cancel_or_reopen_collection` aceita cancelar `draft` e quebra o CHECK de identidade; hub não oferece esse CTA. **PR 4 feito 07/09/2026 — migration `20260907010000` aplicada:** `collection_not_cancelable_draft` no lugar do `23514` opaco; aponta para `discard_collection_draft`.
+  - `service_orders.status = 'canceled'` no CHECK, nenhuma RPC grava. **PR 4 feito 07/09/2026 — mesma migration aplicada:** coluna nullable `previous_status_before_cancellation`; cancel grava e põe a OS em `canceled`; reopen restaura em `cancel_or_reopen_collection` e em `reopen_collection`.
 
 ---
 

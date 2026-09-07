@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por PR. PR 1 e PR 2 **completos**; PR 3 e PR 4 implementados e revisados (migrations **não aplicadas**; validação em curso); PR 5 **bloqueado** (Figma O02) |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por PR. PR 1 a PR 4 **completos** (migrations `20260907000000` / `20260907010000` **aplicadas** no remoto em 07/09/2026, validação verde); PR 5 **bloqueado** (Figma O02) |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -23,7 +23,7 @@ Buraco 5.6 (mesmo eixo): `prepare_delivery_signature_intent` ainda só aceita `i
 
 Isso contradiz o produto (`vision-and-scope.md` decisão 16, `mobile-workflows.md` entrega) **e** o Figma.
 
-**Estado 2026-09-07:** PR 3 implementa o conjunto deliverable com `in_service`; código e review prontos; migration **não aplicada**. O remoto ainda se comporta como este parágrafo descreve.
+**Estado 2026-09-07:** resolvido. PR 3 implementa o conjunto deliverable com `in_service`; migration **aplicada** no remoto, que já **não** se comporta como este parágrafo descreve (mantido como registro do bug original).
 
 ---
 
@@ -47,8 +47,8 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | --- | --- | --- | --- | --- |
 | 1 | Trap `/configuracoes/empresa` | não | — | **completo** 2026-09-07 |
 | 2 | Backfills (só `SELECT`; UPDATE se count > 0) | talvez `UPDATE` pontual | OK humano | **completo** 2026-09-06 (remoto limpo; sem UPDATE) |
-| 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **implementado e revisado** 2026-09-07; `20260907000000` **não aplicada**; validação em curso |
-| 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **implementado e revisado** 2026-09-07; `20260907010000` **não aplicada**; validação em curso |
+| 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** 2026-09-07; `20260907000000` **aplicada** no remoto; validação verde |
+| 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** 2026-09-07; `20260907010000` **aplicada** no remoto; validação verde |
 | 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02; SQL sobre o corpo shipped do PR 3 | **bloqueado** (Figma O02; decisões de modelo fechadas 2026-09-07) |
 
 Não juntar 3+5. Não juntar 3+4.
@@ -126,7 +126,7 @@ WHERE c.status = 'canceled' AND so.status <> 'canceled';
 
 ## 6. PR 3 — Entrega de itens Pronto com outros ainda em reparo
 
-**Estado 2026-09-07:** implementado e revisado. Migration `20260907000000_phase_5_deliver_mid_repair.sql` **não aplicada** no remoto. Validação em curso.
+**Estado 2026-09-07:** completo. Migration `20260907000000_phase_5_deliver_mid_repair.sql` **aplicada** no remoto. Validação verde (lint, typecheck, 521 testes, Steiger).
 
 Contrato canônico (Figma O04, decisão 16, `data-and-rules.md` §entrega): entregar só **prontos**; resto continua no fluxo operacional; coleta vai a `entrega_parcial` quando ainda há pendentes.
 
@@ -156,7 +156,7 @@ Conjunto **deliverable** (os três RPCs, mesma lista): `in_service` | `ready` | 
 
 ## 7. PR 4 — Cancelar rascunho vs cancelar OS
 
-**Estado 2026-09-07:** implementado e revisado. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **não aplicada** no remoto. Validação em curso. Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection` (este segundo caminho entra porque o cancel agora põe a OS em `canceled`).
+**Estado 2026-09-07:** completo. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **aplicada** no remoto. Validação verde; erro mapeado como HTTP **409** (consistente com os demais guards de status de coleta). Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection` (este segundo caminho entra porque o cancel agora põe a OS em `canceled`).
 
 Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem `DROP FUNCTION`; re-`GRANT EXECUTE` no REPLACE.
 
