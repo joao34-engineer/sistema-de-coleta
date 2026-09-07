@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { CollectionListItemDTO } from "@/_pages/collection-lifecycle/model/contracts";
 import { CollectionsListPage } from "@/_pages/collection-lifecycle/ui/collections-list-page";
 
@@ -15,16 +15,27 @@ vi.mock("next/link", async () => {
     children,
     className,
     prefetch,
+    onClick,
     ...rest
   }: Readonly<{
     href: string;
     children: React.ReactNode;
     className?: string;
     prefetch?: boolean;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
   }>) =>
     React.createElement(
       "a",
-      { href, className, "data-prefetch": prefetch === true ? "true" : "false", ...rest },
+      {
+        href,
+        className,
+        "data-prefetch": prefetch === true ? "true" : "false",
+        onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+          event.preventDefault();
+          onClick?.(event);
+        },
+        ...rest,
+      },
       children,
     );
 
@@ -74,16 +85,22 @@ describe("CollectionsListPage filter chips", () => {
 
     expect(screen.getByText("Coletadas")).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Todos" })).toHaveAttribute("href", "/coletas?q=Maria");
+    expect(screen.getByRole("link", { name: "Em reparo" })).toHaveAttribute(
+      "href",
+      "/coletas?q=Maria&filter=in_repair",
+    );
+  });
+
   it("moves the selected pill immediately on tap without leaving two selected chips", () => {
     render(
       <CollectionsListPage initialItems={[collectedItem]} selectedFilter="all" />,
     );
 
-    screen.getByRole("link", { name: "Coletadas" }).click();
+    fireEvent.click(screen.getByRole("link", { name: "Coletadas" }));
 
     expect(screen.getByText("Coletadas")).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: "Coletadas" })).toBeNull();
     expect(screen.getByRole("link", { name: "Todos" })).toBeInTheDocument();
-    expect(screen.queryByText("Todos")?.getAttribute("aria-current")).not.toBe("page");
+    expect(screen.getByRole("link", { name: "Todos" })).not.toHaveAttribute("aria-current");
   });
 });

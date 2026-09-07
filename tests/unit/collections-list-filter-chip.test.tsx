@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { Route } from "next";
 import { CollectionsListFilterChip } from "@/_pages/collection-lifecycle/ui/collections-list-filter-chip";
 
@@ -10,16 +10,27 @@ vi.mock("next/link", async () => {
     children,
     className,
     prefetch,
+    onClick,
     ...rest
   }: Readonly<{
     href: string;
     children: React.ReactNode;
     className?: string;
     prefetch?: boolean;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
   }>) =>
     React.createElement(
       "a",
-      { href, className, "data-prefetch": prefetch === true ? "true" : "false", ...rest },
+      {
+        href,
+        className,
+        "data-prefetch": prefetch === true ? "true" : "false",
+        onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+          event.preventDefault();
+          onClick?.(event);
+        },
+        ...rest,
+      },
       children,
     );
 
@@ -63,7 +74,7 @@ describe("CollectionsListFilterChip", () => {
     expect(link).toHaveAttribute("href", "/coletas?filter=collected");
     expect(link).toHaveAttribute("data-prefetch", "true");
     expect(link).toHaveAttribute("data-selected", "false");
-    link.click();
+    fireEvent.click(link);
     expect(onSelect).toHaveBeenCalledOnce();
   });
 });
