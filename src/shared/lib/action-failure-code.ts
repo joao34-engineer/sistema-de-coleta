@@ -17,6 +17,7 @@ const KNOWN_ACTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   "service_order_not_in_service",
   "invoice_not_ready",
   "delivery_not_invoiced",
+  "collection_not_invoiced",
   "collection_cannot_be_canceled",
   "collection_not_canceled",
   "collection_not_draft",

@@ -4,6 +4,8 @@
 
 Transformar uma coleta finalizada em comprovante profissional, verificavel e compartilhavel.
 
+**Vs scan (06/09/2026):** B28–B32 (cota do share apos signed URL, retry de PDF, issuer, `/verificar`, `NEXT_PUBLIC_APP_URL`) estao **feitos** no codigo. PDF + QR recertificados em Production (`MJT-2026-000002`). E-mail Resend e share nativo/WhatsApp continuam fora do V1 / nao recertificados. Ver [`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md).
+
 ## Passos
 
 1. Definir template da Guia/Recibo de Coleta MJT a partir das configuracoes da empresa, usando placeholders institucionais ate os dados legitimos serem fornecidos.

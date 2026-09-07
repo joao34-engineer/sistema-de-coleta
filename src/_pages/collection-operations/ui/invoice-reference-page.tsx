@@ -107,6 +107,9 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
+        <p className="text-[13px] font-normal text-[var(--color-text-muted)]">
+          Registro interno opcional. A entrega ao cliente não depende deste passo.
+        </p>
         {existingInvoice ? (
           <Card className="flex flex-col gap-1 bg-[var(--color-card-bg)]">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">

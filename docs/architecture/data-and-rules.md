@@ -35,8 +35,9 @@
 rascunho -> pendente_sincronizacao -> coletada -> em_oficina
 em_oficina -> em_orcamento -> aguardando_aprovacao
 aguardando_aprovacao -> aprovada -> em_reparo -> pronto
-pronto -> faturada -> entregue
-faturada -> entrega_parcial -> entregue (quando existirem itens prontos e itens pendentes)
+pronto -> entregue
+pronto -> faturada -> entregue (NF-e opcional; nao bloqueia a entrega)
+faturada ou pronto -> entrega_parcial -> entregue (quando existirem itens prontos e itens pendentes)
 em_orcamento ou aguardando_aprovacao -> nao_aprovada
 coletada, em_oficina ou estados posteriores -> cancelada (com motivo)
 cancelada -> reaberta -> retorno ao estado operacional anterior (com motivo e auditoria)
@@ -64,7 +65,7 @@ No MVP, a oficina e a unidade propria da MJT. A entrada dos itens e um evento in
 
 A entrada na oficina exige conferencia item a item, quantidade observada, condicao observada e registro de divergencia quando necessario. O evento deve guardar a assinatura da administradora responsavel com nome e CNPJ.
 
-A entrega ao cliente cria um evento e uma versao documental com somente os itens que estiverem prontos e forem efetivamente entregues. O cliente confere os itens e assina com nome e CNPJ. Entregas parciais sao permitidas; a coleta so assume o estado final `entregue` quando nao restarem itens pendentes.
+A entrega ao cliente cria um evento e uma versao documental com somente os itens que estiverem prontos e forem efetivamente entregues. O cliente confere os itens e assina com nome e CNPJ. Entregas parciais sao permitidas; a coleta so assume o estado final `entregue` quando nao restarem itens pendentes. A RPC de entrega aceita `pronta` (`ready`), `faturada` (`invoiced`) ou `entrega_parcial` (scan **5.6**, 06/09/2026). Registrar NF-e e opcional e nao e pre-requisito. A aprovacao do orcamento exige nome e CNPJ; o pad de assinatura desenhada fica **opcional** ate pedido explicito (scan **5.7**, 06/09/2026).
 
 O servidor cria um snapshot completo, calcula hash de integridade e associa assinatura e PDF a essa versao. Dados mostrados no documento devem vir do snapshot, nao de consultas mutaveis de cliente ou itens.
 

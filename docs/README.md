@@ -35,7 +35,7 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | Decisoes de arquitetura | [decisions/](decisions/) — DAL unica: [0009](decisions/0009-data-access-layer.md) (**congelada**) |
 | Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — decisao DAL normativa; fases A–H planned |
 | Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) |
-| Inventario de bugs (scan 29/08/2026) | [design-patterns/system-scan-for-bugs.md](design-patterns/system-scan-for-bugs.md) |
+| Inventario de bugs (scan 29/08/2026) | [design-patterns/system-scan-for-bugs.md](design-patterns/system-scan-for-bugs.md) — codigo Fases 0–5 fechado (5.6 entrega desde Pronto); 5.7/5.12/5.13 **adiados**; **nao reimplementar** linhas **feito** |
 
 Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS/Storage e `$mjt-nextjs-pwa` para App Router/PWA. Leia o `SKILL.md` somente quando o gatilho da tarefa se aplicar.
 
@@ -49,7 +49,7 @@ Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS
 | 2 | [Documento e compartilhamento](execution/phase-2-documents-sharing.md) | PDF, QR, consulta e envio |
 | 3 | [Operacao de oficina](execution/phase-3-operations-workshop.md) | Timeline, estados e referencia de faturamento |
 | 4 | [Confiabilidade e lancamento](execution/phase-4-hardening-launch.md) | Chats 1–5 ferramentas; prova humana de restore adiada; faltam campo e go-live formal |
-| — | [Leftovers F1/F2 + doc resto](execution/fase1-2-leftovers-and-doc-resto-fix-prompt.md) | Prompt: SW, hidratação, B28, retry PDF, `/verificar` 429 |
-| — | [Pending panel leftover discard](execution/vercel-pending-panel-dead-actions-fix-prompt.md) | Waves 2–3 closed; open: leftover `immutable_record` on Descartar |
+| — | [Pending panel leftover discard](execution/vercel-pending-panel-dead-actions-fix-prompt.md) | Closed 2026-09-06: panel + `immutable_record` purge on Production |
+| — | [Fase 3 auth + leftovers + Fase 5](execution/fase3-5-ready-to-implement-fix-plan.md) | **Closed** 2026-09-06 (`30d8621`). **5.6** entrega desde Pronto (migration local `20260906210000`). 5.7 / 5.12 / 5.13 adiados |
 
 Nenhum documento de execucao deve ultrapassar 500 linhas. Novas decisoes devem ser registradas em `decisions/` ou no documento tematico correspondente, nao diluidas em prompts ou codigo.

@@ -6,6 +6,7 @@ import { buttonClassName } from "@/shared/ui/button";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import {
   operationalActionsForStatus,
+  optionalInvoiceAction,
   type OperationalAction,
 } from "../model/operational-actions";
 
@@ -14,6 +15,7 @@ export {
   nextOperationalAction,
   secondaryOperationalAction,
   operationalActionsForStatus,
+  optionalInvoiceAction,
 } from "../model/operational-actions";
 
 type Props = Readonly<{
@@ -27,7 +29,8 @@ function actionHref(collectionId: string, action: OperationalAction): Route {
 
 export function OperationalActions({ collectionId, status }: Props) {
   const { primary, secondary } = operationalActionsForStatus(status);
-  if (!primary && !secondary) return null;
+  const optional = optionalInvoiceAction(status);
+  if (!primary && !secondary && !optional) return null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -51,6 +54,17 @@ export function OperationalActions({ collectionId, status }: Props) {
           pendingClassName="opacity-80"
         >
           {secondary.label}
+        </PendingNavLink>
+      ) : null}
+      {optional ? (
+        <PendingNavLink
+          href={actionHref(collectionId, optional)}
+          prefetch
+          className="py-1 text-center text-[13px] font-semibold text-[var(--color-primary)] active:opacity-70"
+          contentClassName="block w-full"
+          pendingClassName="opacity-70"
+        >
+          {optional.label}
         </PendingNavLink>
       ) : null}
     </div>

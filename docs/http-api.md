@@ -228,7 +228,7 @@ Abuso do download é limitado por `document_share_download` (30 requisições / 
 
 ## Login (Server Action)
 
-`signInAction` não é rota HTTP. Códigos estáveis do estado: `validation_error`, `invalid_credentials`, `rate_limit_exceeded`, `temporarily_unavailable`, `unexpected_error`. Rate limit (`auth_login`, 5 / 15 min por IP+e-mail HMAC) ocorre antes de `signInWithPassword`. Não há HTTP 429 no login. Credencial inválida não revela se o e-mail existe. Falha inesperada no `catch` registra `logTransactionFailure` (`operation: sign_in`, `status: 500`) sem PII.
+`signInAction` não é rota HTTP. Códigos estáveis do estado: `validation_error`, `invalid_credentials`, `rate_limit_exceeded`, `temporarily_unavailable`, `unexpected_error`. Rate limit (`auth_login`, 5 falhas na janela UTC de 900 s por IP+e-mail HMAC) ocorre antes de `signInWithPassword`; login com sucesso zera a quota (scan 3.3). Não há HTTP 429 no login. Credencial inválida não revela se o e-mail existe. Falha inesperada no `catch` registra `logTransactionFailure` (`operation: sign_in`, `status: 500`) sem PII.
 
 ## Saúde (Fase 4 Chat 4)
 

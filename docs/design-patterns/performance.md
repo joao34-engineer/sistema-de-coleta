@@ -184,7 +184,7 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 | **Sintoma** | `/coletas/nova` e passos de rascunho abrem vazios/parciais até IndexedDB + action + drain. |
 | **Onde** | Rotas passam só `actor` + `resumeDraftId`. `CollectionCapturePage` (~466 linhas, `"use client"`) no `useEffect`: store → `reload` → `fetchDraftWithItemsAction` se faltar local → `drainIfOnline`. |
 | **Por que dói** | Dado que o servidor já poderia ter buscado chega tarde. Um chunk JS grande no aparelho de campo. |
-| **Legado** | `draft-items-page.tsx` / `draft-review-page.tsx` / `draft-signature-page.tsx` ainda fazem fetch no mount se `initialDraft` faltar (rotas atuais usam o wizard; o padrão permanece perigoso). |
+| **Legado** | `draft-items-page.tsx` / `draft-review-page.tsx` ainda fazem fetch no mount se `initialDraft` faltar (rotas atuais usam o wizard; o padrão permanece perigoso). `draft-signature-page.tsx` foi apagada (scan 5.15, `30d8621`). |
 
 ---
 

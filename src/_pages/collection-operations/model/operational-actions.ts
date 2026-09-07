@@ -27,7 +27,7 @@ const primaryByStatus: Readonly<Partial<Record<CollectionStatus, OperationalActi
   awaiting_approval: { segment: "aprovacao", label: "Aprovar orçamento" },
   approved: { segment: "progresso", label: "Atualizar progresso" },
   in_service: { segment: "progresso", label: "Atualizar progresso" },
-  ready: { segment: "nfe", label: "Registrar NF-e" },
+  ready: { segment: "entrega", label: "Entregar ao cliente" },
   invoiced: { segment: "entrega", label: "Entregar ao cliente" },
   partial_delivery: { segment: "entrega", label: "Entregar ao cliente" },
   canceled: { segment: "reabrir", label: "Reabrir" },
@@ -74,8 +74,15 @@ export function secondaryOperationalAction(status: CollectionStatus): Operationa
   return operationalActionsForStatus(status).secondary;
 }
 
+/** NF-e continua disponível em Pronto, mas não bloqueia a entrega (scan 5.6). */
+export function optionalInvoiceAction(status: CollectionStatus): OperationalAction | null {
+  if (status !== "ready") return null;
+  return { segment: "nfe", label: "Registrar NF-e (opcional)" };
+}
+
 /** Inverso da matriz de CTAs do hub: a URL de oficina só é válida se o hub ofereceria esse segmento. */
 export function isWorkshopSegmentAllowed(status: CollectionStatus, segment: OperationalSegment): boolean {
   const { primary, secondary } = operationalActionsForStatus(status);
-  return primary?.segment === segment || secondary?.segment === segment;
+  if (primary?.segment === segment || secondary?.segment === segment) return true;
+  return optionalInvoiceAction(status)?.segment === segment;
 }

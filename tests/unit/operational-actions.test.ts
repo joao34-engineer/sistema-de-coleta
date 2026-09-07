@@ -10,6 +10,7 @@ import {
   nextOperationalAction,
   operationalActionsForStatus,
   secondaryOperationalAction,
+  optionalInvoiceAction,
   type OperationalSegment,
 } from "@/_pages/collection-operations/model/operational-actions";
 
@@ -20,7 +21,7 @@ const expectedPrimary: Readonly<Partial<Record<CollectionStatus, { segment: stri
   awaiting_approval: { segment: "aprovacao", label: "Aprovar orçamento" },
   approved: { segment: "progresso", label: "Atualizar progresso" },
   in_service: { segment: "progresso", label: "Atualizar progresso" },
-  ready: { segment: "nfe", label: "Registrar NF-e" },
+  ready: { segment: "entrega", label: "Entregar ao cliente" },
   invoiced: { segment: "entrega", label: "Entregar ao cliente" },
   partial_delivery: { segment: "entrega", label: "Entregar ao cliente" },
   canceled: { segment: "reabrir", label: "Reabrir" },
@@ -96,6 +97,11 @@ describe("operationalActionsForStatus (B14)", () => {
     expect(nextOperationalAction("partial_delivery")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
     expect(nextOperationalAction("delivered")).toBeNull();
   });
+
+  it("uses Entregar as the primary CTA when the collection is ready (5.6)", () => {
+    expect(nextOperationalAction("ready")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
+    expect(secondaryOperationalAction("ready")).toEqual({ segment: "cancelar", label: "Cancelar" });
+  });
 });
 
 const workshopSegments: ReadonlyArray<OperationalSegment> = [
@@ -113,8 +119,12 @@ describe("isWorkshopSegmentAllowed (5.17)", () => {
   it("matches the hub CTA matrix for every status and segment", () => {
     for (const status of collectionStatuses) {
       const pair = operationalActionsForStatus(status);
+      const optional = optionalInvoiceAction(status);
       for (const segment of workshopSegments) {
-        const allowedByCta = pair.primary?.segment === segment || pair.secondary?.segment === segment;
+        const allowedByCta =
+          pair.primary?.segment === segment ||
+          pair.secondary?.segment === segment ||
+          optional?.segment === segment;
         expect(isWorkshopSegmentAllowed(status, segment)).toBe(allowedByCta);
       }
     }
@@ -124,6 +134,16 @@ describe("isWorkshopSegmentAllowed (5.17)", () => {
     expect(isWorkshopSegmentAllowed("draft", "checkin")).toBe(false);
     expect(isWorkshopSegmentAllowed("delivered", "checkin")).toBe(false);
     expect(isWorkshopSegmentAllowed("collected", "checkin")).toBe(true);
+  });
+
+  it("lets Pronto deliver without NF-e and keeps NF-e as an optional route (5.6)", () => {
+    expect(nextOperationalAction("ready")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
+    expect(optionalInvoiceAction("ready")).toEqual({ segment: "nfe", label: "Registrar NF-e (opcional)" });
+    expect(isWorkshopSegmentAllowed("ready", "entrega")).toBe(true);
+    expect(isWorkshopSegmentAllowed("ready", "nfe")).toBe(true);
+    expect(isWorkshopSegmentAllowed("in_workshop", "nfe")).toBe(false);
+    expect(optionalInvoiceAction("invoiced")).toBeNull();
+    expect(nextOperationalAction("invoiced")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
   });
 });
 

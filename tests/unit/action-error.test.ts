@@ -50,6 +50,14 @@ describe("safe action errors", () => {
       ok: false,
       error: "Um ou mais itens já foram entregues em um termo anterior.",
     });
+    expect(toSafeActionError(new Error("delivery_not_invoiced"))).toEqual({
+      ok: false,
+      error: "A coleta precisa estar pronta, faturada ou em entrega parcial para entregar ao cliente.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "collection_not_invoiced" })).toEqual({
+      ok: false,
+      error: "A coleta precisa estar pronta, faturada ou em entrega parcial para entregar ao cliente.",
+    });
   });
 
   it("falls back to the generic P0001 message for unknown business rules", () => {

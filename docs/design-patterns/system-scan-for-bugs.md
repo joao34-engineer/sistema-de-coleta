@@ -2,28 +2,34 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `active` — inventário de correção; **Fase 0 (B01–B09) fechada**; **não autoriza implementação sozinho** |
+| **Status** | `active` — inventário; **código das Fases 0–5 (exceto 5.7/5.12/5.13 adiados) fechado**; **não autoriza implementação sozinho** |
 | **Authority** | `informative` até o humano pedir um eixo |
 | **Owner** | product / sistema-coleta |
-| **Last verified** | 2026-08-29 |
+| **Last verified** | 2026-09-06 (código em `origin/main` `30d8621` + eixo **5.6** local, ainda sem SHA de merge) |
 | **Escopo** | Somente `sistema-coleta/` |
-| **Tipo** | Análise read-only (código + migrations). Sem edição de app neste scan. |
+| **Tipo** | Inventário. Não reabrir eixos marcados **feito**. |
 
-Este arquivo é o inventário **completo** do scan de 29/08/2026. Não é rewrite de arquitetura. Não substitui [`architecture/data-and-rules.md`](../architecture/data-and-rules.md) nem as fases de execução.
+Este arquivo é o inventário **completo** do scan de 29/08/2026, com status atualizado em 06/09/2026. Não é rewrite de arquitetura. Não substitui [`architecture/data-and-rules.md`](../architecture/data-and-rules.md) nem as fases de execução.
 
-**Como usar:** um eixo por PR. Schema (Fase 0) antes de telas de oficina (Fase 2+). A fatia de produto da Fase 1 pode correr em paralelo com a 0 **só** se não depender de `in_workshop`.
+**Aberto de propósito:** nenhum eixo de código do scan. **Adiados 06/09/2026:** **5.7** (SignaturePad na aprovação), **5.12** / **5.13** (UI clientes/contatos/veículos). Fora do scan: Fase 4 chats 5–7 e gates remotos 1A.
+
+**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`.
 
 ---
 
 ## 1. Veredito
 
-A casca (login, lista, detalhe, wizard offline, PWA) existe. O que impede o V1 de campo:
+A casca (login, lista, detalhe, wizard offline, PWA) existe. O ciclo de **coleta → número oficial → PDF → QR em `/verificar`** fechou em Production (`MJT-2026-000001` 2026-09-05; `MJT-2026-000002` Vercel 2026-09-05). Auth, fila offline, issuer, share consume, retry de PDF, lista/RPC, oficina (guard de status, check-in completo, SO `delivered`) e o cheap cleanup 5.14–5.18 estão no `main` (`30d8621`).
 
-1. A oficina **não consegue mudar de estado** por CHECKs da Fase 1A e colunas/RPCs desalinhados.
-2. O wizard de coleta perde rascunho, omite local obrigatório e a fila offline classifica erro traduzido.
-3. PDF e compartilhamento não fecham o ciclo sozinhos (worker + link público).
+O que **ainda** está aberto neste inventário:
 
-Fases 4 chats 5–7 (backup, campo, go-live) e gates remotos da Fase 1A **continuam adiados** — não são bugs de código deste scan.
+1. Recertificação, não código: 1.3 reload/Back; 4.4 429/503 no QR; share WhatsApp; deploy do SHA novo; aplicar a migration 5.6 no remoto.
+
+**Adiado 06/09/2026 (não implementar):** **5.7** SignaturePad na aprovação de orçamento (nome/CNPJ bastam); **5.12** / **5.13** telas de clientes, contatos e veículos.
+
+**Adiado 06/09/2026 (não implementar):** **5.7** SignaturePad na aprovação de orçamento (nome/CNPJ bastam); **5.12** / **5.13** telas de clientes, contatos e veículos.
+
+Fases 4 chats 5–7 (prova humana de restore, campo, go-live) e gates remotos da Fase 1A **continuam adiados** — não são bugs de código deste scan.
 
 ---
 
@@ -127,47 +133,52 @@ Remoto alinhado às migrations 3b locais; Zod público aceita status emitidos de
 
 Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo** da Fase 0, com a ressalva: orçamento/CTAs de oficina só valem com 0.1–0.5 verdes.
 
-### Passo 1.1 — Semear orçamento a partir de `collection.items`
+### Passo 1.1 — Semear orçamento a partir de `collection.items` — **feito** (`main` 2026-09-06)
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica |
-| **Onde** | `oficina/orcamento/page.tsx`; `technical-budget-page.tsx` |
-| **Quebra** | `getBudgetItems()` está vazio até o primeiro `create_technical_budget`. Tela: “Nenhum item na coleta”. Semear pelos itens da coleta quando não houver budget. |
+| **Onde** | `oficina/orcamento/page.tsx`; `seedBudgetItemsFromCollection` |
+| **Quebra** | `getBudgetItems()` vazio até o primeiro `create_technical_budget`. Tela: “Nenhum item na coleta”. |
+| **Correção** | Seed pelos itens da coleta quando não houver budget. Não reabrir. |
 
-### Passo 1.2 — “Local da coleta” obrigatório (endereço cadastral opcional)
+### Passo 1.2 — “Local da coleta” obrigatório (endereço cadastral opcional) — **feito** (Vercel 2026-09-05)
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
 | **Onde** | `new-collection-page.tsx`; `finalize_collection` (`collection_incomplete` se location vazio); `createDraftWithCustomerAction` aceita location e **não grava** |
 | **Quebra** | Um campo “Endereço cadastral” opcional vira `collectionLocation`. Review deixa passar “não informado”. Finalize falha ou emite guia sem local. Dois campos: cadastral opcional + local da coleta obrigatório; bloquear revisão/assinatura sem local. |
+| **Aceite** | Nova coleta em Production mostra **Local da coleta \***; revisão lista o local; finalize sem local não emite; `MJT-2026-000002` saiu com local **Oficina MJT — teste QR Vercel**. |
 
-### Passo 1.3 — URL com `?rascunho=` ou `/coletas/[id]/itens` e Back
+### Passo 1.3 — URL com `?rascunho=` ou `/coletas/[id]/itens` e Back — **feito** (Vercel 2026-09-05)
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
 | **Onde** | `collection-capture-page.tsx` (`backHref="/coletas/nova"`); `nova/page.tsx` |
 | **Quebra** | Depois de Continuar a URL fica `/coletas/nova`. Reload / Back abre formulário novo e permite segundo rascunho. Deep links `.../revisao` ignoram `initialStep` se já existe draft local (`reload` usa `local.currentStep`). |
+| **Aceite** | Continuar em Production foi para `/coletas/{id}/itens` → `/revisao` → `/assinatura` → `/documentos`. Não ficou em `/coletas/nova`. Reload/Back a criar segundo rascunho não foi retestado à parte. |
 
-### Passo 1.4 — Códigos de máquina na fila offline; tradução só na UI
-
-| | |
-| :--- | :--- |
-| **Severidade** | alta |
-| **Onde** | `offline-runner.ts` `classify`; `toSafeActionError`; `finalizeCollectionAction` / `saveCollectionSignatureAction` |
-| **Quebra** | Runner espera `stale_version` e `authentication_required`. Actions devolvem frase em português. Sem retry de versão e sem pausa de sessão na assinatura/finalize. Manter `error` estável na fila; mapear texto só no chip/painel. |
-
-### Passo 1.5 — CTAs do hub
+### Passo 1.4 — Códigos de máquina na fila offline; tradução só na UI — **feito** (`main` 2026-09-06)
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
-| **Onde** | `operational-actions.tsx`; rota `/oficina/cancelar` sem link |
-| **Quebra** | `rejected` e `reopened` mostram “Reabrir”; RPC só reabre `canceled`. Sem Cancelar no hub para estados ativos. **Fazer:** Cancelar no hub (quando o RPC permitir); Reabrir só em `canceled`; `rejected` → novo orçamento (não reopen). |
+| **Onde** | `offline-runner.ts` `classify`; `toActionFailureCode` / `toFinalizeActionFailureCode` |
+| **Quebra** | Runner esperava `stale_version` e `authentication_required`; actions devolviam frase em português. |
+| **Correção** | Fila guarda código estável; chip/painel mapeiam PT via `messageForQueueError`. Não reabrir. |
 
-### Passo 1.6 — Worker de documento + decisão V1 de e-mail/share
+### Passo 1.5 — CTAs do hub — **feito** (`main` 2026-09-06)
+
+| | |
+| :--- | :--- |
+| **Severidade** | alta |
+| **Onde** | `operational-actions.ts`; hub |
+| **Quebra** | `rejected`/`reopened` mostravam “Reabrir”; RPC só reabre `canceled`. Sem Cancelar nos estados ativos. |
+| **Correção** | Matriz B14: Reabrir só em `canceled`; `rejected` → Novo orçamento; Cancelar onde o RPC de oficina permite. Rotas `/oficina/*` também recusam status ilegal (5.17). Não reabrir. |
+
+### Passo 1.6 — Worker de documento + decisão V1 de e-mail/share — **feito** (PDF + QR; e-mail fora do V1)
 
 > Stale vs código: finalize/cancel/reopen/revise disparam `processQueuedDocumentRenders` via `after()` no mesmo processo; Documentos tem `PdfPendingStatus` + WhatsApp/`navigator.share` em `/d/{token}`. Cron/curl continuam só retry. Não reabrir este passo como autorização de implementação.
 
@@ -177,6 +188,7 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 | **Onde** | `document_jobs` no finalize; `POST /api/internal/document-jobs/run`; `resend-adapter.ts`; `whatsapp-share-button.tsx` |
 | **Quebra** | Finalize só enfileira. Sem cron/secret, PDF fica `snapshot_ready`. E-mail é dry-run salvo `DOCUMENT_EMAIL_SEND_ENABLED=true`. WhatsApp (se montado) aponta `/api/documents/{id}/download` (exige admin → 401 no cliente). Botão WhatsApp **não está** em `collection-documents-page.tsx`. Sem `navigator.share`. |
 | **Decisão humana** | Agendar o worker. Declarar se e-mail Resend e share nativo entram no V1 ou ficam “preparação”. Link público deve ser `/d/{token}` ou `/verificar/{token}`, nunca a rota autenticada. |
+| **Aceite** | Finalize em Production (`MJT-2026-000002`) gerou PDF (**Baixar PDF**). QR no telemóvel abriu `https://sistema-de-coleta.vercel.app/verificar/…` e mostrou a guia autêntica. E-mail continua fora (`DOCUMENT_EMAIL_SEND_ENABLED` não ligado). Share nativo / WhatsApp não recertificados. |
 
 ---
 
@@ -240,91 +252,103 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 
 ---
 
-## Fase 3 — Auth e sessão
+## Fase 3 — Auth e sessão — **FECHADA** (B23–B27, `main` 2026-09-06)
 
-### Passo 3.1 — Logout na tela de acesso negado
+### Passo 3.1 — Logout na tela de acesso negado — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
-| **Onde** | `AccessDeniedPage`; `proxy.ts` redireciona `/login` → `/dashboard` se há `sub` |
-| **Quebra** | Usuário Supabase sem papel administrator fica preso. Sem Sair. |
+| **Onde** | `AccessDeniedPage`; `proxy.ts` |
+| **Quebra** | Sessão Supabase sem papel administrator (também perfil inativo, membership inativa ou org ausente) ficava presa. Sem Sair. |
+| **Correção** | Botão Sair na tela de acesso negado. Não reabrir. |
 
-### Passo 3.2 — Login fail-closed e env
+### Passo 3.2 — Login fail-closed e env — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | crítica se o deploy estiver incompleto |
-| **Onde** | `enforceLoginRateLimit` → `DOCUMENT_RATE_LIMIT_SECRET`, `getServiceEnvironment` (secret + `SUPABASE_CONFIRM_PROJECT_REF`) |
-| **Quebra** | Qualquer tentativa vira “Não foi possível concluir o login agora.” `CONFIRM_PROJECT_REF` é exigido e **não** é usado no RPC. Confirmar migrations `auth_login` no remoto. |
+| **Onde** | `enforceLoginRateLimit`; `getServiceEnvironment`; `getDocumentRateLimitSecret` |
+| **Quebra** | Env incompleto virava “Não foi possível concluir o login agora.” |
+| **Correção** | Fail-closed no login. `getServiceEnvironment` exige URL + `SUPABASE_SECRET_KEY` + `SUPABASE_CONFIRM_PROJECT_REF`; o HMAC é `getDocumentRateLimitSecret()` à parte. Migrations `auth_login` já estavam no remoto (2026-08-29). Não reabrir. |
 
-### Passo 3.3 — Quota de login
+### Passo 3.3 — Quota de login — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | média |
 | **Onde** | Rate limit **antes** de `signInWithPassword` |
-| **Quebra** | 5 tentativas/15 min (incluindo sucesso) bloqueiam o admin. Preferir contar só falha. |
+| **Quebra** | 5 tentativas na janela UTC de 900 s (incluindo sucesso) bloqueavam o admin. |
+| **Correção** | Conta só falha; sucesso zera a quota. Não reabrir. |
 
-### Passo 3.4 — Cookies e sign-out
+### Passo 3.4 — Cookies e sign-out — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | média |
-| **Onde** | `supabase-server.ts` `setAll` swallow; `signOutAction` ignora erro |
-| **Quebra** | Login parece ok e o proxy devolve ao login; ou “Sair” não limpa sessão. |
+| **Onde** | `supabase-server.ts` `setAll`; `signOutAction` |
+| **Quebra** | Login parecia ok e o proxy devolvia ao login; ou “Sair” não limpava sessão. |
+| **Correção** | `setAll` no caminho RSC continua engolindo (padrão `@supabase/ssr`); Server Actions de login/logout falham alto se o cookie não gravar. Não reabrir. |
 
-### Passo 3.5 — Proxy sem env público
+### Passo 3.5 — Proxy sem env público — **feito**
 
 | | |
 | :--- | :--- |
 | **Severidade** | média (misconfig) |
-| **Onde** | `proxy.ts` `hasPublicEnvironment()` → `next()` |
-| **Quebra** | Sem gate de borda. O layout ainda autentica. |
+| **Onde** | `proxy.ts` `hasPublicEnvironment()` |
+| **Quebra** | Sem env público o proxy fazia `next()` e o layout quebrava (`getPublicEnvironment()`). URL sintaticamente inválida passava o check. |
+| **Correção** | Proxy fail-closed em rota protegida. Não pôr checagem de papel no `proxy.ts`. Não reabrir. |
 
 ---
 
-## Fase 4 — Documento, QR e share (resto)
+## Fase 4 — Documento, QR e share (resto) — **FECHADA** no código (B28–B32)
 
-### Passo 4.1 — Consumir share só depois da URL assinada
+Recertificação humana residual: 4.4 429/503; PDF antigo de `MJT-2026-000001` ainda aponta localhost.
+
+### Passo 4.1 — Consumir share só depois da URL assinada — **feito** (`main` 2026-09-06)
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
 | **Onde** | `app/(public)/d/[shareToken]/download/route.ts` |
-| **Quebra** | `consumeDocumentShare` incrementa `download_count` antes do signed URL. Falha de Storage = 404 + 1 uso perdido. 429 devolve JSON no `<a href>`. |
+| **Quebra** | `consumeDocumentShare` incrementava `download_count` antes do signed URL. Falha de Storage = 404 + 1 uso perdido. |
+| **Correção** | Consome a cota só depois da URL assinada. Não reabrir. |
 
-### Passo 4.2 — Retry de PDF
+### Passo 4.2 — Retry de PDF — **feito** (`main` 2026-09-06)
 
 | | |
 | :--- | :--- |
 | **Severidade** | média |
-| **Onde** | `.../documents/[documentId]/retry` |
+| **Onde** | retry de job + `PdfPendingStatus` |
 | **Quebra** | Sempre `422 document_retry_not_available`. Job falho sem recuperação na UI. |
+| **Correção** | `retryDocumentJob` + estado pendente honesto na tela Documentos. Não reabrir. |
 
-### Passo 4.3 — Perfil emissor incompleto
+### Passo 4.3 — Perfil emissor incompleto — **feito** (`main` 2026-09-06)
 
 | | |
 | :--- | :--- |
 | **Severidade** | alta |
-| **Onde** | `finalize_collection` → `issuer_profile_incomplete` |
-| **Quebra** | Sem logo/perfil, nenhum número oficial. Mensagem genérica. Settings ainda dizem “usados futuramente”. |
+| **Onde** | `finalize_collection` → `issuer_profile_incomplete`; settings |
+| **Quebra** | Sem logo/perfil, nenhum número oficial. Mensagem genérica. Settings diziam “usados futuramente”. |
+| **Correção** | Copy verdadeiro nas configurações; fila/UI mapeiam o código em português. Página de assinatura legado apagada (5.15). Não reabrir. |
 
-### Passo 4.4 — Página `/verificar/[token]`
+### Passo 4.4 — Página `/verificar/[token]` — **feito** (caminho feliz 2026-09-05)
 
 | | |
 | :--- | :--- |
 | **Severidade** | média |
 | **Onde** | `verificar/[verificationToken]/page.tsx` |
 | **Quebra** | Rate limit sem try/catch → 500. A API JSON trata 429. Se o RPC devolver status de oficina, o Zod (`collected \| canceled`) vira “Registro não encontrado” (ligar à Fase 0.9). |
+| **Aceite** | Scan do QR de `MJT-2026-000002` no telemóvel abriu o host Vercel e mostrou a guia autêntica. 429/503 e status de oficina no Zod não foram retestados ao vivo. |
 
-### Passo 4.5 — `NEXT_PUBLIC_APP_URL`
+### Passo 4.5 — `NEXT_PUBLIC_APP_URL` — **feito** (Vercel 2026-09-05)
 
 | | |
 | :--- | :--- |
 | **Severidade** | média |
 | **Onde** | `shares.server.ts`; worker (`document_verification_base_url_missing`) |
 | **Quebra** | Sem URL pública, share e render de QR/PDF falham. |
+| **Aceite** | Production tem `NEXT_PUBLIC_APP_URL=https://sistema-de-coleta.vercel.app`. PDF novo (v1 de `000002`) QR aponta ao host Vercel. PDF antigo de `000001` continua localhost (bytes antigos; env não reescreve Storage). |
 
 ---
 
@@ -332,26 +356,28 @@ Estes sete eixos eram a “lista curta”. Fazem sentido **depois ou em paralelo
 
 Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 
-| Passo | Severidade | Quebra |
-| :--- | :--- | :--- |
-| 5.1 | média | Lista/busca só nos 50 primeiros; RPC `list_collections` (código, cliente, CPF, telefone, status, datas) não é usado |
-| 5.2 | média | Filtro “Em reparo” inclui `ready` (também em “Prontas”) |
-| 5.3 | média | Dashboard “prontas” só conta `ready`, some após NF-e (`invoiced`) |
-| 5.4 | média | Timeline: labels (`workshop_check_in`) ≠ eventos (`collection.workshop.checked_in`); `actorName` sempre null |
-| 5.5 | média | Entrega pré-marca **todos** os itens; não exclui já entregues; RPC não rejeita id repetido |
-| 5.6 | média | Entrega exige `invoiced` (NF-e) antes do termo — confirmar se é regra de produto |
-| 5.7 | média | Aprovação de orçamento sem assinatura desenhada |
-| 5.8 | média | Check-in aceita subconjunto de itens (produto pede conferência de todos) |
-| 5.9 | média | `deliver_to_customer` volta `service_orders.status` para `ready` |
-| 5.10 | média | `awaiting_approval` nunca é escrito (orçamento vai a `in_budget` e aprova dali) |
-| 5.11 | média | Dois stacks cancel/reopen (lifecycle vs `cancel_or_reopen`); lifecycle não limpa `canceled_at` |
-| 5.12 | alta (escopo) | Sem rotas `/clientes` / cadastro; só API + passo da coleta |
-| 5.13 | alta (escopo) | Sem UI de contatos nem veículos (tabelas no modelo) |
-| 5.14 | baixa | E2E de login espera copy antigo (`Sistema de Coleta` vs `Entre para continuar.`) |
-| 5.15 | baixa | `DraftSignaturePage` legado gera nova idempotency key (não roteada) |
-| 5.16 | baixa | Dois `verifyCollectionDocument` (só um usado) |
-| 5.17 | baixa | Rotas de oficina sem guard de status (só RPC) |
-| 5.18 | baixa | pgTAP da Fase 3 ainda descreve assinatura antiga das RPCs |
+| Passo | Status | Severidade | Quebra / correção |
+| :--- | :--- | :--- | :--- |
+| 5.1 | **feito** | média | Lista/dashboard usam RPC com busca, filtro e `totalCount` no servidor |
+| 5.2 | **feito** | média | Taxonomia única: “Em reparo” não inclui `ready` |
+| 5.3 | **feito** | média | Contagens honestas no servidor; prontas incluem `invoiced` |
+| 5.4 | **feito** | média | Labels de evento pontilhados + `actorName` a partir do perfil/metadata |
+| 5.5 | **feito** | média | Entrega começa vazia; RPC recusa id repetido / já entregue |
+| 5.6 | **feito** | média | Entrega a partir de Pronto; NF-e opcional. Humano 06/09/2026. Migration `20260906210000_phase_5_deliver_from_ready.sql` |
+| 5.7 | **adiado** | média | Aprovação de orçamento: nome + CNPJ obrigatórios; SignaturePad **opcional**. Humano 06/09/2026: não implementar o pad agora |
+| 5.8 | **feito** | média | Check-in recusa conjunto incompleto de itens |
+| 5.9 | **feito** | média | OS ganha status terminal `delivered` após entrega total |
+| 5.10 | **feito** | média | `awaiting_approval` documentado como reserva; dwell real é `in_budget`. Não ligar sem pedido |
+| 5.11 | **feito** | média | Lifecycle reopen limpa colunas de cancel; workshop reopen usa `coalesce` |
+| 5.12 | **adiado** | alta (escopo) | Sem rotas `/clientes`. Humano 06/09/2026: adiado |
+| 5.13 | **adiado** | alta (escopo) | Sem UI de contatos nem veículos. Humano 06/09/2026: adiado |
+| 5.14 | **feito** | baixa | E2E login/admin alinhados ao copy atual (`30d8621`) |
+| 5.15 | **feito** | baixa | `DraftSignaturePage` apagada; assinatura viva é `CollectionCapturePage` |
+| 5.16 | **feito** | baixa | Um só `verifyCollectionDocument` (`api/public/verification.ts`) |
+| 5.17 | **feito** | baixa | `loadCollectionForOperation` redireciona se o status não permite o segmento |
+| 5.18 | **feito** | baixa | pgTAP Fase 3 alinhado às RPCs 3b (`approve_technical_budget`). Não gated no CI |
+
+**Nota 5.6 — fechada 06/09/2026.** Entrega é permitida em `ready`, `invoiced` e `partial_delivery`. No hub, Pronto mostra **Entregar ao cliente**; **Registrar NF-e (opcional)** continua acessível. O sistema não emite nota fiscal; o registro interno não é pré-requisito da entrega. `register_invoice_reference` ainda só grava NF-e enquanto a coleta está `ready` — lançar NF-e depois de uma entrega completa fica fora deste eixo.
 
 ---
 
@@ -360,7 +386,9 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 - Backup/restore, testes de campo, treino e go-live (Fase 4 chats 5–7).
 - Gates remotos Fase 1A (RLS cruzada, concorrência, Storage, cleanup) — adiados.
 - Recuperação de senha / SMTP de convite — adiados na Fase 0.
-- [`architecture-improvement.md`](./architecture-improvement.md) — organização de código, não correção funcional.
+- E-mail Resend (`DOCUMENT_EMAIL_SEND_ENABLED`) e recertificação WhatsApp/`navigator.share` — decisão de produto, não eixo deste scan.
+- [`architecture-improvement.md`](./architecture-improvement.md) — organização de código (A–H), não correção funcional. Não tratar como bug do scan.
+- Cheiros residuais **sem eixo até pedido**: `draft-items-page` / `draft-review-page` sem rota; cancelar `draft` pelo RPC de oficina vs CHECK de identidade; `service_orders.canceled` no CHECK e nunca escrito; `quantity_observed > 0` (sem “não chegou”); UI de entrega ainda não filtra só **Pronto** (ligado a 5.6); backfills de OS `delivered` / `canceled_at` obsoleto exigem `SELECT` + aprovação humana.
 
 ---
 
@@ -369,19 +397,19 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 | Fase | Gate mínimo |
 | :--- | :--- |
 | 0 | Check-in, orçamento, rejeição, progresso, cancelar oficina e 2ª entrega parcial no SQL; remoto confirmado (0.9) — **feito** 29/08/2026 |
-| 1 | Nova coleta: local obrigatório, URL/Back, finalize com número; fila classifica códigos; hub CTAs; PDF nasce após worker (ou estado “PDF pendente” honesto) |
+| 1 | Nova coleta: local obrigatório, URL/Back, finalize com número; fila classifica códigos; hub CTAs; PDF nasce após worker (ou estado “PDF pendente” honesto) — **feito** (código `main` 2026-09-06; 1.2 / 1.3 / 1.6 recertificados em Production 2026-09-05, `MJT-2026-000002`). Recertificar 1.3 reload/Back se o humano pedir |
 | 2 | Crash no sync + retry conclui; finalize online não mente; reconnect no banner — **feito** 05/09/2026 |
-| 3 | Admin entra; não-admin sai; env documentado no deploy |
-| 4 | Share `/d/{token}` não queima cota à toa; verify não 500; issuer incompleto com mensagem clara |
-| 5 | Sob demanda; um eixo por PR |
+| 3 | Admin entra; não-admin sai; env documentado no deploy — **feito** no código (`30d8621` + PRs auth). Smoke e2e local precisa Chromium |
+| 4 | Share `/d/{token}` não queima cota à toa; verify não 500; issuer incompleto com mensagem clara — **feito** no código. 4.4 / 4.5 recertificados (QR Vercel). Recertificar 429/503 do QR se o humano pedir |
+| 5 | 5.1–5.6 e 5.8–5.18 **feitos**. **5.7 / 5.12 / 5.13 adiados** (06/09/2026). |
 
-Validação de código (quando implementar): `npm run check` em `sistema-coleta`. Schema: permissões admin / não-admin / anon, sem reset do remoto.
+Validação de código (quando implementar o que ainda está aberto): `npm run check` em `sistema-coleta`. Schema: permissões admin / não-admin / anon, sem reset do remoto.
 
 ---
 
 ## 5. Índice rápido (id estável)
 
-| ID | Fase.passo | Título curto |
+| ID | Fase.passo | Título curto | Status |
 | :--- | :--- | :--- |
 | B01 | 0.1 | CHECK status + official_code bloqueia oficina | **feito** |
 | B02 | 0.2 | `check_in_signature_path` na tabela errada | **feito** |
@@ -392,23 +420,42 @@ Validação de código (quando implementar): `npm run check` em `sistema-coleta`
 | B07 | 0.7 | `all_ready` prematuro | **feito** |
 | B08 | 0.8 | Cliente some no detalhe | **feito** |
 | B09 | 0.9 | Confirmar RPCs/QR no remoto | **feito** |
-| B10 | 1.1 | Orçamento vazio |
-| B11 | 1.2 | Local da coleta |
-| B12 | 1.3 | URL / Back / initialStep |
-| B13 | 1.4 | Códigos na fila offline |
-| B14 | 1.5 | Cancelar / Reabrir / rejected |
-| B15 | 1.6 | Worker + e-mail/share V1 |
+| B10 | 1.1 | Orçamento vazio | **feito** |
+| B11 | 1.2 | Local da coleta | **feito** |
+| B12 | 1.3 | URL / Back / initialStep | **feito** (recert reload/Back à parte) |
+| B13 | 1.4 | Códigos na fila offline | **feito** |
+| B14 | 1.5 | Cancelar / Reabrir / rejected | **feito** |
+| B15 | 1.6 | Worker + e-mail/share V1 | **feito** (PDF + QR; e-mail fora) |
 | B16 | 2.1 | `in_flight` | **feito** |
 | B17 | 2.2 | Finalize online mente | **feito** |
 | B18 | 2.3 | fallbackDrainLock | **feito** |
 | B19 | 2.4 | Banner sem `online` | **feito** |
 | B20–B22 | 2.5–2.7 | Discard / hydrate / SP / pad | **feito** |
-| B23–B27 | 3.1–3.5 | Auth |
-| B28–B32 | 4.1–4.5 | Documento resto |
-| B33+ | 5.x | Polimento |
+| B23–B27 | 3.1–3.5 | Auth | **feito** |
+| B28 | 4.1 | Share consume após signed URL | **feito** |
+| B29 | 4.2 | Retry de PDF | **feito** |
+| B30 | 4.3 | Issuer incompleto | **feito** |
+| B31 | 4.4 | `/verificar` | **feito** |
+| B32 | 4.5 | `NEXT_PUBLIC_APP_URL` | **feito** |
+| B33 | 5.1 | Lista/busca no servidor | **feito** |
+| B34 | 5.2 | Filtro “Em reparo” vs `ready` | **feito** |
+| B35 | 5.3 | Contagem “prontas” / `invoiced` | **feito** |
+| B36 | 5.4 | Timeline labels / `actorName` | **feito** |
+| B37 | 5.5 | Entrega: seleção e ids | **feito** |
+| B38 | 5.6 | Entrega exige `invoiced`? | **feito** (entrega desde Pronto; NF-e opcional) |
+| B39 | 5.7 | Aprovação sem SignaturePad | **adiado** (pad opcional) |
+| B40 | 5.8 | Check-in conjunto completo | **feito** |
+| B41 | 5.9 | OS `delivered` | **feito** |
+| B42 | 5.10 | `awaiting_approval` unused | **feito** (doc) |
+| B43 | 5.11 | Lifecycle reopen limpa cancel | **feito** |
+| B44 | 5.12 | UI `/clientes` | **adiado** |
+| B45 | 5.13 | UI contatos / veículos | **adiado** |
+| B46–B50 | 5.14–5.18 | E2E copy, legado, verify, guard, pgTAP | **feito** (`30d8621`) |
 
 ---
 
 ## 6. Fontes do scan
 
 Análise de 29/08/2026 sobre `src/`, `app/`, `public/sw.js`, `supabase/migrations/` (1A, 2, 3a/3b, 4 chats 2–3) e docs de execução. Sem alteração de código na sessão do scan.
+
+Status de código relido em 06/09/2026 contra `origin/main` (`30d8621`). Errata do plano [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) §11 já absorvida neste arquivo.

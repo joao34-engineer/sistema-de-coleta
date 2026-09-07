@@ -2,7 +2,7 @@
 
 > **✅ STATUS: EXECUTADA E CONCLUÍDA (22–23/08/2026)**
 > Todas as fases implementadas. Gate final verde: `steiger` 0 problemas · `lint` 0 erros (1 warning pré-existente) · `typecheck` limpo · `test` 89 passed / 18 skipped · `build` sucesso com 92 rotas (`/coletas/[id]` + 8 rotas `/oficina/*` registradas).
-> Único passo restante: smoke manual ponta a ponta contra Supabase real (collected→…→entrega, confirmando idempotência e `stale_version`).
+> Único passo restante na época: smoke manual ponta a ponta. **Não reabrir esta sessão.** O scan posterior fechou oficina/auth/lista e **5.6** (entrega desde Pronto). 5.7 / 5.12 / 5.13 adiados 06/09/2026.
 
 ## Contexto
 

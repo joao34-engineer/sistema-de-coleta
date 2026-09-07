@@ -1,6 +1,13 @@
 # Fix prompt — Vercel finalize fails + hub “Algo deu errado”
 
-Copy this whole file into a new session. Use Composer 2.5 (or equivalent) to implement and Grok 4.6 reviewers in parallel lanes. Stay in `sistema-coleta/`. Feature-first. No architecture rewrite.
+| Campo | Valor |
+| :--- | :--- |
+| **Status** | **Closed** — ciclo coleta → número → PDF → QR em Production 2026-09-05 (`MJT-2026-000002`) |
+| **Do not** | Re-implement. Scan 1.6 / 4.4 / 4.5 estão **feito**. |
+
+The sections below are the original incident prompt. Keep for history.
+
+---
 
 The **Fase 1 gate stays closed** on the walk guia. This session exists so a **new** coleta on **https://sistema-de-coleta.vercel.app** can finalize, get an official number, and bake a PDF QR on that origin.
 

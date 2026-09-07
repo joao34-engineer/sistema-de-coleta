@@ -37,7 +37,9 @@ necessarios. Eles nao substituem esses gates remotos. A migration foi aplicada
 por decisao explicita do humano, mas os quatro gates reais permanecem adiados e
 nao constituem aprovacao de concorrencia, RLS ou Storage em execucao real.
 
-A Fase 1 continua em andamento. Telas baseadas no Figma, template visual do PDF e pagina publica de verificacao/QR permanecem fora da 1A e bloqueiam a conclusao integral da fase.
+**Vs scan (06/09/2026):** B10–B15 (local, URL, fila, CTAs, worker/PDF) estao **feitos** no codigo; QR publico existe em Production (`MJT-2026-000002`). Os quatro gates remotos acima **continuam adiados**. UI de cadastro `/clientes` e de contatos/veiculos sao scan **5.12 / 5.13** (escopo, so com pedido). Ver [`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md).
+
+A Fase 1A (nucleo tecnico) esta aplicada. Telas Figma e template visual do PDF nao bloqueiam mais o ciclo coleta → numero → PDF → QR.
 
 ## Passos
 

@@ -21,10 +21,14 @@ sessão em 12:51), validada e aplicada no remoto. O que existe agora:
 
 **Fase 0 (scan B01–B09, 29/08/2026):** migration `20260829220000_phase_0_workshop_schema_contracts.sql` — CHECKs de identidade/cancel/SO `rejected`, coluna `collections.check_in_signature_path`, unique de `delivery_terms` por coleta removido, REPLACE 3b de `create_technical_budget`/`update_service_progress`, snapshot de cliente em todo status emitido em `get_collection_detail`/`list_collections`. Sem `DROP FUNCTION`. Aplicacao no remoto: ver `docs/supabase.md`.
 
-O que falta para Fase 3 completa (Sessões 3b/3c):
-- Comandos server-only consumindo os schemas Zod + Route Handlers finos em `app/api/...`
-- Religar telas do Figma 8-9 com dados reais (entry point: `/coletas/[id]/documentos` ou nova tela de detalhe).
-- Corrigir filtro "Em reparo" em `collections-list-page.tsx` (hoje mapeia `draft`).
+**Codigo da oficina no `main` (06/09/2026, ate `30d8621`):** telas de check-in, orcamento, aprovacao, progresso, NF-e, entrega, cancelar/reabrir; filtro “Em reparo” nao inclui `ready` (5.2); lista/dashboard com RPC (5.1/5.3); check-in exige todos os itens (5.8); OS `delivered` (5.9); guard de status nas rotas `/oficina/*` (5.17). Inventario: [`system-scan-for-bugs.md`](../design-patterns/system-scan-for-bugs.md).
+
+O que **ainda** falta (nao reabrir o que o scan marca **feito**):
+
+- **Adiado 06/09/2026:** SignaturePad na aprovacao (**5.7**, nome/CNPJ bastam); UI `/clientes` (**5.12**) e contatos/veiculos (**5.13**).
+- **5.6 feito no codigo:** entrega a partir de Pronto; NF-e opcional. Aplicar `20260906210000_phase_5_deliver_from_ready.sql` no remoto.
+- Relatorios operacionais de volume/ciclo (passo 7 abaixo) — nunca foram eixo do scan.
+- Backfills de OS `delivered` / `canceled_at` obsoleto: `SELECT` + aprovacao humana, nao codigo.
 
 ## Passos
 
