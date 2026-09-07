@@ -5,6 +5,7 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { SignOutForm } from "@/shared/ui/sign-out-form";
 import { operatorDisplayName } from "@/shared/auth/operator-display-name";
 
 type Props = Readonly<{
@@ -71,6 +72,8 @@ export function CollectorProfilePage({ administrator }: Props) {
             </Link>
           </CardFooter>
         </Card>
+
+        <SignOutForm size="md" />
       </div>
 
       <MobileBottomNav />

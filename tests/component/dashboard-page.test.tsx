@@ -1,7 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import { DashboardPage } from "@/_pages/dashboard/ui/dashboard-page";
 
 vi.mock("next/navigation", () => ({
@@ -10,7 +9,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next/image", () => ({
-  default: (props: Readonly<{ alt: string }>) => <span>{props.alt}</span>,
+  default: ({ src, alt }: { src: string; alt: string }) =>
+    require("react").createElement("img", { src, alt }),
 }));
 
 const administrator: AuthenticatedAdministrator = {
@@ -22,29 +22,6 @@ const administrator: AuthenticatedAdministrator = {
   role: "administrator",
 };
 
-const settings: CompanySettingsDTO = {
-  organizationId: 1,
-  displayName: "MJT",
-  legalName: "MJT Walk Emissor Ltda",
-  taxId: "11444777000161",
-  phone: "1133334444",
-  address: {
-    street: "Rua",
-    streetNumber: "1",
-    complement: null,
-    district: "Centro",
-    city: "São Paulo",
-    stateCode: "SP",
-    postalCode: "01001000",
-  },
-  receiptLegalText: "texto",
-  signerName: "Agente",
-  signerTitle: "Responsavel",
-  logoPath: "logo.png",
-  setupStatus: "complete",
-  updatedAt: "2026-09-07T00:00:00.000Z",
-};
-
 describe("DashboardPage", () => {
   afterEach(() => cleanup());
 
@@ -52,30 +29,70 @@ describe("DashboardPage", () => {
     render(
       <DashboardPage
         administrator={administrator}
-        settings={settings}
         activities={[]}
         inProgressCount={0}
         readyForDeliveryCount={0}
-        todayLabel="segunda-feira, 7 de setembro de 2026"
+        todayLabel="segunda-feira, 7 de setembro"
       />,
     );
     expect(screen.getByRole("heading", { name: "Olá, Coletor" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /gmail\.com/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sair" }).closest("form")).toHaveAttribute("action", "/api/auth/sign-out");
+    expect(screen.queryByRole("button", { name: "Sair" })).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Logo MJT Tornearia" })).toHaveAttribute(
+      "src",
+      "/logo/Logo_-_MJT-removebg-preview.png",
+    );
+    expect(screen.getByRole("heading", { name: /Organize a rota/ })).toHaveTextContent(
+      "Organize a rota sem perder o controle.",
+    );
+    expect(screen.getByRole("link", { name: "Nova coleta" })).toHaveAttribute("href", "/coletas/nova");
   });
 
   it("greets with the given name from the profile", () => {
     render(
       <DashboardPage
         administrator={{ ...administrator, fullName: "João Marcelo Walk" }}
-        settings={settings}
         activities={[]}
         inProgressCount={0}
         readyForDeliveryCount={0}
-        todayLabel="segunda-feira, 7 de setembro de 2026"
+        todayLabel="segunda-feira, 7 de setembro"
       />,
     );
     expect(screen.getByRole("heading", { name: "Olá, João" })).toBeInTheDocument();
+  });
+
+  it("renders stacked activity cards with Pronto label", () => {
+    render(
+      <DashboardPage
+        administrator={administrator}
+        activities={[
+          {
+            id: "11111111-1111-1111-8111-111111111111",
+            officialCode: "MJT-2026-000021",
+            status: "collected",
+            customerName: "Clínica Horizonte",
+            createdAt: "2026-09-07T12:00:00.000Z",
+          },
+          {
+            id: "22222222-2222-2222-8222-222222222222",
+            officialCode: "MJT-2026-000017",
+            status: "ready",
+            customerName: "Casa Amaral",
+            createdAt: "2026-09-07T11:00:00.000Z",
+          },
+        ]}
+        inProgressCount={3}
+        readyForDeliveryCount={1}
+        todayLabel="quinta-feira, 14 de agosto"
+      />,
+    );
+
+    expect(screen.getByText("03")).toBeInTheDocument();
+    expect(screen.getByText("1 pronta para entrega")).toBeInTheDocument();
+    expect(screen.getByText("Clínica Horizonte")).toBeInTheDocument();
+    expect(screen.getByText("Casa Amaral")).toBeInTheDocument();
+    expect(screen.getByText("Pronto")).toBeInTheDocument();
+    expect(screen.queryByText("Ver rascunhos")).not.toBeInTheDocument();
+    expect(screen.queryByText("Perfil Emissor MJT")).not.toBeInTheDocument();
   });
 });

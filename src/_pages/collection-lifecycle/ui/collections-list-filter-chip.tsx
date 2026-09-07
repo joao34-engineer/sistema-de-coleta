@@ -4,10 +4,10 @@ import Link from "next/link";
 import type { Route } from "next";
 
 const CHIP_BASE =
-  "flex h-[36px] shrink-0 items-center justify-center rounded-full px-4 text-[12px] font-semibold transition-colors";
-const CHIP_SELECTED = "bg-[var(--color-text-primary)] text-white shadow-xs";
+  "flex h-8 shrink-0 items-center justify-center rounded-full px-[14px] py-2 text-[12px] font-semibold";
+const CHIP_SELECTED = "bg-[var(--color-text-primary)] text-white";
 const CHIP_IDLE =
-  "bg-[var(--color-card-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]";
+  "border border-[var(--color-border)] bg-[var(--color-card-bg)] text-[var(--color-text-muted)]";
 
 export type CollectionsListFilterChipProps = Readonly<{
   href: Route;

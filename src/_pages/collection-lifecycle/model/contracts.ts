@@ -45,7 +45,16 @@ function isValidCpf(value: string): boolean {
 
 const taxIdSchema = z.string().trim().transform(normalizeDigits).refine((value) => isValidCpf(value) || isValidCnpj(value), "Informe um CPF ou CNPJ válido.");
 
-export const collectionsListFilterSchema = z.enum(["all", "collected", "in_repair", "ready"]);
+export const collectionsListFilterSchema = z.enum([
+  "all",
+  "draft",
+  "collected",
+  "in_repair",
+  "ready",
+  "invoiced",
+  "partial_delivery",
+  "canceled",
+]);
 
 const statusesFromQuery = z.preprocess((value: unknown) => {
   if (value === undefined || value === null || value === "") return undefined;

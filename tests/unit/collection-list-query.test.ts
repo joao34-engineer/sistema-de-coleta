@@ -18,7 +18,7 @@ describe("collection list query", () => {
   });
 
   it("maps chips through statusesForListFilter", () => {
-    expect(statusesForListFilter("ready")).toEqual(["ready", "invoiced", "partial_delivery"]);
+    expect(statusesForListFilter("ready")).toEqual(["ready"]);
     expect(statusesForListFilter("in_repair")).not.toContain("ready");
   });
 

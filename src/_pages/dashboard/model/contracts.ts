@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type CollectionStatus, isReadyForDelivery } from "@/shared/model/collection-status";
+import { collectionStatusLabel, type CollectionStatus, isReadyForDelivery } from "@/shared/model/collection-status";
 
 export const dashboardSummarySchema = z.object({
   inProgress: z.number().int().nonnegative(),
@@ -18,6 +18,20 @@ export type DashboardActivityItem = Readonly<{
   customerName: string | null;
   createdAt: string;
 }>;
+
+export function formatDashboardDateLabel(now = new Date()): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "America/Sao_Paulo",
+  }).format(now);
+}
+
+export function dashboardActivityStatusLabel(status: DashboardActivityStatus): string {
+  if (status === "ready") return "Pronto";
+  return collectionStatusLabel[status];
+}
 
 const notInProgressStatuses: ReadonlySet<DashboardActivityStatus> = new Set(["draft", "canceled", "delivered"]);
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { matchesStatusFilter, inRepairStatuses, readyForDeliveryStatuses } from "../../src/_pages/collection-lifecycle/model/status-filters";
-import { countInProgress, countReadyForDelivery, type DashboardActivityItem } from "../../src/_pages/dashboard/model/contracts";
+import { countInProgress, countReadyForDelivery, formatDashboardDateLabel, type DashboardActivityItem } from "../../src/_pages/dashboard/model/contracts";
 
 function item(status: DashboardActivityItem["status"]): DashboardActivityItem {
   return {
@@ -21,10 +21,10 @@ describe("dashboard status buckets", () => {
     expect(matchesStatusFilter("rejected", "in_repair")).toBe(true);
   });
 
-  it("includes ready, invoiced and partial_delivery under the ready bucket", () => {
-    for (const status of readyForDeliveryStatuses) {
-      expect(matchesStatusFilter(status, "ready")).toBe(true);
-    }
+  it("counts ready, invoiced and partial_delivery as ready for delivery without using the list chip", () => {
+    expect(readyForDeliveryStatuses).toEqual(["ready", "invoiced", "partial_delivery"]);
+    expect(matchesStatusFilter("invoiced", "ready")).toBe(false);
+    expect(matchesStatusFilter("partial_delivery", "ready")).toBe(false);
   });
 
   it("inRepairStatuses does not include ready", () => {
@@ -44,5 +44,13 @@ describe("dashboard counters", () => {
   it("countInProgress excludes draft, canceled and delivered but includes invoiced", () => {
     expect(countInProgress([item("draft"), item("canceled"), item("delivered")])).toBe(0);
     expect(countInProgress([item("invoiced"), item("in_service"), item("rejected")])).toBe(3);
+  });
+});
+
+describe("formatDashboardDateLabel", () => {
+  it("formats weekday and month without a year", () => {
+    const label = formatDashboardDateLabel(new Date("2026-08-14T15:00:00.000Z"));
+    expect(label).toMatch(/14 de agosto/);
+    expect(label).not.toMatch(/2026/);
   });
 });

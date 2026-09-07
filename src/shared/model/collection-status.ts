@@ -22,7 +22,15 @@ export const collectionStatuses = [
 
 export type CollectionStatus = (typeof collectionStatuses)[number];
 
-export type CollectionsListFilter = "all" | "collected" | "in_repair" | "ready";
+export type CollectionsListFilter =
+  | "all"
+  | "draft"
+  | "collected"
+  | "in_repair"
+  | "ready"
+  | "invoiced"
+  | "partial_delivery"
+  | "canceled";
 
 /** Status que representam serviço ativo na oficina (filtro "Em reparo"). */
 export const inRepairStatuses: ReadonlyArray<CollectionStatus> = [
@@ -34,7 +42,7 @@ export const inRepairStatuses: ReadonlyArray<CollectionStatus> = [
   "rejected",
 ];
 
-/** Status que representam coletas prontas para entrega (filtro "Prontas"). */
+/** Status contados como prontos para entrega no dashboard (não é o chip M06 "Pronta"). */
 export const readyForDeliveryStatuses: ReadonlyArray<CollectionStatus> = [
   "ready",
   "invoiced",
@@ -56,25 +64,30 @@ export const inProgressStatuses: ReadonlyArray<CollectionStatus> = [
   "reopened",
 ];
 
-const inRepairStatusesSet: ReadonlySet<CollectionStatus> = new Set(inRepairStatuses);
 const readyForDeliveryStatusesSet: ReadonlySet<CollectionStatus> = new Set(readyForDeliveryStatuses);
 
 export function isReadyForDelivery(status: CollectionStatus): boolean {
   return readyForDeliveryStatusesSet.has(status);
 }
 
+const listFilterStatuses: Readonly<Record<CollectionsListFilter, ReadonlyArray<CollectionStatus>>> = {
+  all: collectionStatuses,
+  draft: ["draft"],
+  collected: ["collected"],
+  in_repair: inRepairStatuses,
+  ready: ["ready"],
+  invoiced: ["invoiced"],
+  partial_delivery: ["partial_delivery"],
+  canceled: ["canceled"],
+};
+
 export function statusesForListFilter(filter: CollectionsListFilter): ReadonlyArray<CollectionStatus> {
-  if (filter === "all") return collectionStatuses;
-  if (filter === "collected") return ["collected"];
-  if (filter === "in_repair") return inRepairStatuses;
-  return readyForDeliveryStatuses;
+  return listFilterStatuses[filter];
 }
 
 export function matchesStatusFilter(status: CollectionStatus, filter: CollectionsListFilter): boolean {
   if (filter === "all") return true;
-  if (filter === "collected") return status === "collected";
-  if (filter === "in_repair") return inRepairStatusesSet.has(status);
-  return isReadyForDelivery(status);
+  return statusesForListFilter(filter).includes(status);
 }
 
 export const collectionStatusLabel: Readonly<Record<CollectionStatus, string>> = {

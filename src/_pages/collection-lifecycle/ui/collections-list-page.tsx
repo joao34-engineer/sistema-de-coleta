@@ -6,18 +6,17 @@ import type { Route } from "next";
 import type { CollectionListItemDTO } from "../model/contracts";
 import { buildCollectionsListHref } from "../model/list-search";
 import {
-  collectionStatusLabel,
   statusesForListFilter,
   type CollectionStatus,
   type CollectionsListFilter,
 } from "../model/status-filters";
+import { listRowStatusClassName, listRowStatusLabel, listRowStatusTone } from "../model/list-row-status";
 import { loadMoreCollectionsAction } from "../api/actions";
 import { CollectionsListFilterChip } from "./collections-list-filter-chip";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 
@@ -36,9 +35,13 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 const LIST_FILTER_CHIPS = [
   { id: "all", label: "Todos" },
-  { id: "collected", label: "Coletadas" },
+  { id: "draft", label: "Rascunho" },
+  { id: "collected", label: "Coletada" },
   { id: "in_repair", label: "Em reparo" },
-  { id: "ready", label: "Prontas" },
+  { id: "ready", label: "Pronta" },
+  { id: "invoiced", label: "Faturada" },
+  { id: "partial_delivery", label: "Entrega parcial" },
+  { id: "canceled", label: "Cancelada" },
 ] as const satisfies ReadonlyArray<{ id: CollectionsListFilter; label: string }>;
 
 export function CollectionsListPage({
@@ -100,13 +103,14 @@ export function CollectionsListPage({
     return (
       <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
         <MobilePageHeader
+          logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
           title="Coletas"
           subtitle="Buscar, filtrar e abrir"
         />
         <MobileStatePanel
           type="error"
           title="Não foi possível carregar as coletas"
-          subtitle="Ocorreu um erro ao consultar o servidor. Suas dados não foram alterados."
+          subtitle="Ocorreu um erro ao consultar o servidor. Seus dados não foram alterados."
           actionText="Tentar novamente"
           onAction={() => router.refresh()}
         />
@@ -137,19 +141,20 @@ export function CollectionsListPage({
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
+        logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
         title="Coletas"
         subtitle="Buscar, filtrar e abrir"
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
         <Input
-          placeholder="Buscar por número, cliente, CPF ou telefone"
+          placeholder="Buscar por número ou cliente"
           value={draftQ}
           onChange={(event) => setDraftQ(event.target.value)}
         />
 
         {showStatusFilters ? (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex flex-wrap content-start gap-2">
             {LIST_FILTER_CHIPS.map((chip) => (
               <CollectionsListFilterChip
                 key={chip.id}
@@ -175,31 +180,35 @@ export function CollectionsListPage({
             onAction={() => router.push("/coletas/nova" as Route)}
           />
         ) : (
-          <div className="flex flex-col gap-3">
-            {items.map((item) => (
-              <PendingNavLink
-                key={item.id}
-                href={
-                  item.status === "draft"
-                    ? (`/coletas/${item.id}/itens` as Route)
-                    : (`/coletas/${item.id}` as Route)
-                }
-                className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs transition-all hover:border-[var(--color-primary)] active:scale-[0.99]"
-                contentClassName="flex w-full items-center justify-between"
-                pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
-              >
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {item.officialCode ?? "Rascunho"}
+          <div className="flex flex-col gap-[14px]">
+            {items.map((item) => {
+              const tone = listRowStatusTone(item.status);
+              return (
+                <PendingNavLink
+                  key={item.id}
+                  href={
+                    item.status === "draft"
+                      ? (`/coletas/${item.id}/itens` as Route)
+                      : (`/coletas/${item.id}` as Route)
+                  }
+                  className="flex min-h-[88px] flex-col justify-center rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-5 py-[18px]"
+                  contentClassName="flex w-full flex-col"
+                  pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
+                >
+                  <h2 className="text-[14px] font-semibold leading-5 text-[var(--color-text-primary)]">
+                    {item.officialCode ?? "sem número oficial"}
                   </h2>
-                  <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-                    {item.customerName ?? "Cliente não informado"}
-                  </p>
-                </div>
-
-                <Badge status={item.status}>{collectionStatusLabel[item.status]}</Badge>
-              </PendingNavLink>
-            ))}
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-[12px] font-normal leading-4 text-[var(--color-text-muted)]">
+                      {item.customerName ?? "Cliente não informado"}
+                    </p>
+                    <p className={`shrink-0 text-[12px] font-semibold leading-4 ${listRowStatusClassName[tone]}`}>
+                      {listRowStatusLabel(item.status)}
+                    </p>
+                  </div>
+                </PendingNavLink>
+              );
+            })}
 
             {cursor ? (
               <div className="flex flex-col items-center gap-2 pt-1">

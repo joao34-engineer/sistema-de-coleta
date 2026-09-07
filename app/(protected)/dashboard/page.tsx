@@ -20,7 +20,7 @@ export default async function DashboardPageRoute() {
       getCollectionDashboardSummary(),
       listCollections({
         statuses: [...inProgressStatuses],
-        limit: 3,
+        limit: 2,
       }),
     ]);
     inProgressCount = summary.inProgress;

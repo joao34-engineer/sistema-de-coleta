@@ -36,6 +36,7 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — decisao DAL normativa; fases A–H planned |
 | Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) |
 | Inventario de bugs (scan 29/08/2026) | [design-patterns/system-scan-for-bugs.md](design-patterns/system-scan-for-bugs.md) — codigo Fases 0–5 fechado (5.6 entrega desde Pronto); 5.7/5.12/5.13 **adiados**; **nao reimplementar** linhas **feito** |
+| Telas Figma M01 / M06 (2026-09-07) | [design-system/figma-m01-m06-screens.md](design-system/figma-m01-m06-screens.md) — `/dashboard` e `/coletas` vs frames `229:1060` e `232:38` |
 
 Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS/Storage e `$mjt-nextjs-pwa` para App Router/PWA. Leia o `SKILL.md` somente quando o gatilho da tarefa se aplicar.
 

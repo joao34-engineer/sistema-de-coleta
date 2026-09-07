@@ -8,6 +8,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/coletas",
 }));
 
+vi.mock("next/image", () => ({
+  default: ({ src, alt }: { src: string; alt: string }) =>
+    require("react").createElement("img", { src, alt }),
+}));
+
 vi.mock("next/link", async () => {
   const React = await import("react");
   const MockLink = ({
@@ -68,10 +73,20 @@ describe("CollectionsListPage filter chips", () => {
 
     expect(screen.getByText("Todos")).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: "Todos" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Coletadas" })).toHaveAttribute("href", "/coletas?filter=collected");
+    expect(screen.getByRole("link", { name: "Coletada" })).toHaveAttribute("href", "/coletas?filter=collected");
     expect(screen.getByRole("link", { name: "Em reparo" })).toHaveAttribute("href", "/coletas?filter=in_repair");
-    expect(screen.getByRole("link", { name: "Prontas" })).toHaveAttribute("href", "/coletas?filter=ready");
-    expect(screen.queryByRole("button", { name: "Coletadas" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Pronta" })).toHaveAttribute("href", "/coletas?filter=ready");
+    expect(screen.getByRole("link", { name: "Rascunho" })).toHaveAttribute("href", "/coletas?filter=draft");
+    expect(screen.getByRole("link", { name: "Faturada" })).toHaveAttribute("href", "/coletas?filter=invoiced");
+    expect(screen.getByRole("link", { name: "Entrega parcial" })).toHaveAttribute("href", "/coletas?filter=partial_delivery");
+    expect(screen.getByRole("link", { name: "Cancelada" })).toHaveAttribute("href", "/coletas?filter=canceled");
+    expect(screen.queryByRole("button", { name: "Coletada" })).toBeNull();
+    expect(screen.getByRole("img", { name: "Logo MJT Tornearia" })).toHaveAttribute(
+      "src",
+      "/logo/Logo_-_MJT-removebg-preview.png",
+    );
+    expect(screen.getByText("Maria Silva")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Buscar por número ou cliente")).toBeInTheDocument();
   });
 
   it("preserves the search term on filter hrefs", () => {
@@ -83,7 +98,7 @@ describe("CollectionsListPage filter chips", () => {
       />,
     );
 
-    expect(screen.getByText("Coletadas")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText("Coletada", { selector: '[aria-current="page"]' })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Todos" })).toHaveAttribute("href", "/coletas?q=Maria");
     expect(screen.getByRole("link", { name: "Em reparo" })).toHaveAttribute(
       "href",
@@ -96,10 +111,10 @@ describe("CollectionsListPage filter chips", () => {
       <CollectionsListPage initialItems={[collectedItem]} selectedFilter="all" />,
     );
 
-    fireEvent.click(screen.getByRole("link", { name: "Coletadas" }));
+    fireEvent.click(screen.getByRole("link", { name: "Coletada" }));
 
-    expect(screen.getByText("Coletadas")).toHaveAttribute("aria-current", "page");
-    expect(screen.queryByRole("link", { name: "Coletadas" })).toBeNull();
+    expect(screen.getByText("Coletada", { selector: '[aria-current="page"]' })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Coletada" })).toBeNull();
     expect(screen.getByRole("link", { name: "Todos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Todos" })).not.toHaveAttribute("aria-current");
   });

@@ -64,13 +64,13 @@ describe("CollectionsListFilterChip", () => {
     render(
       <CollectionsListFilterChip
         href={"/coletas?filter=collected" as Route}
-        label="Coletadas"
+        label="Coletada"
         isSelected={false}
         onSelect={onSelect}
       />,
     );
 
-    const link = screen.getByRole("link", { name: "Coletadas" });
+    const link = screen.getByRole("link", { name: "Coletada" });
     expect(link).toHaveAttribute("href", "/coletas?filter=collected");
     expect(link).toHaveAttribute("data-prefetch", "true");
     expect(link).toHaveAttribute("data-selected", "false");
