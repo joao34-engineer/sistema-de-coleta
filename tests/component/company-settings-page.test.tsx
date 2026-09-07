@@ -3,6 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import { CompanySettingsPage } from "@/_pages/company-settings/ui/company-settings-page";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/configuracoes/empresa",
+}));
+
 vi.mock("@/_pages/company-settings/api/actions", () => ({
   updateCompanySettingsAction: vi.fn(async () => ({ status: "success", code: "success", message: "ok" })),
   uploadCompanyLogoAction: vi.fn(async () => ({ status: "success", code: "success", message: "ok" })),
@@ -34,10 +39,12 @@ const baseSettings: CompanySettingsDTO = {
 describe("CompanySettingsPage", () => {
   afterEach(() => cleanup());
 
-  it("does not promise future use of institutional data", () => {
+  it("renders mobile chrome instead of the desktop typography block", () => {
     render(<CompanySettingsPage settings={baseSettings} />);
+    expect(screen.getByRole("heading", { name: "Empresa" })).toBeInTheDocument();
+    expect(screen.getByText("Dados institucionais")).toBeInTheDocument();
     expect(screen.queryByText(/futuramente/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/guia de coleta \(PDF\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/guia de coleta \(PDF\)/i)).not.toBeInTheDocument();
   });
 
   it("shows the pending issuer banner for an incomplete profile", () => {
