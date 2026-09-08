@@ -2,10 +2,11 @@
 
 import { createDraft, discardCollectionDraft } from "@/_pages/collection-drafts/api/drafts.server";
 import { patchDraftFieldsAction } from "@/_pages/collection-drafts/api/actions";
-import { saveCollectionSignature, finalizeCollection } from "@/_pages/collection-lifecycle/index.server";
+import { saveCollectionSignature, finalizeCollection, signatureInputSchema } from "@/_pages/collection-lifecycle/index.server";
 import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
 import { listCustomers, createCustomer, loadCustomerDto } from "@/_pages/customers/index.server";
 import { toActionFailureCode, toFinalizeActionFailureCode } from "@/shared/lib/action-failure-code";
+import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 /** Forma mínima de cliente consumida pela tela de nova coleta. */
@@ -202,18 +203,25 @@ export async function saveCollectionSignatureAction(payload: {
   acceptanceText: string;
   signatureBase64Png: string;
 }): Promise<SaveSignatureActionResult> {
+  const parsed = signatureInputSchema.safeParse({
+    signerName: payload.signerName,
+    signerTaxId: payload.signerTaxId,
+    acceptanceText: payload.acceptanceText,
+    expectedVersion: payload.expectedVersion,
+  });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: zodIssueTouchesKey(parsed.error, "signerTaxId") ? "invalid_signer_tax_id" : "validation_error",
+    };
+  }
   try {
     const cleanBase64 = payload.signatureBase64Png.replace(/^data:image\/png;base64,/, "");
     const bytes = Uint8Array.from(Buffer.from(cleanBase64, "base64"));
     const signatureFile = new File([bytes], "signature.png", { type: "image/png" });
     const signatureResult = await saveCollectionSignature(
       payload.collectionId,
-      {
-        expectedVersion: payload.expectedVersion,
-        signerName: payload.signerName,
-        signerTaxId: payload.signerTaxId,
-        acceptanceText: payload.acceptanceText,
-      },
+      parsed.data,
       signatureFile,
       getRequestId(),
     );

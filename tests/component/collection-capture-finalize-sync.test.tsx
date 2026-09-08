@@ -107,4 +107,27 @@ describe("CollectionCapturePage finalize online leftover", () => {
     expect(screen.queryByText("Salvo neste aparelho")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: offlineCopy.retry })).toBeInTheDocument();
   });
+
+  it("keeps invalid CPF on the assinatura form instead of Falha ao sincronizar", async () => {
+    const store = await ensureOfflineDraftStore();
+    await store.putDraft({ ...draft, lastError: null, syncStatus: "synced" });
+
+    render(
+      <CollectionCapturePage actor={actor} resumeDraftId={collectionId} initialStep="assinatura" />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Finalizar coleta" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar Assinatura" }));
+    const taxId = screen.getByLabelText("CPF/CNPJ de quem assinou *");
+    fireEvent.change(taxId, { target: { value: "11111111111" } });
+
+    await waitFor(() => {
+      expect(screen.getByText("CPF inválido, revise e tente novamente.")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Finalizar coleta" })).toBeDisabled();
+    expect(screen.queryByRole("heading", { name: offlineCopy.failed })).not.toBeInTheDocument();
+  });
 });

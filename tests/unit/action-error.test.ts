@@ -79,6 +79,25 @@ describe("safe action errors", () => {
     });
   });
 
+  it("maps invoice and progress status guards after L2", () => {
+    expect(toSafeActionError(new Error("invoice_not_ready"))).toEqual({
+      ok: false,
+      error: "A coleta precisa estar pronta ou em entrega parcial para registrar a NF-e.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "collection_not_ready" })).toEqual({
+      ok: false,
+      error: "A coleta precisa estar pronta ou em entrega parcial para registrar a NF-e.",
+    });
+    expect(toSafeActionError(new Error("service_order_not_in_service"))).toEqual({
+      ok: false,
+      error: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "collection_not_in_service" })).toEqual({
+      ok: false,
+      error: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso.",
+    });
+  });
+
   it("keeps collection_not_cancelable_draft distinct from collection_cannot_be_canceled", () => {
     const draft = toSafeActionError(new Error("collection_not_cancelable_draft"));
     const cannot = toSafeActionError(new Error("collection_cannot_be_canceled"));

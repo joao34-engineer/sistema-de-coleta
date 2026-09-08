@@ -65,7 +65,7 @@ Retorna o rascunho ativo e somente itens não removidos.
 
 ### `PATCH /api/collections/{id}/draft`
 
-Recebe `expectedVersion` e campos opcionais `customerId`, `collectionLocation`, `responsibleName`, `responsibleTaxId` e `collectedAt`. A rota chama uma RPC transacional de atualização do cabeçalho e devolve `{ data: { draft } }` com a versão resultante.
+Recebe `expectedVersion` e campos opcionais `customerId`, `collectionLocation`, `responsibleName`, `responsibleTaxId` e `collectedAt`. A rota chama uma RPC transacional de atualização do cabeçalho e devolve `{ data: { draft } }` com a versão resultante. `responsibleTaxId` inválido (checksum de CPF/CNPJ) retorna `422 { ok: false, code: "invalid_signer_tax_id" }` — não `draft_update_failed`.
 
 ### `POST /api/collections/{id}/items`
 
@@ -97,7 +97,7 @@ O job server-only `npm run cleanup:upload-intents` chama `expire_collection_uplo
 
 ### `PUT /api/collections/{id}/signature`
 
-Recebe `multipart/form-data` com PNG, `signerName`, `signerTaxId`, `acceptanceText` e `expectedVersion`. Usa o mesmo prepare/upload/commit, mas guarda os metadados do signatário no intent. Resposta contém `collectionId`, `signatureId` e `rowVersion`.
+Recebe `multipart/form-data` com PNG, `signerName`, `signerTaxId`, `acceptanceText` e `expectedVersion`. Usa o mesmo prepare/upload/commit, mas guarda os metadados do signatário no intent. Resposta contém `collectionId`, `signatureId` e `rowVersion`. CPF/CNPJ com checksum inválido retorna `422 { error: { code: "invalid_signer_tax_id" } }`; PNG ou outros campos inválidos continuam `validation_error`.
 
 ## Ciclo de vida
 

@@ -20,4 +20,15 @@ describe("canFinalizeCollection", () => {
       }),
     ).toBe(true);
   });
+
+  it("stays closed for 11 or 14 digits that fail the checksum", () => {
+    const base = {
+      collectionLocation: "Rua da Oficina",
+      signatureDataUrl: "data:image/png;base64,abc",
+      signerName: "Ana",
+    };
+    expect(canFinalizeCollection({ ...base, signerTaxId: "11111111111" })).toBe(false);
+    expect(canFinalizeCollection({ ...base, signerTaxId: "12345678901" })).toBe(false);
+    expect(canFinalizeCollection({ ...base, signerTaxId: "04252011000111" })).toBe(false);
+  });
 });

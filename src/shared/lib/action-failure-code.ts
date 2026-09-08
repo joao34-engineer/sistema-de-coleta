@@ -26,6 +26,7 @@ const KNOWN_ACTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   "not_found",
   "signature_contract_invalid",
   "signature_upload_failed",
+  "invalid_signer_tax_id",
   "operation_failed",
   "finalize_failed",
 ]);

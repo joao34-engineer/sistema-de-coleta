@@ -147,7 +147,7 @@ export const budgetApprovalResultSchema = z.object({
 
 export const serviceProgressResultSchema = z.object({
   collectionId: uuidSchema,
-  status: z.enum(["approved", "in_service", "ready", "partial_delivery"]),
+  status: z.enum(["approved", "in_service", "ready", "partial_delivery", "invoiced"]),
   rowVersion: z.number().int().positive(),
   serviceOrderId: uuidSchema,
 });
@@ -164,7 +164,7 @@ export const invoiceReferenceResultSchema = z.object({
 
 export const customerDeliveryResultSchema = z.object({
   collectionId: uuidSchema,
-  status: z.enum(["partial_delivery", "delivered"]),
+  status: z.enum(["partial_delivery", "delivered", "invoiced"]),
   rowVersion: z.number().int().positive(),
   delivered: z.boolean(),
   partial: z.boolean(),

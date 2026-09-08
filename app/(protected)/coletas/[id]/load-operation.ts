@@ -41,7 +41,11 @@ export async function loadCollectionForOperation(
     : [[], [] as const];
 
   let itemFacts: OperationalItemFacts | undefined;
-  if (collection.status === "in_service" || collection.status === "partial_delivery") {
+  if (
+    collection.status === "in_service" ||
+    collection.status === "partial_delivery" ||
+    collection.status === "invoiced"
+  ) {
     itemFacts = operationalItemFactsFrom(
       collection.items.map((item) => item.id),
       budgetItems,

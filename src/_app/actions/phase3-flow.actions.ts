@@ -103,7 +103,7 @@ export async function approveBudgetAction(collectionId: string, input: BudgetApp
 }
 
 export type UpdateServiceProgressActionResult =
-  | ActionSuccess<{ status: "approved" | "in_service" | "ready" | "partial_delivery" }>
+  | ActionSuccess<{ status: "approved" | "in_service" | "ready" | "partial_delivery" | "invoiced" }>
   | ActionFailure;
 
 export async function updateServiceProgressAction(collectionId: string, input: ServiceProgressDTO, idempotencyKey: string): Promise<UpdateServiceProgressActionResult> {
@@ -139,7 +139,7 @@ export async function registerInvoiceReferenceAction(collectionId: string, input
 }
 
 export type DeliverToCustomerActionResult =
-  | ActionSuccess<{ status: "partial_delivery" | "delivered" }>
+  | ActionSuccess<{ status: "partial_delivery" | "delivered" | "invoiced" }>
   | ActionFailure;
 
 export async function deliverToCustomerAction(collectionId: string, formData: FormData): Promise<DeliverToCustomerActionResult> {

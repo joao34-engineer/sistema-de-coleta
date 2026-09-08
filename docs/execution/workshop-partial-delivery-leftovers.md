@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos** em código; L1 **código completo** 07/09/2026 (`20260907020000`); **L3 e L7 código completo** 07/09/2026; leftover **L2 decisão fechada** (código ainda não — próxima sessão, sozinho); PR 5 **bloqueado** (Figma O02). **C1:** migrations `20260907000000` / `07010000` / `07020000` estão **commitadas localmente**; push remoto **não confirmado** nesta máquina |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1 **no remoto** 07/09/2026 (`20260907020000`); L2 **no remoto** 07/09/2026 (`20260907030000`); L3 e L7 em código; PR 5 **bloqueado** (Figma O02). **C1:** `migration list` local = remoto até `20260907220000` |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -30,7 +30,7 @@ Buraco 5.6 (mesmo eixo): `prepare_delivery_signature_intent` só aceitava `invoi
 
 Isso contradizia o produto (`vision-and-scope.md` decisão 16, `mobile-workflows.md` entrega) **e** o Figma.
 
-**Estado 2026-09-07:** resolvido em código. PR 3 implementa o conjunto deliverable com `in_service` nos dois RPCs de entrega (`20260907000000` **commitada**; C1 — push remoto ainda não confirmado nesta máquina).
+**Estado 2026-09-07:** resolvido em código. PR 3 implementa o conjunto deliverable com `in_service` nos dois RPCs de entrega (`20260907000000` **no remoto** — dry-run 07/09/2026).
 
 ---
 
@@ -54,11 +54,11 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | --- | --- | --- | --- | --- |
 | 1 | Trap `/configuracoes/empresa` | não | — | **completo** 2026-09-07 |
 | 2 | Backfills (só `SELECT`; UPDATE se count > 0) | talvez `UPDATE` pontual | OK humano | **completo** 2026-09-06 (remoto limpo; sem UPDATE) |
-| 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** em código 2026-09-07; `20260907000000` **commitada**; C1 pendente |
-| 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** em código 2026-09-07; `20260907010000` **commitada**; C1 pendente |
+| 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** em código 2026-09-07; `20260907000000` no remoto (dry-run 07/09/2026) |
+| 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** em código 2026-09-07; `20260907010000` no remoto (dry-run 07/09/2026) |
 | 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02; SQL sobre o corpo shipped pós-L4 | **bloqueado** (Figma O02; decisões de modelo fechadas 2026-09-07) |
-| L1 | Matriz `partial_delivery` + progresso sem item entregue (A2+A3+A12) | sim, `update_service_progress` | PR 3 | **código completo** 2026-09-07 (`20260907020000`); C1 pendente |
-| L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **decisão fechada** 2026-09-07; **código ainda não**. Próxima sessão, sozinho. Não perguntar de novo |
+| L1 | Matriz `partial_delivery` + progresso sem item entregue (A2+A3+A12) | sim, `update_service_progress` | PR 3 | **no remoto** 07/09/2026 (`20260907020000`) |
+| L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **no remoto** 07/09/2026 (`20260907030000`) |
 | L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
 | L4 | Invariantes de item (A5+A6) | sim | L2 | **não**. Depois de L2. PR 5 espera este bloco `remaining` |
 | L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **não** |
@@ -140,7 +140,7 @@ WHERE c.status = 'canceled' AND so.status <> 'canceled';
 
 ## 6. PR 3 — Entrega de itens Pronto com outros ainda em reparo
 
-**Estado 2026-09-07:** completo em código. Migration `20260907000000_phase_5_deliver_mid_repair.sql` **commitada**. C1: push remoto não confirmado nesta máquina. Validação TypeScript verde (lint/typecheck/testes da época).
+**Estado 2026-09-07:** completo em código. Migration `20260907000000_phase_5_deliver_mid_repair.sql` **no remoto** (dry-run 07/09/2026). Validação TypeScript verde (lint/typecheck/testes da época).
 
 Contrato canônico (Figma O04, decisão 16, `data-and-rules.md` §entrega): entregar só **prontos**; resto continua no fluxo operacional; coleta vai a `entrega_parcial` quando ainda há pendentes.
 
@@ -156,7 +156,7 @@ Conjunto **deliverable** (`deliver_to_customer` e `prepare_delivery_signature_in
    - `remaining = 0` → coleta + OS `delivered` (5.9).
    - ainda há pendentes → coleta **`partial_delivery`** (não ficar em `in_service` depois de existir termo; filtros/hub já usam esse balde).
    - OS: se algum restante `em_reparo` → `in_service`; se todos restantes `pronto` → `ready`; nenhum restante → `delivered`. (Antes o RPC punha OS `ready` em qualquer parcial — errado para mid-repair.)
-5. **`update_service_progress`**: alargar guard para `approved | in_service | partial_delivery` para o restante continuar em reparo. Sem isto, `partial_delivery` trava o progresso. Não aceitar `ready`/`invoiced`/`delivered`.
+5. **`update_service_progress`**: alargar guard para `approved | in_service | partial_delivery` para o restante continuar em reparo. Sem isto, `partial_delivery` trava o progresso. Não aceitar `ready`/`delivered`. **L2** acrescenta `invoiced` ao guard e impede puxá-lo para `ready` (mesmo tratamento de `partial_delivery`).
 6. **Hub / 5.17:** `in_service` com algum Pronto não entregue: primary **Atualizar progresso**, extra **Entregar itens prontos**. `partial_delivery`: primary **Entregar ao cliente** só quando ainda houver Pronto não entregue; extra **Atualizar progresso** nesse caso se restar `em_reparo`. Sem Pronto pendente e com item ainda em reparo: primary **Atualizar progresso** (não duplicar no extra). Sem os dois fatos: sem CTA de oficina. `isWorkshopSegmentAllowed` segue a matriz. Progresso lista só itens ainda não entregues; `update_service_progress` recusa id já em `delivery_items` com `item_already_delivered`.
 7. **Copy:** `item_not_ready` em `operations-errors.ts` / `action-error.ts`. Manter código `collection_not_invoiced` (só alargar o `IN`). Overlay `database.types.ts` se types remote não entrar no PR.
 
@@ -170,7 +170,7 @@ Conjunto **deliverable** (`deliver_to_customer` e `prepare_delivery_signature_in
 
 ## 7. PR 4 — Cancelar rascunho vs cancelar OS
 
-**Estado 2026-09-07:** completo em código. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **commitada**. C1 pendente. Erro mapeado como HTTP **409**. Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection`.
+**Estado 2026-09-07:** completo em código. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **no remoto** (dry-run 07/09/2026). Erro mapeado como HTTP **409**. Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection`.
 
 Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem `DROP FUNCTION`; re-`GRANT EXECUTE` no REPLACE.
 
@@ -242,13 +242,13 @@ Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
 
 **Não perguntar de novo.** Humano 07/09/2026: nota fiscal **continua disponível** em `partial_delivery`. Mid-repair e NF-e coexistem. **Não** aceitar NF-e em `in_service`.
 
-1. `register_invoice_reference` aceita `ready | partial_delivery` (hoje só `ready` → `collection_not_ready`). Evento `previous_status` = status real (não hardcoded `'ready'`).
-2. Hub: `optionalInvoiceAction` também em `partial_delivery` (hoje só `ready`). Não em `invoiced`.
+1. `register_invoice_reference` aceita `ready | partial_delivery`. Evento `previous_status` = status real (não hardcoded `'ready'`).
+2. Hub: `optionalInvoiceAction` em `ready | partial_delivery`. Não em `invoiced`.
 3. A9: se a coleta já está `invoiced` e `remaining > 0`, o status **permanece `invoiced`**.
 4. **Derivado (obrigatório):** `update_service_progress` aceita `invoiced`; matriz de CTA de `invoiced` igual à de `partial_delivery`. Sem isto A9 reabre A2.
 5. `CREATE OR REPLACE` nas assinaturas atuais. Sem `DROP FUNCTION`. Não misturar com L1 / L3 / L7 / PR 5 / “NF-e depois de `delivered`”.
 
-**Ainda não implementado.** Próxima sessão: implementar **só** L2. C1 antes do `db push`.
+**Código completo 07/09/2026** (`20260907030000`): os três `CREATE OR REPLACE` + hub (`optionalInvoiceAction`, matriz `invoiced` = `partial_delivery`) + Zod/actions/copy. Nits no mesmo REPLACE: filtro `organization_id` nos writes de OS/coleta, `updated_at` no progresso, variável morta removida. Teste textual `tests/unit/phase-5-invoice-partial-delivery-migration.test.ts`. **Aplicada no remoto** 07/09/2026 (`db push`; `migration list` confirma `07020000` + `07030000`).
 
 ### L3 — DAL parse por linha (A4+C5) — completo 2026-09-07
 
@@ -258,7 +258,7 @@ Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
 
 `customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). D4/D5 fora.
 
-### L4 / L5 / L6 — depois de L2 (não nesta sessão)
+### L4 / L5 / L6 — depois de L2
 
 - **L4:** `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS). Sem OS não bloqueia `delivered`. Unique parcial em `service_order_items`; `item_not_ready` = todas as linhas `pronto`; budget rejeita `item_id` duplicado. PR 5 herda este bloco.
 - **L5:** pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`.

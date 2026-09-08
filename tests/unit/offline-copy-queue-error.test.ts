@@ -26,6 +26,12 @@ describe("messageForQueueError", () => {
     expect(messageForQueueError("immutable_record")).not.toBe("immutable_record");
   });
 
+  it("maps invalid_signer_tax_id to CPF/CNPJ copy and leaves draft_update_failed generic", () => {
+    expect(messageForQueueError("invalid_signer_tax_id")).toBe("CPF ou CNPJ inválido, revise e tente novamente.");
+    expect(messageForQueueError("invalid_signer_tax_id")).not.toBe(offlineCopy.failed);
+    expect(messageForQueueError("draft_update_failed")).toBe(offlineCopy.failed);
+  });
+
   it("returns the generic failed label for unknown codes and legacy Portuguese lastError", () => {
     expect(messageForQueueError("unknown_future_code")).toBe(offlineCopy.failed);
     expect(messageForQueueError("Não foi possível concluir a operação. Verifique a conexão e tente novamente.")).toBe(

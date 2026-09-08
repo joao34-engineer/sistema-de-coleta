@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalCpfOrCnpjSchema } from "@/shared/lib/cpf";
 
 export const collectionIdSchema = z.string().uuid();
 export const draftCreateSchema = z.object({ id: collectionIdSchema, customerId: z.string().uuid().optional() });
@@ -7,7 +8,7 @@ export const draftPatchSchema = z.object({
   customerId: z.string().uuid().nullable().optional(),
   collectionLocation: z.string().trim().max(1000).nullable().optional(),
   responsibleName: z.string().trim().min(1).max(160).nullable().optional(),
-  responsibleTaxId: z.string().regex(/^\d{11}$|^\d{14}$/).nullable().optional(),
+  responsibleTaxId: optionalCpfOrCnpjSchema,
   collectedAt: z.string().datetime({ offset: true }).nullable().optional(),
 }).refine((value) => Object.keys(value).some((key) => key !== "expectedVersion"), "Informe ao menos um campo para salvar.");
 export const itemCreateSchema = z.object({ description: z.string().trim().min(1).max(500), quantity: z.number().positive().max(1_000_000), condition: z.string().trim().max(500).nullable().optional(), notes: z.string().trim().max(2000).nullable().optional() });

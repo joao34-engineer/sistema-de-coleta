@@ -129,6 +129,7 @@ function rpcErrorResponse(error: unknown, request: Request, operation: string, a
   if (code === "P0001" && message === "collection_item_not_found") return respond(404, { ok: false, code: "not_found" });
   if (code === "P0001" && message === "collection_item_mismatch") return respond(422, { ok: false, code: "collection_item_mismatch" });
   if (code === "P0001" && message === "invalid_expected_version") return respond(422, { ok: false, code: "validation_error" });
+  if (code === "P0001" && message === "invalid_signer_tax_id") return respond(422, { ok: false, code: "invalid_signer_tax_id" });
   logTransactionFailure({ requestId: getRequestId(request), operation, code: code ?? `${operation}_failed`, actorId, status: 500 });
   return respond(500, { ok: false, code: `${operation}_failed` });
 }

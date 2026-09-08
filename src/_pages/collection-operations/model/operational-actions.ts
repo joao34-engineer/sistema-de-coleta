@@ -97,11 +97,15 @@ export function operationalItemFactsFrom(
   return { hasUndeliveredReadyItem, hasInRepairItem };
 }
 
+function usesPartialDeliveryMatrix(status: CollectionStatus): boolean {
+  return status === "partial_delivery" || status === "invoiced";
+}
+
 function primaryActionForStatus(
   status: CollectionStatus,
   itemFacts: OperationalItemFacts | undefined,
 ): OperationalAction | null {
-  if (status === "partial_delivery" && itemFacts !== undefined) {
+  if (usesPartialDeliveryMatrix(status) && itemFacts !== undefined) {
     if (itemFacts.hasUndeliveredReadyItem) {
       return primaryByStatus.partial_delivery ?? null;
     }
@@ -122,7 +126,7 @@ function extraActionForStatus(
     return deliverReadyItemsAction;
   }
   if (
-    status === "partial_delivery" &&
+    usesPartialDeliveryMatrix(status) &&
     itemFacts.hasUndeliveredReadyItem &&
     itemFacts.hasInRepairItem
   ) {
@@ -161,9 +165,9 @@ export function secondaryOperationalAction(status: CollectionStatus): Operationa
   return operationalActionsForStatus(status).secondary;
 }
 
-/** NF-e continua disponível em Pronto, mas não bloqueia a entrega (scan 5.6). */
+/** NF-e continua disponível em Pronto e em entrega parcial; não bloqueia a entrega (L2). */
 export function optionalInvoiceAction(status: CollectionStatus): OperationalAction | null {
-  if (status !== "ready") return null;
+  if (status !== "ready" && status !== "partial_delivery") return null;
   return { segment: "nfe", label: "Registrar NF-e (opcional)" };
 }
 

@@ -1,3 +1,5 @@
+import { INVALID_SIGNER_TAX_ID_COPY } from "@/shared/lib/cpf";
+
 export const offlineCopy = {
   savedLocally: "Salvo neste aparelho",
   online: "Online",
@@ -54,6 +56,7 @@ const queueErrorMessages: Readonly<Record<string, string>> = {
   collection_requires_signature: offlineCopy.confirmSignatureToIssue,
   customer_not_found: "Cliente não encontrado.",
   duplicate_tax_id: "Já existe um cliente com este CPF ou CNPJ.",
+  invalid_signer_tax_id: INVALID_SIGNER_TAX_ID_COPY,
   customer_required: "Selecione ou cadastre um cliente para continuar.",
   collection_item_mismatch: "O item não pertence a esta coleta.",
   signature_upload_conflict:
@@ -62,6 +65,10 @@ const queueErrorMessages: Readonly<Record<string, string>> = {
 };
 
 const MACHINE_CODE_PATTERN = /^[a-z][a-z0-9_]*$/;
+
+export function isSignerTaxIdQueueError(code: string | null | undefined): boolean {
+  return code === "invalid_signer_tax_id";
+}
 
 /**
  * Maps offline queue `lastError` (machine code or legacy Portuguese) to user-facing PT.

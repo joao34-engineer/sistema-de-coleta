@@ -49,6 +49,30 @@ describe("operations API cancel draft codes", () => {
     });
   });
 
+  it("maps invoice and progress status guards after L2", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "collection_not_ready" })).toEqual({
+      status: 409,
+      code: "invoice_not_ready",
+      message: "A coleta precisa estar pronta ou em entrega parcial para registrar a NF-e.",
+      actorId: null,
+    });
+    expect(toOperationsApiError({ code: "P0001", message: "collection_not_in_service" })).toEqual({
+      status: 409,
+      code: "service_order_not_in_service",
+      message: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso.",
+      actorId: null,
+    });
+  });
+
+  it("maps invalid_signer_tax_id to 422 above the generic P0001 fallback", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "invalid_signer_tax_id" })).toEqual({
+      status: 422,
+      code: "invalid_signer_tax_id",
+      message: "CPF ou CNPJ inválido, revise e tente novamente.",
+      actorId: null,
+    });
+  });
+
   it("keeps collection_not_cancelable_draft distinct from collection_cannot_be_canceled", () => {
     const draft = toOperationsApiError({ code: "P0001", message: "collection_not_cancelable_draft" });
     const cannot = toOperationsApiError({ code: "P0001", message: "collection_cannot_be_canceled" });

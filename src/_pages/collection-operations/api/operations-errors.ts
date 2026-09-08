@@ -1,5 +1,6 @@
 import "server-only";
 
+import { INVALID_SIGNER_TAX_ID_COPY } from "@/shared/lib/cpf";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
 import { actorIdFromUnknown } from "@/shared/lib/server-logger";
 
@@ -19,8 +20,8 @@ function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorI
     if (error.code === "P0001" && error.message === "collection_not_collected") return { status: 409, code: "workshop_checkin_not_collected", message: "A coleta precisa estar no status 'coletada' para iniciar o check-in de oficina." };
     if (error.code === "P0001" && error.message === "collection_not_in_workshop") return { status: 409, code: "budget_not_in_workshop", message: "A coleta precisa estar no status 'em oficina' para criar o orçamento técnico." };
     if (error.code === "P0001" && error.message === "collection_not_in_budget") return { status: 409, code: "budget_not_in_budget", message: "A coleta precisa estar no status 'em orçamento' para aprovar/rejeitar." };
-    if (error.code === "P0001" && error.message === "collection_not_in_service") return { status: 409, code: "service_order_not_in_service", message: "A coleta precisa estar no status 'aprovada' ou 'em reparo' para atualizar o progresso." };
-    if (error.code === "P0001" && error.message === "collection_not_ready") return { status: 409, code: "invoice_not_ready", message: "A coleta precisa estar no status 'pronta' para registrar a NF-e." };
+    if (error.code === "P0001" && error.message === "collection_not_in_service") return { status: 409, code: "service_order_not_in_service", message: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso." };
+    if (error.code === "P0001" && error.message === "collection_not_ready") return { status: 409, code: "invoice_not_ready", message: "A coleta precisa estar pronta ou em entrega parcial para registrar a NF-e." };
     if (error.code === "P0001" && error.message === "item_not_ready") return { status: 422, code: "item_not_ready", message: "Somente itens marcados como Pronto podem ser entregues." };
     if (error.code === "P0001" && error.message === "collection_not_invoiced") return { status: 409, code: "delivery_not_invoiced", message: "A coleta precisa estar em reparo, pronta, faturada ou em entrega parcial para entregar ao cliente." };
     if (error.code === "P0001" && error.message === "collection_not_cancelable_draft") return { status: 409, code: "collection_not_cancelable_draft", message: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho." };
@@ -44,6 +45,7 @@ function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorI
     if (error.code === "P0001" && error.message === "invalid_cancel_reopen_request") return { status: 422, code: "validation_error", message: "Dados de cancelamento/reabertura inválidos." };
     if (error.code === "P0001" && error.message === "invalid_upload_metadata") return { status: 422, code: "validation_error", message: "Metadados de upload inválidos." };
     if (error.code === "P0001" && error.message === "invalid_signature_metadata") return { status: 422, code: "validation_error", message: "Metadados de assinatura inválidos." };
+    if (error.code === "P0001" && error.message === "invalid_signer_tax_id") return { status: 422, code: "invalid_signer_tax_id", message: INVALID_SIGNER_TAX_ID_COPY };
     if (error.code === "P0001" && error.message === "invalid_evidence_metadata") return { status: 422, code: "validation_error", message: "Metadados de evidência inválidos." };
     if (error.code === "P0001" && error.message === "signature_intent_not_committed") return { status: 409, code: "delivery_intent_required", message: "A intenção de assinatura não foi confirmada." };
     if (error.code === "P0001" && error.message === "upload_intent_not_pending") return { status: 409, code: "upload_intent_not_pending", message: "A intenção de upload não está pendente." };

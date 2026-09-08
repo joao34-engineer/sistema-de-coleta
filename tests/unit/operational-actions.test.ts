@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { collectionStatuses, type CollectionStatus } from "@/shared/model/collection-status";
-import { serviceProgressResultSchema } from "@/_pages/collection-operations/model/contracts";
+import { serviceProgressResultSchema, customerDeliveryResultSchema } from "@/_pages/collection-operations/model/contracts";
 import {
   alreadyDeliveredCollectionItemIds,
   defaultDeliveredItemIds,
@@ -204,7 +204,50 @@ describe("operationalActionsForStatus (B14)", () => {
     });
   });
 
-  it.each(["ready", "invoiced", "collected", "approved", "delivered"] as const)(
+  it("mirrors the partial_delivery CTA matrix on invoiced", () => {
+    expect(
+      operationalActionsForStatus("invoiced", {
+        hasUndeliveredReadyItem: false,
+        hasInRepairItem: true,
+      }),
+    ).toEqual({
+      primary: { segment: "progresso", label: "Atualizar progresso" },
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: null,
+    });
+    expect(
+      operationalActionsForStatus("invoiced", {
+        hasUndeliveredReadyItem: true,
+        hasInRepairItem: false,
+      }),
+    ).toEqual({
+      primary: { segment: "entrega", label: "Entregar ao cliente" },
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: null,
+    });
+    expect(
+      operationalActionsForStatus("invoiced", {
+        hasUndeliveredReadyItem: true,
+        hasInRepairItem: true,
+      }),
+    ).toEqual({
+      primary: { segment: "entrega", label: "Entregar ao cliente" },
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: { segment: "progresso", label: "Atualizar progresso" },
+    });
+    expect(
+      operationalActionsForStatus("invoiced", {
+        hasUndeliveredReadyItem: false,
+        hasInRepairItem: false,
+      }),
+    ).toEqual({
+      primary: null,
+      secondary: { segment: "cancelar", label: "Cancelar" },
+      extra: null,
+    });
+  });
+
+  it.each(["ready", "collected", "approved", "delivered"] as const)(
     "keeps extra null on %s even when both item facts are true",
     (status) => {
       expect(operationalActionsForStatus(status, bothFacts).extra).toBeNull();
@@ -245,12 +288,18 @@ describe("isWorkshopSegmentAllowed (5.17)", () => {
     expect(isWorkshopSegmentAllowed("collected", "checkin")).toBe(true);
   });
 
-  it("lets Pronto deliver without NF-e and keeps NF-e as an optional route (5.6)", () => {
+  it("lets Pronto deliver without NF-e and keeps NF-e as an optional route (5.6 / L2)", () => {
     expect(nextOperationalAction("ready")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
     expect(optionalInvoiceAction("ready")).toEqual({ segment: "nfe", label: "Registrar NF-e (opcional)" });
+    expect(optionalInvoiceAction("partial_delivery")).toEqual({
+      segment: "nfe",
+      label: "Registrar NF-e (opcional)",
+    });
     expect(isWorkshopSegmentAllowed("ready", "entrega")).toBe(true);
     expect(isWorkshopSegmentAllowed("ready", "nfe")).toBe(true);
+    expect(isWorkshopSegmentAllowed("partial_delivery", "nfe")).toBe(true);
     expect(isWorkshopSegmentAllowed("in_workshop", "nfe")).toBe(false);
+    expect(isWorkshopSegmentAllowed("in_service", "nfe")).toBe(false);
     expect(optionalInvoiceAction("invoiced")).toBeNull();
     expect(nextOperationalAction("invoiced")).toEqual({ segment: "entrega", label: "Entregar ao cliente" });
   });
@@ -288,6 +337,18 @@ describe("isWorkshopSegmentAllowed (5.17)", () => {
     expect(
       isWorkshopSegmentAllowed("partial_delivery", "entrega", {
         hasUndeliveredReadyItem: false,
+        hasInRepairItem: true,
+      }),
+    ).toBe(false);
+    expect(
+      isWorkshopSegmentAllowed("invoiced", "progresso", {
+        hasUndeliveredReadyItem: false,
+        hasInRepairItem: true,
+      }),
+    ).toBe(true);
+    expect(
+      isWorkshopSegmentAllowed("invoiced", "nfe", {
+        hasUndeliveredReadyItem: true,
         hasInRepairItem: true,
       }),
     ).toBe(false);
@@ -388,7 +449,33 @@ describe("serviceProgressResultSchema", () => {
     }
   });
 
+  it("accepts invoiced after NF-e on a leftover remaining in repair", () => {
+    const result = serviceProgressResultSchema.safeParse({ ...sample, status: "invoiced" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("invoiced");
+    }
+  });
+
   it("rejects a bogus status", () => {
-    expect(serviceProgressResultSchema.safeParse({ ...sample, status: "invoiced" }).success).toBe(false);
+    expect(serviceProgressResultSchema.safeParse({ ...sample, status: "collected" }).success).toBe(false);
+  });
+});
+
+describe("customerDeliveryResultSchema", () => {
+  const sample = {
+    collectionId: "11111111-1111-4111-8111-111111111111",
+    rowVersion: 4,
+    delivered: true,
+    partial: true,
+    deliveryTermId: "33333333-3333-4333-8333-333333333333",
+  };
+
+  it("accepts invoiced when a later delivery leaves remaining items", () => {
+    const result = customerDeliveryResultSchema.safeParse({ ...sample, status: "invoiced" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("invoiced");
+    }
   });
 });

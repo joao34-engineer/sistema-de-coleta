@@ -36,6 +36,14 @@ describe("toActionFailureCode", () => {
     expect(toActionFailureCode(error)).toBe("stale_version");
   });
 
+  it("preserves invalid_signer_tax_id", () => {
+    expect(toActionFailureCode(new Error("invalid_signer_tax_id"))).toBe("invalid_signer_tax_id");
+  });
+
+  it("preserves invalid_signer_tax_id", () => {
+    expect(toActionFailureCode(new Error("invalid_signer_tax_id"))).toBe("invalid_signer_tax_id");
+  });
+
   it("preserves authentication_required", () => {
     expect(toActionFailureCode(new Error("authentication_required"))).toBe("authentication_required");
   });

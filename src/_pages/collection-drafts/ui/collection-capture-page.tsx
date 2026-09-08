@@ -19,7 +19,7 @@ import {
   setDraftStep,
   updateLocalItem,
 } from "../model/offline-capture";
-import { messageForQueueError, offlineCopy } from "../model/offline-copy";
+import { isSignerTaxIdQueueError, messageForQueueError, offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { presentFinalizeSync } from "../model/present-finalize-sync";
 import { runAuthenticatedDrain } from "../model/run-authenticated-drain";
@@ -28,7 +28,7 @@ import { hasRequiredCollectionLocation } from "../model/has-required-collection-
 import { collectionExistsAction, fetchDraftWithItemsAction } from "../api/actions";
 import { getCustomerAction } from "@/app/actions/draft-flow.actions";
 import { canFinalizeCollection } from "../model/can-finalize-collection";
-import { isValidCpfOrCnpj } from "@/shared/lib/cpf";
+import { invalidCpfOrCnpjMessage, isValidCpfOrCnpj } from "@/shared/lib/cpf";
 import { NewCollectionPage } from "./new-collection-page";
 import { SyncStatusChip } from "./sync-status-chip";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -572,7 +572,21 @@ function CaptureSteps({
           <SignaturePad disabled={isFinalizing} onClear={() => setSignatureDataUrl(null)} onSave={(url) => setSignatureDataUrl(url)} />
         </div>
         <Input label="Nome de quem assinou *" value={signerName} onChange={(event) => setSignerNameDraft(event.target.value)} required />
-        <Input label="CPF/CNPJ de quem assinou *" value={signerTaxId} onChange={(event) => setSignerTaxIdDraft(event.target.value)} required />
+        <Input
+          label="CPF/CNPJ de quem assinou *"
+          value={signerTaxId}
+          onChange={(event) => {
+            const next = event.target.value;
+            setSignerTaxIdDraft(next);
+            const digits = normalizeTaxId(next);
+            if (/^\d{11}$|^\d{14}$/.test(digits) && !isValidCpfOrCnpj(digits)) {
+              setLocalError(invalidCpfOrCnpjMessage(digits));
+              return;
+            }
+            setLocalError(null);
+          }}
+          required
+        />
         <Button
           type="button"
           variant="primary"
@@ -597,8 +611,8 @@ function CaptureSteps({
                 return;
               }
               const taxId = normalizeTaxId(signerTaxId);
-              if (!/^\d{11}$|^\d{14}$/.test(taxId)) {
-                setLocalError("Informe um CPF ou CNPJ válido.");
+              if (!isValidCpfOrCnpj(taxId)) {
+                setLocalError(invalidCpfOrCnpjMessage(taxId));
                 return;
               }
               setIsFinalizing(true);
@@ -628,6 +642,10 @@ function CaptureSteps({
                   return;
                 }
                 if (outcome === "online_failed") {
+                  if (isSignerTaxIdQueueError(leftover?.lastError)) {
+                    setLocalError(messageForQueueError(leftover?.lastError));
+                    return;
+                  }
                   onOnlineFinalizeFailed(messageForQueueError(leftover?.lastError) || offlineCopy.onlineFinalizeFailed);
                   return;
                 }

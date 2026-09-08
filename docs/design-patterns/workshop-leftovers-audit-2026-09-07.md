@@ -14,7 +14,9 @@
 
 O trabalho foi **feito de verdade** — não é doc inflado. As migrations existem, as assinaturas são idênticas às anteriores (nenhum overload duplicado, nenhum `DROP FUNCTION`, grants preservados), o conjunto deliverable está correto nos dois RPCs, o PR 5 **não vazou** para o código, e a validação local reproduz verde.
 
-O que não se sustenta são três coisas: **o fluxo mid-repair tem furos de produto que o tornam parcialmente inutilizável na prática**, **não existe um único teste de banco cobrindo o SQL dos PR 3 e PR 4**, e **a afirmação "aplicada no remoto" não tem lastro local** — a melhor evidência disponível aponta no sentido contrário.
+O que não se sustenta na auditoria original eram três coisas: **o fluxo mid-repair tinha furos de produto**, **não existe um único teste de banco cobrindo o SQL dos PR 3 e PR 4**, e **a afirmação "aplicada no remoto" não tinha lastro local**.
+
+**Follow-up 07/09/2026 (L2):** A1+A9 em código e **no remoto** (`20260907030000`). `db push` aplicou também `20260907020000` (L1). `migration list` local = remoto até `20260907220000` (inclui `invalid_signer_tax_id`, fora do eixo L2). B1/B2 (pgTAP) e A5–A8 continuam abertos.
 
 ### Validação local reproduzida (2026-09-07)
 
@@ -48,7 +50,7 @@ Registro do que a auditoria **descartou** como problema, para ninguém reabrir:
 
 ## 3. Bugs — produto e correção
 
-### A1 · NF-e fica permanentemente inalcançável depois de qualquer entrega parcial — **Alto** — **decisão fechada 2026-09-07; código ainda não**
+### A1 · NF-e fica permanentemente inalcançável depois de qualquer entrega parcial — **Alto** — **corrigido 2026-09-07 (L2)**
 
 ```
 sistema-coleta/supabase/migrations/20260907000000_phase_5_deliver_mid_repair.sql:216
@@ -61,7 +63,7 @@ Antes do PR 3, entregar exigia `ready` ou `invoiced`, então sempre existia uma 
 
 **Decisão 2026-09-07 (humano — não perguntar de novo):** mid-repair e NF-e **coexistem**. `register_invoice_reference` deve aceitar `ready | partial_delivery`. `optionalInvoiceAction` no hub deve oferecer NF-e também em `partial_delivery`. Não são mutuamente exclusivos. "NF-e depois de `delivered`" (§9 do plano) continua eixo separado e **não** é esta decisão.
 
-Implementar no leftover **L2** (mesmo eixo que A9). Não reabrir o trade-off.
+**Shipped L2** (`20260907030000`): `register_invoice_reference` aceita `ready | partial_delivery`; evento `previous_status` = status real; `optionalInvoiceAction` no hub também em `partial_delivery` (não em `invoiced` / `in_service`). **No remoto** 07/09/2026. Não reabrir o trade-off.
 
 ### A2 · A CTA primária de `partial_delivery` é um beco sem saída — **Alto** — **corrigido 2026-09-07**
 
@@ -170,11 +172,13 @@ O `else null` do CASE pula o update. O comentário justifica com "collected / in
 
 A lacuna concreta é `awaiting_approval`: status válido de coleta (`collections_status_check`, `20260822125100:15`), pós-orçamento, portanto **com** OS, e ausente do mapeamento. Alcançabilidade baixa (nenhum RPC grava `awaiting_approval` hoje), por isso Médio. Um `else` caindo no próprio status da OS, ou um `raise`, tornaria o invariante incondicional.
 
-### A9 · `invoiced` é rebaixado silenciosamente a `partial_delivery` — **Médio** — **decisão fechada 2026-09-07; código ainda não**
+### A9 · `invoiced` é rebaixado silenciosamente a `partial_delivery` — **Médio** — **corrigido 2026-09-07 (L2)**
 
 Mesma linha `:216`. O fato não se perde (a linha em `invoice_references` fica intacta), mas a coluna de status deixa de refletir a nota emitida, e os baldes da UI dependem de status. Comportamento pré-PR 3 (`20260906170000:176`), porém o conjunto alargado o torna alcançável a partir de mais caminhos. Combinado com A1, é irreversível.
 
-**Decisão 2026-09-07 (humano — não perguntar de novo):** se a coleta já está `invoiced` e ainda há `remaining > 0` após uma entrega, **permanece `invoiced`**. Não rebaixar para `partial_delivery`. L2 implementa isto no mesmo `CREATE OR REPLACE` de `deliver_to_customer` que alarga `register_invoice_reference`.
+**Decisão 2026-09-07 (humano — não perguntar de novo):** se a coleta já está `invoiced` e ainda há `remaining > 0` após uma entrega, **permanece `invoiced`**. Não rebaixar para `partial_delivery`.
+
+**Shipped L2** (`20260907030000`): `deliver_to_customer` preserva `invoiced` quando `remaining > 0`; `update_service_progress` aceita `invoiced` e não o puxa para `ready`; matriz de CTA de `invoiced` = `partial_delivery`. **No remoto** 07/09/2026.
 
 ### A10 · Rota REST de entrega rejeita qualquer entrega sem observações — **Médio** — **corrigido 2026-09-07 (L7)**
 
@@ -235,16 +239,16 @@ Viola o "Zero `any`" do `sistema-coleta/AGENTS.md` e mascara um descompasso vivo
 
 ## 5. Alegações do plano que não se sustentam
 
-### C1 · "Migrations aplicadas no remoto" — sem lastro local, evidência aponta o contrário — **Alto**
+### C1 · "Migrations aplicadas no remoto" — sem lastro local na auditoria; **reconferido 07/09/2026**
 
-Nenhum comando de banco foi executado nesta auditoria; isto vem só de leitura de arquivos.
+Nenhum comando de banco foi executado **na auditoria original**; o texto abaixo é o inventário daquela leitura de arquivos. **Follow-up:** `db push` 07/09/2026 aplicou `20260907020000` (L1), `20260907030000` (L2) e `20260907220000` (`invalid_signer_tax_id`, pendente local fora deste eixo). `migration list` local = remoto até `20260907220000`.
 
 1. **Cronologia impossível.** O diretório de traces do Supabase CLI tem três arquivos; o mais novo (`2026-09-07.ndjson`) tem mtime **06/09/2026 22:05:51**. As duas migrations têm mtime **07/09/2026 00:26:54** e **00:44:58** — ambas escritas **depois** da última atividade registrada do CLI nesta máquina. Nenhum trace foi tocado depois.
 2. **O SQL não aparece em trace nenhum.** Busca por `deliver_mid_repair`, `previous_status_before_cancellation`, `collection_not_cancelable_draft` e `item_not_ready` nos traces não retorna nada, embora os traces gravem `db.query.text` completo dos statements empurrados.
 3. **O último push registrado foi outra migration:** o corpo de `private.encode_collection_cursor`, isto é `20260906220000` (o fix de cursor), seguido de um `migration list`.
 4. **A frase "aplicada" veio de um commit só de docs** (`091429a docs(workshop): record PR 3 and PR 4 migrations as applied`, 12 linhas em dois `.md`). Nada foi executado por esse commit.
 
-Leitura honesta: **o código e as migrations existem e estão commitados, mas nenhum artefato local sustenta "aplicada no remoto", e o melhor artefato disponível aponta no sentido contrário.** Ressalva justa: telemetria de CLI não é trilha de auditoria garantida — um push de CI, de outra máquina, ou com telemetria desligada não deixaria rastro aqui. Então é "não substanciado e contrariado pela melhor evidência local", não prova de que o remoto não os tem. Dado que o próprio plano manda `db push --dry-run` → humano → push, isto precisa de reconferência humana contra `supabase_migrations.schema_migrations`.
+Leitura honesta **na auditoria:** traces locais não sustentavam "aplicada". **Follow-up 07/09/2026:** `migration list` confirma PR 3/PR 4/L1/L2 no remoto (até `20260907220000`).
 
 ### C2 · A regra "Não juntar 3+4" do próprio plano foi violada — **Médio**
 
@@ -318,13 +322,13 @@ O prefix match em si está certo (`"/configuracoes/empresa".startsWith("/configu
 
 - **`collection_events` não registra o fato mid-repair.** `20260907000000:232-248` é idêntico à versão anterior: grava `'partial', remaining > 0` mas não `remaining`, nem o status resultante da OS, nem quais itens seguem em reparo. `event_type` continua `'collection.delivered'` numa entrega parcial. O comportamento central do PR 3 (OS para `in_service` em vez de `ready`) não deixa rastro no log append-only.
 - **PR 4 também não grava metadata da transição da OS.** O plano diz "não gravar **só** em `collection_events.metadata`", o que foi lido como "não gravar em metadata". Um `jsonb_build_object('serviceOrderPreviousStatus', …)` custaria nada e tornaria A7/A8 diagnosticáveis depois do fato.
-- **`deliver_to_customer` atualiza a OS sem filtro de tenant** (`20260907000000:226`: `where id = order_record.id`), enquanto o PR 4 filtra `organization_id` em todos os writes. Herdado de `20260906160000:170-174`, não introduzido aqui — mas a assimetria merece um olhar.
+- **`deliver_to_customer` atualiza a OS sem filtro de tenant** — **corrigido 2026-09-07 (L2)** em `20260907030000` (`where id = … and organization_id = collection_record.organization_id` na OS e na coleta). O corpo canónico anterior (`20260907000000:226`) só filtrava `id`.
 - **`item_not_ready` ofusca `collection_item_not_found`.** O check em `:121-134` roda antes do loop em `:136-145`, então id de outro tenant, removido ou inexistente devolve "Somente itens marcados como Pronto podem ser entregues." A segurança não muda; a mensagem engana e `collection_item_not_found` virou quase código morto nesse RPC.
 - **`request_hash` não cobre `p_delivered_item_ids`.** `digestLifecycleRequest` (`commands.ts:30-34`) só cobre operação, coleta, versão e motivo. Mitigado hoje porque a idempotency key é o `signatureIntentId` gerado a cada tentativa e `p_expected_version` está no hash — mas entrega parcial torna múltiplas entregas por coleta a norma, e esse guard passou a ser load-bearing.
 - **`getBudgetItems` roda duas vezes por request** (`entrega/page.tsx:10-13` + `load-operation.ts:20`; mesmo em `progresso/page.tsx:9`). Duas idas idênticas ao banco em página `force-dynamic`.
 - **Códigos de entrega ausentes do registry estável** `shared/lib/action-failure-code.ts:5-31`: falta `item_not_ready`, `item_already_delivered`, `duplicate_delivery_item`, `collection_not_cancelable_draft`. Passam pelo fallback de regex, então o comportamento está certo — o registry é que deixou de documentar quais códigos são estáveis.
-- **`update_service_progress` omite `updated_at = now()`** nos três updates de `service_orders` (`:474`, `:486`, `:506`), enquanto `deliver_to_customer:225` seta. Assimetria pré-existente, mas a migration tocou nessas linhas.
-- **`service_order_record` declarado e nunca usado** em `deliver_to_customer` (`:30`).
+- **`update_service_progress` omite `updated_at = now()`** — **corrigido 2026-09-07 (L2)** nos três updates de OS em `20260907030000`. O corpo `07020000` omitia.
+- **`service_order_record` declarado e nunca usado** em `deliver_to_customer` — **corrigido 2026-09-07 (L2)** (variável removida no REPLACE).
 - **`_pages` importa de `_app`** (`customer-delivery-page.tsx:12`, `service-progress-page.tsx:11`), invertendo a hierarquia do `AGENTS.md` raiz. O Steiger não pega porque `steiger.config.ts:13` desabilita `fsd/typo-in-layer-name` para `_app`/`_pages`, então esses diretórios nunca são reconhecidos como camadas. Padrão pré-existente em todo o repo.
 
 ---
@@ -335,10 +339,10 @@ Um eixo por PR, como manda o plano original. Nada aqui autoriza abrir PR — é 
 
 | Prioridade | Itens | Por quê |
 | --- | --- | --- |
-| 1 | **C1** | Antes de qualquer coisa: confirmar com o humano se as migrations estão no remoto. Todo o resto depende dessa resposta |
-| 2 | **A2 + A3 + A12** | **Corrigido 2026-09-07** (código + `20260907020000`; push remoto ainda depende de C1) |
+| 1 | **C1** | **Fechado 07/09/2026:** `migration list` local = remoto até `20260907220000` (L1+L2 aplicados) |
+| 2 | **A2 + A3 + A12** | **Corrigido 2026-09-07** (código + `20260907020000` **no remoto**) |
 | 3 | **A4 + C5** | **Corrigido 2026-09-07 (L3)** — parse por linha; `quantityObserved > 0` no reader até o PR 5 |
-| 4 | **A1 + A9** | **Decisão fechada 2026-09-07.** NF-e disponível em `partial_delivery`; `invoiced` não rebaixa. Implementar leftover L2. Não perguntar de novo |
+| 4 | **A1 + A9** | **Corrigido 2026-09-07 (L2)** (`20260907030000` **no remoto**). NF-e em `partial_delivery`; `invoiced` não rebaixa; progresso/CTA de `invoiced` = `partial_delivery` |
 | 5 | **A5 + A6** | Eixo SQL de invariantes de item (L4). A5: `remaining` só entregáveis; A6 unique index |
 | 6 | **B1 + B2** | pgTAP para a cadeia de entrega e para o PR 4 (L5) |
 | 7 | **A7 + A8** | Eixo SQL de reopen (L6). Baixa alcançabilidade hoje, dívida real |

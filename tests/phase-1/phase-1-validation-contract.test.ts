@@ -79,4 +79,12 @@ describe("Fase 1A validation contract", () => {
     expect(toLifecycleApiError(tagged).actorId).toBe("00000000-0000-0000-0000-000000000001");
     expect(toLifecycleApiError(tagged).message).not.toContain("00000000-0000-0000-0000-000000000001");
   });
+
+  it("maps invalid_signer_tax_id above the generic P0001 fallback", () => {
+    expect(toLifecycleApiError({ code: "P0001", message: "invalid_signer_tax_id" })).toMatchObject({
+      status: 422,
+      code: "invalid_signer_tax_id",
+      message: "CPF ou CNPJ inválido, revise e tente novamente.",
+    });
+  });
 });

@@ -13,6 +13,7 @@ import {
   type OfflineDraftRecord,
   type OfflineMutationRecord,
 } from "./offline-records";
+import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 
 const STALE_RETRY_ONCE = "stale_version";
 const AUTH_ERROR = "authentication_required";
@@ -20,13 +21,14 @@ const SYNC_INTERRUPTED = "sync_interrupted";
 const VALIDATION_ERROR = "validation_error";
 const COLLECTION_INCOMPLETE = "collection_incomplete";
 const CANCELLED_BY_DISCARD = "cancelled_by_discard";
+const INVALID_SIGNER_TAX_ID = "invalid_signer_tax_id";
 
 function isUnfinishedMutation(row: OfflineMutationRecord): boolean {
   return row.status === "pending" || row.status === "failed" || row.status === "in_flight";
 }
 
 function isTerminalValidation(error: string): boolean {
-  return error === COLLECTION_INCOMPLETE || error === VALIDATION_ERROR;
+  return error === COLLECTION_INCOMPLETE || error === VALIDATION_ERROR || error === INVALID_SIGNER_TAX_ID;
 }
 
 function pickUnfinishedDiscard(
@@ -357,7 +359,10 @@ async function replayMutation(
   if (mutation.kind === "patch_draft") {
     const parsed = patchDraftPayloadSchema.safeParse(mutation.payload);
     if (!parsed.success) {
-      return { kind: "error", error: VALIDATION_ERROR };
+      return {
+        kind: "error",
+        error: zodIssueTouchesKey(parsed.error, "responsibleTaxId") ? INVALID_SIGNER_TAX_ID : VALIDATION_ERROR,
+      };
     }
     const payload = parsed.data;
     const result = await commands.patchDraft({
@@ -459,7 +464,10 @@ async function replayMutation(
     }
     const parsed = saveSignaturePayloadSchema.safeParse(mutation.payload);
     if (!parsed.success) {
-      return { kind: "error", error: VALIDATION_ERROR };
+      return {
+        kind: "error",
+        error: zodIssueTouchesKey(parsed.error, "signerTaxId") ? INVALID_SIGNER_TAX_ID : VALIDATION_ERROR,
+      };
     }
     const payload = parsed.data;
     const blob = await store.getSignature(draft.id, draft.userId);

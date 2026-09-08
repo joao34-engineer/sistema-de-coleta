@@ -2,6 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { INVALID_SIGNER_TAX_ID_COPY } from "@/shared/lib/cpf";
 import { logTransactionFailure } from "@/shared/lib/server-logger";
 
 const idempotencyKeySchema = z.uuid();
@@ -29,6 +30,10 @@ export function apiErrorResponse(
 
 export function validationErrorResponse(): NextResponse {
   return noStoreJson({ error: { code: "validation_error", message: "Revise os dados enviados." } }, { status: 422 });
+}
+
+export function invalidSignerTaxIdResponse(): NextResponse {
+  return noStoreJson({ error: { code: "invalid_signer_tax_id", message: INVALID_SIGNER_TAX_ID_COPY } }, { status: 422 });
 }
 
 export function idempotencyKeyRequiredResponse(): NextResponse {

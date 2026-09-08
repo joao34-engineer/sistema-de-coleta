@@ -1,5 +1,6 @@
 import "server-only";
 
+import { INVALID_SIGNER_TAX_ID_COPY } from "@/shared/lib/cpf";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
 import { actorIdFromUnknown } from "@/shared/lib/server-logger";
 
@@ -19,6 +20,7 @@ function mapLifecycleApiError(error: unknown): Omit<LifecycleApiError, "actorId"
     if (error.code === "P0001" && error.message === "collection_not_draft") return { status: 409, code: "collection_not_draft", message: "A coleta não está em rascunho." };
     if (error.code === "P0001" && error.message === "invalid_cursor") return { status: 422, code: "invalid_cursor", message: "O cursor de paginação é inválido." };
     if (error.code === "P0001" && error.message === "customer_snapshot_immutable") return { status: 409, code: "immutable_record", message: "O registro documental é imutável." };
+    if (error.code === "P0001" && error.message === "invalid_signer_tax_id") return { status: 422, code: "invalid_signer_tax_id", message: INVALID_SIGNER_TAX_ID_COPY };
     if (error.code === "P0001") return { status: 422, code: "business_rule_violation", message: "A coleta não atende aos requisitos desta operação." };
     if (error.code === "40001") return { status: 409, code: "stale_version", message: "A coleta foi atualizada por outra operação." };
     if (error.code === "23505") return { status: 409, code: "conflict", message: "A operação conflita com um registro existente." };

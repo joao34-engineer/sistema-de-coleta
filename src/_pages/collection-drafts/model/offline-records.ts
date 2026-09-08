@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cpfOrCnpjSchema, optionalCpfOrCnpjSchema } from "@/shared/lib/cpf";
 import { captureSteps } from "./capture-actor";
 
 export const OFFLINE_DATABASE_NAME = "mjt-offline-v1";
@@ -109,7 +110,7 @@ export const createDraftPayloadSchema = z.object({
 export const patchDraftPayloadSchema = z.object({
   collectionLocation: z.string().max(1000).nullable().optional(),
   responsibleName: z.string().max(160).nullable().optional(),
-  responsibleTaxId: z.string().regex(/^\d{11}$|^\d{14}$/).nullable().optional(),
+  responsibleTaxId: optionalCpfOrCnpjSchema,
   collectedAt: z.string().nullable().optional(),
   customerId: z.string().uuid().nullable().optional(),
 });
@@ -124,7 +125,7 @@ export const itemPayloadSchema = z.object({
 
 export const saveSignaturePayloadSchema = z.object({
   signerName: z.string().min(1).max(160),
-  signerTaxId: z.string().regex(/^\d{11}$|^\d{14}$/),
+  signerTaxId: cpfOrCnpjSchema,
   acceptanceText: z.string().min(10).max(2000),
 });
 
