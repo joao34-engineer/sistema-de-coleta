@@ -459,6 +459,76 @@ describe("offline drain runner", () => {
     expect(first?.lastError).toBe("validation_error");
   });
 
+  it("marks invalid signer CPF as invalid_signer_tax_id instead of validation_error", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "save_signature",
+      payload: {
+        signerName: "Ana",
+        signerTaxId: "11111111111",
+        acceptanceText: "Declaro que acompanhei a coleta das peças e equipamentos.",
+      },
+    });
+    const saveSignature = vi.fn();
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ saveSignature }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "failed", officialKept: false });
+    expect(saveSignature).not.toHaveBeenCalled();
+    const updated = await store.getDraft(collectionId, actor.userId);
+    expect(updated?.lastError).toBe("invalid_signer_tax_id");
+  });
+
+  it("marks invalid responsible CPF on patch_draft as invalid_signer_tax_id", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { responsibleTaxId: "11111111111" },
+    });
+    const patchDraft = vi.fn();
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ patchDraft }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "failed", officialKept: false });
+    expect(patchDraft).not.toHaveBeenCalled();
+    const updated = await store.getDraft(collectionId, actor.userId);
+    expect(updated?.lastError).toBe("invalid_signer_tax_id");
+  });
+
+  it("keeps other patch_draft parse failures as validation_error", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { customerId: "not-a-uuid" },
+    });
+    const patchDraft = vi.fn();
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ patchDraft }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "failed", officialKept: false });
+    expect(patchDraft).not.toHaveBeenCalled();
+    const updated = await store.getDraft(collectionId, actor.userId);
+    expect(updated?.lastError).toBe("validation_error");
+  });
+
   it("marks the draft failed when leftover pending mutations remain without in_flight rows", async () => {
     const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
     await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId, syncStatus: "syncing", lastError: null }));

@@ -1,3 +1,4 @@
+import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 import type { OfflineDraftStore } from "./offline-store";
 import type { OfflineSyncCommands } from "./offline-commands";
 import type { CaptureActor } from "./capture-actor";
@@ -13,7 +14,6 @@ import {
   type OfflineDraftRecord,
   type OfflineMutationRecord,
 } from "./offline-records";
-import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 
 const STALE_RETRY_ONCE = "stale_version";
 const AUTH_ERROR = "authentication_required";

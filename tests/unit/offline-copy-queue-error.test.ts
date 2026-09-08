@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { messageForQueueError, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
+import { isSignerTaxIdQueueError, messageForQueueError, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
 
 describe("messageForQueueError", () => {
   it("maps authentication_required to authExpired", () => {
@@ -29,6 +29,8 @@ describe("messageForQueueError", () => {
   it("maps invalid_signer_tax_id to CPF/CNPJ copy and leaves draft_update_failed generic", () => {
     expect(messageForQueueError("invalid_signer_tax_id")).toBe("CPF ou CNPJ inválido, revise e tente novamente.");
     expect(messageForQueueError("invalid_signer_tax_id")).not.toBe(offlineCopy.failed);
+    expect(isSignerTaxIdQueueError("invalid_signer_tax_id")).toBe(true);
+    expect(isSignerTaxIdQueueError("draft_update_failed")).toBe(false);
     expect(messageForQueueError("draft_update_failed")).toBe(offlineCopy.failed);
   });
 

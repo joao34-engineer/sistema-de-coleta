@@ -1,7 +1,7 @@
 import "server-only";
 
-import { INVALID_SIGNER_TAX_ID_COPY } from "@/shared/lib/cpf";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
+import { INVALID_SIGNER_TAX_ID_COPY } from "@/shared/lib/cpf";
 import { actorIdFromUnknown } from "@/shared/lib/server-logger";
 
 export type OperationsApiError = Readonly<{ status: number; code: string; message: string; actorId: string | null }>;

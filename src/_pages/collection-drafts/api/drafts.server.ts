@@ -4,9 +4,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError, requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
-import { getRequestId, logTransactionFailure } from "@/shared/lib/server-logger";
 import { toActionFailureCode } from "@/shared/lib/action-failure-code";
+import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 import { validateEvidenceFile } from "@/shared/lib/file-validation";
+import { getRequestId, logTransactionFailure } from "@/shared/lib/server-logger";
 import {
   collectionIdSchema,
   draftCreateSchema,
@@ -258,6 +259,9 @@ export async function patchDraft(request: Request, id: string): Promise<NextResp
   try {
     const parsedId = collectionIdSchema.safeParse(id);
     const input = draftPatchSchema.safeParse(await json(request));
+    if (!input.success && zodIssueTouchesKey(input.error, "responsibleTaxId")) {
+      return respond(422, { ok: false, code: "invalid_signer_tax_id" });
+    }
     if (!parsedId.success || !input.success) return respond(400, { ok: false, code: "validation_error", issues: input.success ? undefined : input.error.flatten() });
     const administrator = await requireAuthenticatedAdministrator();
     const supabase = (await createServerSupabaseClient()) as unknown as PhaseOneClient;
