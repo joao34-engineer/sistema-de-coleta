@@ -35,33 +35,31 @@ export function isWorkerRequestAuthorized(request: Request): boolean {
   return timingSafeEqualUtf8(cronSecret, authorization.slice(prefix.length));
 }
 
-export async function runDocumentWorkerBatch(batchSize: number): Promise<Readonly<{ processed: number; statuses: ReadonlyArray<"idle" | "succeeded" | "retry_scheduled" | "failed"> }>> {
+export async function runDocumentWorkerBatch(
+  batchSize: number,
+  documentId?: string,
+): Promise<Readonly<{ processed: number; statuses: ReadonlyArray<"idle" | "succeeded" | "retry_scheduled" | "failed"> }>> {
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 5) throw new RangeError("document_worker_batch_size_invalid");
   const statuses: Array<"idle" | "succeeded" | "retry_scheduled" | "failed"> = [];
   for (let index = 0; index < batchSize; index += 1) {
-    const result = await runDocumentWorkerOnce();
+    const result = await runDocumentWorkerOnce(documentId);
     statuses.push(result.status);
     if (result.status === "idle") break;
   }
   return { processed: statuses.filter((status) => status !== "idle").length, statuses };
 }
 
-const DOCUMENT_RENDER_KICK_BATCH = 2;
-/** Claim is global FIFO (pdf+qr per guia). One round of 2 would drain leftovers and skip the guia just finalized. */
-const DOCUMENT_RENDER_KICK_ROUNDS = 4;
-
 /**
  * After finalize (and similar) already enqueued jobs, render PDF/QR in this process.
- * Failures must not undo the collection: cron / later retry still own durability.
+ * Pass `documentId` so the kick claims that guia's jobs, not leftover FIFO rows.
+ * Cron still calls `runDocumentWorkerBatch` without an id. Failures must not undo finalize.
  */
 export async function processQueuedDocumentRenders(
+  documentId?: string,
   runBatch: typeof runDocumentWorkerBatch = runDocumentWorkerBatch,
 ): Promise<void> {
   try {
-    for (let round = 0; round < DOCUMENT_RENDER_KICK_ROUNDS; round += 1) {
-      const result = await runBatch(DOCUMENT_RENDER_KICK_BATCH);
-      if (result.processed < DOCUMENT_RENDER_KICK_BATCH) return;
-    }
+    await runBatch(2, documentId);
   } catch {
     return;
   }

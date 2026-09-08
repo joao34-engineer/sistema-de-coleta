@@ -242,8 +242,8 @@ export async function finalizeCollectionAction(payload: {
       payload.expectedVersion,
       payload.idempotencyKey,
     );
-    scheduleDocumentRenderKick();
-    const documentUrl = finalizeResult.document?.id ? `/api/documents/${finalizeResult.document.id}` : undefined;
+    scheduleDocumentRenderKick(finalizeResult.document.id);
+    const documentUrl = `/api/documents/${finalizeResult.document.id}`;
     return {
       ok: true,
       collectionId: payload.collectionId,

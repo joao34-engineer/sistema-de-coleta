@@ -74,6 +74,7 @@ type PhaseFunctionOverlays = {
   save_company_issuer_settings: { Args: { p_legal_name: string; p_tax_id: string; p_phone: string; p_street: string; p_street_number: string; p_district: string; p_city: string; p_state_code: string; p_postal_code: string; p_receipt_legal_text: string; p_signer_name: string; p_signer_title: string; p_logo_asset_id?: string | null }; Returns: Json };
   consume_document_rate_limit: { Args: { p_scope: string; p_subject_hash: string; p_window_seconds: number; p_limit: number }; Returns: { allowed: boolean; retry_after_seconds: number }[] };
   claim_document_job: { Args: { p_worker_id: string; p_lease_seconds?: number }; Returns: Json };
+  claim_document_job_for_document: { Args: { p_worker_id: string; p_lease_seconds: number; p_document_id: string }; Returns: Json };
   prepare_document_render_upload: { Args: { p_job_id: string; p_lease_token: string; p_artifact_type: string; p_content_type: string; p_byte_size: number; p_sha256: string }; Returns: Json };
   commit_document_render_upload: { Args: { p_intent_id: string }; Returns: Json };
   cancel_document_render_upload: { Args: { p_intent_id: string }; Returns: Json };

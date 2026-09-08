@@ -13,7 +13,7 @@ export async function POST(_request: Request, context: RouteContext<"/api/collec
   try {
     const data = await retryDocumentJob(id, documentId);
     if (!data.alreadyReady) {
-      scheduleDocumentRenderKick();
+      scheduleDocumentRenderKick(documentId);
     }
     return noStoreJson({ data }, { status: 200 });
   } catch (error: unknown) {

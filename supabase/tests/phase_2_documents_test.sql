@@ -47,6 +47,7 @@ select has_function('public', 'validate_document_issuer_profile', array['bigint'
 select has_function('public', 'save_company_issuer_settings', array['bigint', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'uuid', 'text', 'text'], 'company issuer settings RPC exists');
 select has_function('public', 'consume_document_rate_limit', array['text', 'text', 'integer', 'integer'], 'rate-limit RPC exists');
 select has_function('public', 'claim_document_job', array['text', 'integer'], 'job claim RPC exists');
+select has_function('public', 'claim_document_job_for_document', array['text', 'integer', 'uuid'], 'document-scoped job claim RPC exists');
 select has_function('public', 'prepare_document_render_upload', array['uuid', 'uuid', 'text', 'text', 'integer', 'text'], 'render intent prepare RPC exists');
 select has_function('public', 'commit_document_render_upload', array['uuid'], 'render intent commit RPC exists');
 select has_function('public', 'cancel_document_render_upload', array['uuid'], 'render intent cancel RPC exists');
@@ -71,6 +72,8 @@ select is(has_function_privilege('authenticated', 'public.save_company_issuer_se
 select is(has_function_privilege('anon', 'public.create_document_share(uuid, text, timestamptz, integer)', 'execute'), false, 'anon cannot create shares');
 select is(has_function_privilege('authenticated', 'public.claim_document_job(text, integer)', 'execute'), false, 'authenticated cannot claim jobs');
 select is(has_function_privilege('service_role', 'public.claim_document_job(text, integer)', 'execute'), true, 'service role can claim jobs');
+select is(has_function_privilege('authenticated', 'public.claim_document_job_for_document(text, integer, uuid)', 'execute'), false, 'authenticated cannot claim jobs for a document');
+select is(has_function_privilege('service_role', 'public.claim_document_job_for_document(text, integer, uuid)', 'execute'), true, 'service role can claim jobs for a document');
 select is(has_function_privilege('authenticated', 'public.create_document_share(uuid, text, timestamptz, integer)', 'execute'), true, 'administrator path can create shares through RPC');
 select is(has_function_privilege('authenticated', 'public.revoke_document_share(uuid)', 'execute'), true, 'administrator path can revoke shares through RPC');
 select is(has_function_privilege('authenticated', 'public.create_document_revision(uuid, uuid, text, text)', 'execute'), true, 'administrator path can record revisions through RPC');

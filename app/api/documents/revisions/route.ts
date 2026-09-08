@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   if (idempotency.kind === "missing") return noStoreJson({ error: { code: "idempotency_key_required", message: "Informe o cabeçalho Idempotency-Key." } }, { status: 400 });
   try {
     const data = await reviseCollectionDocument(parsed.data, idempotency.value);
-    scheduleDocumentRenderKick();
+    scheduleDocumentRenderKick(data.document.id);
     return noStoreJson({ data }, { status: 201 });
   } catch (error: unknown) {
     const safe = deliveryErrorResponse(error);

@@ -14,7 +14,7 @@ export async function POST(request: Request, context: RouteContext<"/api/collect
   if (idempotencyKeyStateResult.kind === "missing") return idempotencyKeyRequiredResponse();
   try {
     const result = await reopenCollection(id, parsed.data.expectedVersion, parsed.data.reason, idempotencyKeyStateResult.value);
-    scheduleDocumentRenderKick();
+    scheduleDocumentRenderKick(result.document.id);
     return noStoreJson(result);
   } catch (error: unknown) {
     return apiErrorResponse(toLifecycleApiError(error), getRequestId(request), "reopen_collection");

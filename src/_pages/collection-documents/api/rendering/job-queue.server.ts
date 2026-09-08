@@ -99,13 +99,21 @@ async function completeJob(
 export function createDocumentJobQueue(
   client: PhaseTwoSupabaseClient = createPhaseTwoServiceClient(),
   defaultWorkerId?: string,
+  documentId?: string,
 ): DocumentJobQueue {
   return {
     async claimNext(workerId) {
-      const { data, error } = await client.rpc("claim_document_job", {
-        p_worker_id: workerIdFromEnvironment(workerId ?? defaultWorkerId),
-        p_lease_seconds: 300,
-      });
+      const worker = workerIdFromEnvironment(workerId ?? defaultWorkerId);
+      const { data, error } = documentId === undefined
+        ? await client.rpc("claim_document_job", {
+          p_worker_id: worker,
+          p_lease_seconds: 300,
+        })
+        : await client.rpc("claim_document_job_for_document", {
+          p_worker_id: worker,
+          p_lease_seconds: 300,
+          p_document_id: documentId,
+        });
       if (error) throw error;
       return data === null ? null : parseJobClaim(data);
     },

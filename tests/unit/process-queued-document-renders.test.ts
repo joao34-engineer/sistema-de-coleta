@@ -1,32 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import { processQueuedDocumentRenders } from "@/_pages/collection-documents/api/delivery/worker.server";
 
+const documentId = "11111111-1111-4111-8111-111111111111";
+
 describe("processQueuedDocumentRenders", () => {
-  it("asks the worker for a pdf+qr batch", async () => {
-    const runBatch = vi.fn().mockResolvedValue({ processed: 1, statuses: ["succeeded", "idle"] });
-    await processQueuedDocumentRenders(runBatch);
-    expect(runBatch).toHaveBeenCalledTimes(1);
-    expect(runBatch).toHaveBeenCalledWith(2);
-  });
-
-  it("keeps claiming while a full batch succeeds so leftover jobs do not skip the new guia", async () => {
-    const runBatch = vi
-      .fn()
-      .mockResolvedValueOnce({ processed: 2, statuses: ["succeeded", "succeeded"] })
-      .mockResolvedValueOnce({ processed: 2, statuses: ["succeeded", "succeeded"] })
-      .mockResolvedValueOnce({ processed: 0, statuses: ["idle"] });
-    await processQueuedDocumentRenders(runBatch);
-    expect(runBatch).toHaveBeenCalledTimes(3);
-  });
-
-  it("stops after the kick round cap even if the queue still looks full", async () => {
+  it("asks the worker for a pdf+qr batch of this document", async () => {
     const runBatch = vi.fn().mockResolvedValue({ processed: 2, statuses: ["succeeded", "succeeded"] });
-    await processQueuedDocumentRenders(runBatch);
-    expect(runBatch).toHaveBeenCalledTimes(4);
+    await processQueuedDocumentRenders(documentId, runBatch);
+    expect(runBatch).toHaveBeenCalledTimes(1);
+    expect(runBatch).toHaveBeenCalledWith(2, documentId);
+  });
+
+  it("keeps the global FIFO batch when no document id is passed (cron)", async () => {
+    const runBatch = vi.fn().mockResolvedValue({ processed: 1, statuses: ["succeeded", "idle"] });
+    await processQueuedDocumentRenders(undefined, runBatch);
+    expect(runBatch).toHaveBeenCalledWith(2, undefined);
   });
 
   it("swallows worker failures so finalize stays committed", async () => {
     const runBatch = vi.fn().mockRejectedValue(new Error("document_verification_base_url_missing"));
-    await expect(processQueuedDocumentRenders(runBatch)).resolves.toBeUndefined();
+    await expect(processQueuedDocumentRenders(documentId, runBatch)).resolves.toBeUndefined();
   });
 });
