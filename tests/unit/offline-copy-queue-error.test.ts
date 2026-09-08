@@ -51,3 +51,12 @@ describe("messageForQueueError", () => {
     expect(message).not.toMatch(/tax_id|column/i);
   });
 });
+
+describe("messageForRetryFailure", () => {
+  it("prefixes the mapped leftover so a repeated drain is visible", () => {
+    expect(messageForRetryFailure("issuer_profile_incomplete")).toBe(
+      `${offlineCopy.retryStillFailed} Os dados do emissor da guia estão incompletos. Ajuste nas configurações.`,
+    );
+    expect(messageForRetryFailure(null)).toBe(`${offlineCopy.retryStillFailed} ${offlineCopy.failed}`);
+  });
+});
