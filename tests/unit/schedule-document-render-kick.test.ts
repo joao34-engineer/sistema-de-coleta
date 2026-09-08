@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-const afterMock = vi.hoisted(() => vi.fn<(task: () => void) => void>());
+const afterMock = vi.hoisted(() => vi.fn<(task: () => void | Promise<void>) => void>());
 const processQueuedDocumentRenders = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock("next/server", () => ({
@@ -14,7 +14,7 @@ vi.mock("@/_pages/collection-documents/api/delivery/index.server", () => ({
 import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
 
 describe("scheduleDocumentRenderKick", () => {
-  it("schedules the worker after the response without awaiting it", () => {
+  it("schedules an after() task that returns the worker promise", async () => {
     afterMock.mockImplementation(() => undefined);
 
     scheduleDocumentRenderKick();
@@ -24,7 +24,9 @@ describe("scheduleDocumentRenderKick", () => {
 
     const task = afterMock.mock.calls[0]?.[0];
     expect(task).toEqual(expect.any(Function));
-    task?.();
+    const pending = task?.();
+    expect(pending).toBeInstanceOf(Promise);
+    await pending;
     expect(processQueuedDocumentRenders).toHaveBeenCalledTimes(1);
   });
 });

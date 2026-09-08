@@ -184,7 +184,7 @@ Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem
 
 CHECK da OS já inclui `canceled`. **Antes** o RPC não tocava `service_orders`: cancelar `in_workshop`/`in_service` deixava OS viva. OS só existe após orçamento.
 
-**Correção:** coluna aditiva `service_orders.previous_status_before_cancellation` (nullable; CHECK = status da OS excepto `canceled`). Não gravar só em `collection_events.metadata` (reopen fica opaco). No cancel, se existir OS: gravar previous, `status = 'canceled'`. No reopen: restaurar previous e limpar a coluna; se previous null, mapear a partir do status restaurado da coleta (`in_budget→budgeted`, `approved→approved`, `in_service→in_service`, `ready|invoiced|partial_delivery→ready`, `rejected→rejected`; `collected`/`in_workshop` sem OS = no-op). Sem OS → no-op.
+**Correção:** coluna aditiva `service_orders.previous_status_before_cancellation` (nullable; CHECK = status da OS excepto `canceled`). Não gravar só em `collection_events.metadata` (reopen fica opaco). No cancel, se existir OS: gravar previous, `status = 'canceled'`. No reopen: restaurar previous e limpar a coluna; se previous null, mapear a partir do status restaurado da coleta. **L6** (`20260907240000`) substitui o fallback original (`ready|invoiced|partial_delivery→ready`, `else` skip): `partial_delivery`/`invoiced` via `private.service_order_status_from_remaining`; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown`. `collected`/`in_workshop` sem OS = no-op. Sem OS → no-op.
 
 **Não** cancelar OS em `draft`. **Não** `DELETE`. **Não** deixar OS `canceled` após reopen.
 

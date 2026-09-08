@@ -103,7 +103,7 @@ Recebe `multipart/form-data` com PNG, `signerName`, `signerTaxId`, `acceptanceTe
 
 ### `POST /api/collections/{id}/finalize`
 
-Recebe `expectedVersion` e exige `Idempotency-Key`. A RPC bloqueia a coleta, valida cliente, local, responsável, item e assinatura, congela cliente/evidências no snapshot, reserva o código oficial e cria a primeira versão documental. Retry com a mesma chave e hash devolve a mesma resposta. Depois do RPC com sucesso, o adaptador (Server Action e esta rota) agenda `processQueuedDocumentRenders` no mesmo processo via `after()` — o celular recebe o número imediatamente; a falha do render não desfaz o finalize.
+Recebe `expectedVersion` e exige `Idempotency-Key`. A RPC bloqueia a coleta, valida cliente, local, responsável, item e assinatura, congela cliente/evidências no snapshot, reserva o código oficial e cria a primeira versão documental. Retry com a mesma chave e hash devolve a mesma resposta. Depois do RPC com sucesso, o adaptador (Server Action e esta rota) agenda `processQueuedDocumentRenders` no mesmo processo via `after()` **devolvendo a Promise do worker** — o celular recebe o número imediatamente; a falha do render não desfaz o finalize.
 
 ### `POST /api/collections/{id}/cancel` e `POST /api/collections/{id}/reopen`
 
@@ -265,7 +265,7 @@ Resposta `503` (env ausente, timeout ou check Supabase falhou):
 
 ## Worker interno
 
-Happy path do celular: finalize / cancel / reopen (Fase 1A) / revise no mesmo processo Next — `after()` chama o DAL `processQueuedDocumentRenders` (lote 2). Sem secret no aparelho e sem `fetch` da própria `/api`. Esta rota HTTP e o cron são **retry/recovery**, não o fluxo do dia a dia.
+Happy path do celular: finalize / cancel / reopen (Fase 1A) / revise no mesmo processo Next — `after()` chama o DAL `processQueuedDocumentRenders` (lote 2) e **devolve essa Promise** para o isolate serverless não congelar no meio do claim. Sem secret no aparelho e sem `fetch` da própria `/api`. Esta rota HTTP e o cron são **retry/recovery**, não o fluxo do dia a dia.
 
 ### `GET` / `POST /api/internal/document-jobs/run` (alias `POST /api/internal/document-generation/run`)
 
