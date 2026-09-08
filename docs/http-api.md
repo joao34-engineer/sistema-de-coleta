@@ -265,7 +265,7 @@ Resposta `503` (env ausente, timeout ou check Supabase falhou):
 
 ## Worker interno
 
-Happy path do celular: finalize / cancel / reopen (Fase 1A) / revise no mesmo processo Next — `after()` chama o DAL `processQueuedDocumentRenders` (lote 2) e **devolve essa Promise** para o isolate serverless não congelar no meio do claim. Sem secret no aparelho e sem `fetch` da própria `/api`. Esta rota HTTP e o cron são **retry/recovery**, não o fluxo do dia a dia.
+Happy path do celular: finalize / cancel / reopen (Fase 1A) / revise no mesmo processo Next — `after()` chama o DAL `processQueuedDocumentRenders` (até 4 lotes de 2: pdf+qr, FIFO global) e **devolve essa Promise** para o isolate serverless não congelar no meio do claim. Sem secret no aparelho e sem `fetch` da própria `/api`. Esta rota HTTP e o cron são **retry/recovery**, não o fluxo do dia a dia.
 
 ### `GET` / `POST /api/internal/document-jobs/run` (alias `POST /api/internal/document-generation/run`)
 

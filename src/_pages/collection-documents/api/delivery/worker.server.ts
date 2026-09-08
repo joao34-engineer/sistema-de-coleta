@@ -46,6 +46,10 @@ export async function runDocumentWorkerBatch(batchSize: number): Promise<Readonl
   return { processed: statuses.filter((status) => status !== "idle").length, statuses };
 }
 
+const DOCUMENT_RENDER_KICK_BATCH = 2;
+/** Claim is global FIFO (pdf+qr per guia). One round of 2 would drain leftovers and skip the guia just finalized. */
+const DOCUMENT_RENDER_KICK_ROUNDS = 4;
+
 /**
  * After finalize (and similar) already enqueued jobs, render PDF/QR in this process.
  * Failures must not undo the collection: cron / later retry still own durability.
@@ -54,7 +58,10 @@ export async function processQueuedDocumentRenders(
   runBatch: typeof runDocumentWorkerBatch = runDocumentWorkerBatch,
 ): Promise<void> {
   try {
-    await runBatch(2);
+    for (let round = 0; round < DOCUMENT_RENDER_KICK_ROUNDS; round += 1) {
+      const result = await runBatch(DOCUMENT_RENDER_KICK_BATCH);
+      if (result.processed < DOCUMENT_RENDER_KICK_BATCH) return;
+    }
   } catch {
     return;
   }

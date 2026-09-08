@@ -29,6 +29,7 @@ export function PdfPendingStatus({
   const [exhausted, setExhausted] = useState(false);
   const [retryBusy, setRetryBusy] = useState(false);
   const [retryMessage, setRetryMessage] = useState<string | null>(null);
+  const [pollEpoch, setPollEpoch] = useState(0);
   const failed = !hasPdf && pdfJobStatus === "failed";
   const pending = !hasPdf && !failed;
 
@@ -52,7 +53,7 @@ export function PdfPendingStatus({
       window.clearTimeout(resetTimer);
       window.clearInterval(timer);
     };
-  }, [pending, router, refreshMs, maxRefreshes]);
+  }, [pending, router, refreshMs, maxRefreshes, pollEpoch]);
 
   async function handleRetry(): Promise<void> {
     setRetryBusy(true);
@@ -60,6 +61,8 @@ export function PdfPendingStatus({
     try {
       const response = await fetch(`/api/collections/${collectionId}/documents/${documentId}/retry`, { method: "POST" });
       if (!response.ok) throw new Error("document_retry_failed");
+      setExhausted(false);
+      setPollEpoch((epoch) => epoch + 1);
       router.refresh();
     } catch {
       setRetryMessage("Não foi possível tentar de novo.");
@@ -72,13 +75,17 @@ export function PdfPendingStatus({
     return null;
   }
 
-  if (failed) {
+  if (failed || exhausted) {
     return (
       <div
         role="status"
         className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[12px] font-medium text-[var(--color-text-primary)]"
       >
-        <p>Não foi possível gerar o PDF desta guia. Tente de novo ou aguarde alguns minutos.</p>
+        <p>
+          {failed
+            ? "Não foi possível gerar o PDF desta guia. Tente de novo ou aguarde alguns minutos."
+            : "O PDF ainda está na fila. Tente de novo para gerar agora."}
+        </p>
         <button
           type="button"
           onClick={() => void handleRetry()}
@@ -97,9 +104,7 @@ export function PdfPendingStatus({
       role="status"
       className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[12px] font-medium text-[var(--color-text-primary)]"
     >
-      {exhausted
-        ? "O PDF ainda está sendo processado. Atualize a página em instantes."
-        : "Gerando o PDF da guia. Isso leva alguns segundos. Depois você pode baixar ou compartilhar no WhatsApp."}
+      Gerando o PDF da guia. Isso leva alguns segundos. Depois você pode baixar ou compartilhar no WhatsApp.
     </p>
   );
 }

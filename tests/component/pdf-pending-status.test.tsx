@@ -20,8 +20,10 @@ describe("PdfPendingStatus", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps the generating copy until polls are exhausted", async () => {
+  it("keeps the generating copy until polls are exhausted, then offers retry", async () => {
     vi.useFakeTimers();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { status: "queued", alreadyReady: false } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
     render(
       <PdfPendingStatus
         collectionId={collectionId}
@@ -39,7 +41,16 @@ describe("PdfPendingStatus", () => {
       await vi.advanceTimersByTimeAsync(10);
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(/O PDF ainda está sendo processado/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/O PDF ainda está na fila/i);
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/collections/${collectionId}/documents/${documentId}/retry`,
+      { method: "POST" },
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(router.refresh).toHaveBeenCalled();
   });
 
   it("shows honest failure and retry instead of generating copy", async () => {
