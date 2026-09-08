@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSignerTaxIdQueueError, messageForQueueError, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
+import { isSignerTaxIdQueueError, messageForQueueError, messageForRetryFailure, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
 
 describe("messageForQueueError", () => {
   it("maps authentication_required to authExpired", () => {

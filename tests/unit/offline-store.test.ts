@@ -192,4 +192,27 @@ describe("offline draft store", () => {
     );
     expect(discards).toHaveLength(1);
   });
+
+  it("supersedes an unfinished patch_draft when a newer one is enqueued", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    const collectionId = draftFixture().id;
+    await store.putDraft(draftFixture());
+    const first = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { responsibleTaxId: "11111111111" },
+    });
+    await store.putMutation({ ...first, status: "failed", lastError: "invalid_signer_tax_id" });
+    const second = await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { responsibleTaxId: "52998224725" },
+    });
+    expect(second.id).not.toBe(first.id);
+    const rows = await store.listMutations(collectionId, actor.userId);
+    expect(rows.find((row) => row.id === first.id)?.status).toBe("done");
+    expect(rows.find((row) => row.id === second.id)?.status).toBe("pending");
+  });
 });

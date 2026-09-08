@@ -22,9 +22,37 @@ const VALIDATION_ERROR = "validation_error";
 const COLLECTION_INCOMPLETE = "collection_incomplete";
 const CANCELLED_BY_DISCARD = "cancelled_by_discard";
 const INVALID_SIGNER_TAX_ID = "invalid_signer_tax_id";
+const SUPERSEDED = "superseded";
 
 function isUnfinishedMutation(row: OfflineMutationRecord): boolean {
   return row.status === "pending" || row.status === "failed" || row.status === "in_flight";
+}
+
+function isLatestWinsKind(kind: OfflineMutationRecord["kind"]): boolean {
+  return kind === "patch_draft" || kind === "save_signature" || kind === "finalize";
+}
+
+function hasNewerUnfinished(
+  rows: readonly OfflineMutationRecord[],
+  mutation: OfflineMutationRecord,
+): boolean {
+  if (!isLatestWinsKind(mutation.kind)) {
+    return false;
+  }
+  return rows.some(
+    (row) => row.kind === mutation.kind && row.sequence > mutation.sequence && isUnfinishedMutation(row),
+  );
+}
+
+async function supersedeOlderLatestWins(
+  store: OfflineDraftStore,
+  rows: readonly OfflineMutationRecord[],
+): Promise<void> {
+  for (const row of rows) {
+    if (isUnfinishedMutation(row) && hasNewerUnfinished(rows, row)) {
+      await store.putMutation({ ...row, status: "done", lastError: SUPERSEDED });
+    }
+  }
 }
 
 function isTerminalValidation(error: string): boolean {
@@ -180,10 +208,16 @@ export async function drainCollectionQueue(input: {
   }
 
   const listed = await store.listMutations(collectionId, actor.userId);
-  const discardWinner = pickUnfinishedDiscard(listed);
+  await supersedeOlderLatestWins(store, listed);
+  const currentListed = listed.map((row) =>
+    isUnfinishedMutation(row) && hasNewerUnfinished(listed, row)
+      ? { ...row, status: "done" as const, lastError: SUPERSEDED }
+      : row,
+  );
+  const discardWinner = pickUnfinishedDiscard(currentListed);
   if (discardWinner) {
     // Discard must win: a failed finalize must not block the human's discard.
-    await cancelUnfinishedExcept(store, listed, discardWinner.id);
+    await cancelUnfinishedExcept(store, currentListed, discardWinner.id);
   }
   const mutations = discardWinner
     ? [
@@ -191,7 +225,7 @@ export async function drainCollectionQueue(input: {
           ? { ...discardWinner, status: "pending" as const }
           : discardWinner,
       ].filter((row) => row.status === "pending" || row.status === "failed")
-    : orderMutationsForDrain(listed);
+    : orderMutationsForDrain(currentListed);
 
   await store.putDraft({ ...draft, syncStatus: "syncing", updatedAt: store.nowIso() });
 
@@ -216,6 +250,15 @@ export async function drainCollectionQueue(input: {
       return { status: "failed", officialKept: false };
     }
 
+    const liveRows = await store.listMutations(collectionId, actor.userId);
+    const live = liveRows.find((row) => row.id === mutation.id);
+    if (live === undefined || live.status === "done" || hasNewerUnfinished(liveRows, mutation)) {
+      if (live !== undefined && live.status !== "done") {
+        await store.putMutation({ ...live, status: "done", lastError: SUPERSEDED });
+      }
+      continue;
+    }
+
     const inFlight: OfflineMutationRecord = { ...mutation, status: "in_flight" };
     await store.putMutation(inFlight);
 
@@ -234,6 +277,11 @@ export async function drainCollectionQueue(input: {
       return drainCollectionQueue({ store, commands, actor, collectionId, staleRetry: true });
     }
     if (outcome.kind === "error") {
+      const rowsAfterError = await store.listMutations(collectionId, actor.userId);
+      if (hasNewerUnfinished(rowsAfterError, inFlight)) {
+        await store.putMutation({ ...inFlight, status: "done", lastError: SUPERSEDED });
+        continue;
+      }
       await markFailed(store, inFlight, draft, outcome.error);
       return { status: "failed", officialKept: false };
     }

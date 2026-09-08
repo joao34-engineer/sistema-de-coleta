@@ -123,6 +123,16 @@ export function createOfflineDraftStore(port: OfflineKvPort) {
         return leftover;
       }
     }
+    if (input.kind === "patch_draft" || input.kind === "save_signature" || input.kind === "finalize") {
+      for (const row of existing) {
+        if (
+          row.kind === input.kind &&
+          (row.status === "pending" || row.status === "failed" || row.status === "in_flight")
+        ) {
+          await putMutation({ ...row, status: "done", lastError: "superseded" });
+        }
+      }
+    }
     const sequence = existing.reduce((max, row) => Math.max(max, row.sequence), -1) + 1;
     const record: OfflineMutationRecord = {
       id: crypto.randomUUID(),

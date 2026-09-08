@@ -97,7 +97,7 @@ describe("OfflinePendingPanel", () => {
     );
   });
 
-  it("collapses the panel when Continuar targets the current page", () => {
+  it("hides Continuar when already on the resume page", () => {
     const onClose = vi.fn();
     const resumeHref = "/coletas/22222222-2222-4222-8222-222222222222/itens";
     render(
@@ -110,8 +110,24 @@ describe("OfflinePendingPanel", () => {
         onClose={onClose}
       />,
     );
-    fireEvent.click(screen.getByRole("link", { name: offlineCopy.resume }));
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("link", { name: offlineCopy.resume })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: offlineCopy.closePanel })).toBeInTheDocument();
+  });
+
+  it("shows Continuar when resume is another step", () => {
+    render(
+      <OfflinePendingPanel
+        drafts={[{ ...draft, lastError: "collection_incomplete" }]}
+        busy={false}
+        currentPathname="/coletas/22222222-2222-4222-8222-222222222222/assinatura"
+        onRetry={() => undefined}
+        onDiscard={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("link", { name: offlineCopy.resume })).toHaveAttribute(
+      "href",
+      "/coletas/22222222-2222-4222-8222-222222222222/revisao",
+    );
   });
 
   it("disables discard while busy", () => {

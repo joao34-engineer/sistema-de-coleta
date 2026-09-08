@@ -485,6 +485,43 @@ describe("offline drain runner", () => {
     expect(updated?.lastError).toBe("invalid_signer_tax_id");
   });
 
+  it("retries a valid signer CPF after a failed invalid patch_draft", async () => {
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId }));
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { responsibleTaxId: "11111111111" },
+    });
+    const firstDrain = await drainCollectionQueue({
+      store,
+      commands: commands(),
+      actor,
+      collectionId,
+    });
+    expect(firstDrain).toEqual({ status: "failed", officialKept: false });
+    expect((await store.getDraft(collectionId, actor.userId))?.lastError).toBe("invalid_signer_tax_id");
+
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "patch_draft",
+      payload: { responsibleTaxId: "52998224725" },
+    });
+    const patchDraft = vi.fn(async () => ({ ok: true as const, rowVersion: 2 }));
+    const result = await drainCollectionQueue({
+      store,
+      commands: commands({ patchDraft }),
+      actor,
+      collectionId,
+    });
+    expect(result).toEqual({ status: "completed", officialKept: false });
+    expect(patchDraft).toHaveBeenCalledTimes(1);
+    expect(patchDraft).toHaveBeenCalledWith(expect.objectContaining({ responsibleTaxId: "52998224725" }));
+    expect((await store.getDraft(collectionId, actor.userId))?.lastError).toBeNull();
+  });
+
   it("marks invalid responsible CPF on patch_draft as invalid_signer_tax_id", async () => {
     const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
     await store.putDraft(draftRecord({ serverRowVersion: 1, serverCustomerId: customerId }));

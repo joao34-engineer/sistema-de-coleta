@@ -227,6 +227,7 @@ export async function saveLocalSignature(input: {
     responsibleTaxId: input.signerTaxId,
     collectedAt,
     syncStatus: "queued",
+    lastError: null,
     updatedAt: input.store.nowIso(),
   });
   await input.store.putSignature({

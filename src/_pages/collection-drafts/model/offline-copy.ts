@@ -10,12 +10,16 @@ export const offlineCopy = {
   pendingEmpty: "Nenhuma coleta pendente neste aparelho.",
   retry: "Tentar de novo",
   retryBusy: "Tentando novamente…",
+  retryStillFailed: "Ainda não foi possível sincronizar.",
   completeCollection: "Completar coleta",
   syncComplete: "Sincronização concluída.",
   closePanel: "Fechar",
   showPending: "Ver pendentes",
   resume: "Continuar",
   discard: "Descartar rascunho",
+  discardTitle: "Descartar rascunho?",
+  discardCancel: "Cancelar",
+  discardAction: "Descartar",
   discardConfirm: "Descartar este rascunho salvo neste aparelho? A guia oficial não é apagada.",
   quotaExceeded: "Não há espaço neste aparelho para guardar o rascunho.",
   searchOffline: "A busca de cliente precisa de internet. Cadastre um novo cliente para continuar.",
@@ -86,4 +90,9 @@ export function messageForQueueError(code: string | null | undefined): string {
     return offlineCopy.failed;
   }
   return offlineCopy.failed;
+}
+
+/** Distinct retry outcome when drain leaves the same leftover error. */
+export function messageForRetryFailure(code: string | null | undefined): string {
+  return `${offlineCopy.retryStillFailed} ${messageForQueueError(code)}`;
 }

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OfflinePendingBanner } from "@/_app/offline/ui/offline-pending-banner";
-import { offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
+import { messageForRetryFailure, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
 import type { OfflineDraftRecord, OfflineMutationRecord } from "@/_pages/collection-drafts/model/offline-records";
 
 const drain = vi.hoisted(() => vi.fn(async () => ({ officialKept: false })));
@@ -79,7 +79,6 @@ describe("OfflinePendingBanner online drain", () => {
     listMutations.mockResolvedValue([]);
     getDraft.mockReset();
     getDraft.mockResolvedValue(null);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -101,20 +100,28 @@ describe("OfflinePendingBanner online drain", () => {
     });
   });
 
-  it("does not discard when confirm is cancelled", async () => {
-    vi.mocked(window.confirm).mockReturnValue(false);
-    refreshDrafts.mockResolvedValue([draft]);
-    render(
-      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
-    );
+  async function openDiscardDialog(): Promise<void> {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalled();
+      expect(screen.getByRole("dialog", { name: offlineCopy.discardTitle })).toBeInTheDocument();
+    });
+  }
+
+  it("does not discard when confirm is cancelled", async () => {
+    refreshDrafts.mockResolvedValue([draft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await openDiscardDialog();
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discardCancel }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
     expect(discardLocalDraft).not.toHaveBeenCalled();
+    expect(screen.getByText(/Oficina Norte/)).toBeInTheDocument();
   });
 
   it("shows an error when discardLocalDraft fails and keeps the row", async () => {
@@ -127,6 +134,10 @@ describe("OfflinePendingBanner online drain", () => {
       expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: offlineCopy.discardTitle })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discardAction }));
     await waitFor(() => {
       expect(screen.getAllByText(offlineCopy.failed).length).toBeGreaterThan(0);
     });
@@ -158,7 +169,11 @@ describe("OfflinePendingBanner online drain", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalledWith(offlineCopy.discardConfirmSynced);
+      expect(screen.getByText(offlineCopy.discardConfirmSynced)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discardAction }));
+    await waitFor(() => {
+      expect(discardLocalDraft).toHaveBeenCalledOnce();
     });
   });
 
@@ -176,6 +191,10 @@ describe("OfflinePendingBanner online drain", () => {
       expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: offlineCopy.discardTitle })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discardAction }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: offlineCopy.discard })).toBeDisabled();
     });
@@ -200,6 +219,10 @@ describe("OfflinePendingBanner online drain", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.discard }));
     await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: offlineCopy.discardTitle })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: offlineCopy.discardAction }));
+    await waitFor(() => {
       expect(screen.getByText(offlineCopy.discardOfficialKept)).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: offlineCopy.discard })).not.toBeInTheDocument();
@@ -220,7 +243,9 @@ describe("OfflinePendingBanner online drain", () => {
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
     expect(screen.getByRole("button", { name: offlineCopy.retryBusy })).toBeDisabled();
     await waitFor(() => {
-      expect(screen.getByText("Os dados do emissor da guia estão incompletos. Ajuste nas configurações.")).toBeInTheDocument();
+      expect(document.getElementById("offline-pending-retry-result")).toHaveTextContent(
+        messageForRetryFailure("issuer_profile_incomplete"),
+      );
     });
     expect(screen.getByRole("button", { name: offlineCopy.retry })).not.toBeDisabled();
   });
@@ -235,7 +260,9 @@ describe("OfflinePendingBanner online drain", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
     await waitFor(() => {
-      expect(screen.getByText(offlineCopy.failed)).toBeInTheDocument();
+      expect(document.getElementById("offline-pending-retry-result")).toHaveTextContent(
+        messageForRetryFailure(null),
+      );
     });
     expect(screen.getByText(/Oficina Norte/)).toBeInTheDocument();
   });
@@ -274,6 +301,7 @@ describe("OfflinePendingBanner online drain", () => {
         "Informe o local da coleta antes de continuar.",
       );
     });
+    expect(screen.getByText(offlineCopy.pendingTitle)).toBeInTheDocument();
     expect(drain).not.toHaveBeenCalled();
   });
 

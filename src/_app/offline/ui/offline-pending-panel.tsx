@@ -69,14 +69,23 @@ export function OfflinePendingPanel({
           <p className="mt-2 text-[12px] font-medium text-[var(--color-text)]">{notice}</p>
         ) : null}
         {bannerError ? <p className="mt-2 text-[12px] font-medium text-[#ba5b52]">{bannerError}</p> : null}
-        {retryResult ? (
-          <p id="offline-pending-retry-result" className="mt-2 text-[12px] font-medium text-[var(--color-text)]">
-            {retryResult}
-          </p>
-        ) : null}
+        <div aria-atomic="true" aria-live="polite">
+          {retryResult ? (
+            <p
+              id="offline-pending-retry-result"
+              className={`mt-2 text-[12px] font-medium ${
+                retryResult === offlineCopy.syncComplete ? "text-[var(--color-text)]" : "text-[#ba5b52]"
+              }`}
+            >
+              {retryResult}
+            </p>
+          ) : null}
+        </div>
         {ordered.length > 0 ? (
           <ul className="mt-3 flex flex-col gap-2">
             {ordered.map((draft) => {
+              const resumeHref = pendingResumeHref(draft);
+              const showResume = currentPathname !== resumeHref;
               const errorText =
                 draft.lastError !== null && draft.lastError !== undefined && draft.lastError.trim() !== ""
                   ? messageForQueueError(draft.lastError)
@@ -87,18 +96,14 @@ export function OfflinePendingPanel({
                     <span className="text-[var(--color-text)]">
                       {draft.customer.displayName} · {stepLabel[draft.currentStep]}
                     </span>
-                    <Link
-                      className="font-semibold text-[var(--color-primary-strong)]"
-                      href={pendingResumeHref(draft) as Route}
-                      onClick={(event) => {
-                        if (currentPathname === pendingResumeHref(draft)) {
-                          event.preventDefault();
-                          onClose?.();
-                        }
-                      }}
-                    >
-                      {offlineCopy.resume}
-                    </Link>
+                    {showResume ? (
+                      <Link
+                        className="font-semibold text-[var(--color-primary-strong)]"
+                        href={resumeHref as Route}
+                      >
+                        {offlineCopy.resume}
+                      </Link>
+                    ) : null}
                   </div>
                   {errorText ? <p className="text-[12px] font-medium text-[#ba5b52]">{errorText}</p> : null}
                   <Button
