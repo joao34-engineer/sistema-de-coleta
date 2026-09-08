@@ -6,6 +6,7 @@ const failureMessages: Readonly<Record<string, string>> = {
   stale_version: "A coleta foi atualizada por outra operação. Recarregue a página e revise os dados.",
   idempotency_conflict: "Esta operação já foi enviada com outros dados. Atualize a página antes de tentar de novo.",
   duplicate_workshop_item: "O mesmo item da coleta foi informado mais de uma vez no check-in.",
+  duplicate_budget_item: "O mesmo item não pode ser informado mais de uma vez no orçamento.",
   workshop_checkin_items_incomplete: "O check-in de oficina deve incluir todos os itens da coleta.",
   workshop_checkin_not_collected: "A coleta precisa estar no status 'coletada' para o check-in de oficina.",
   budget_not_in_workshop: "A coleta precisa estar 'em oficina' para registrar o orçamento.",
@@ -22,6 +23,7 @@ const failureMessages: Readonly<Record<string, string>> = {
   collection_not_cancelable_draft: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
   collection_cannot_be_canceled: "A coleta não pode ser cancelada no status atual.",
   collection_not_canceled: "A coleta não está cancelada para ser reaberta.",
+  service_order_reopen_status_unknown: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada.",
   validation_error: "Revise os dados informados e tente novamente.",
 };
 

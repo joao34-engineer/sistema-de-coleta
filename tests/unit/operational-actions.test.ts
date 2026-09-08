@@ -360,10 +360,10 @@ describe("operationalItemFactsFrom", () => {
   const missingId = "22222222-2222-4222-8222-222222222222";
   const deliveredReadyId = "33333333-3333-4333-8333-333333333333";
 
-  it("defaults a missing budget line to em_reparo", () => {
+  it("treats a missing budget line as neither ready nor in repair", () => {
     expect(operationalItemFactsFrom([missingId], [])).toEqual({
       hasUndeliveredReadyItem: false,
-      hasInRepairItem: true,
+      hasInRepairItem: false,
     });
   });
 
@@ -394,12 +394,12 @@ describe("operationalItemFactsFrom", () => {
     });
   });
 
-  it("combines an undelivered Pronto line with a missing line still in repair", () => {
+  it("does not treat a missing budget line as in repair next to an undelivered Pronto", () => {
     expect(
       operationalItemFactsFrom([readyId, missingId], [{ collectionItemId: readyId, status: "pronto" }]),
     ).toEqual({
       hasUndeliveredReadyItem: true,
-      hasInRepairItem: true,
+      hasInRepairItem: false,
     });
   });
 });

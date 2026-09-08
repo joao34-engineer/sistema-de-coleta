@@ -73,7 +73,7 @@ const statusesWithCancel: ReadonlySet<CollectionStatus> = new Set<CollectionStat
 
 /**
  * Derives CTA item facts from collection lines + service-order progress.
- * A missing service-order line defaults to `em_reparo`, matching the progresso route.
+ * A missing service-order line is not deliverable and not in repair.
  */
 export function operationalItemFactsFrom(
   collectionItemIds: ReadonlyArray<string>,
@@ -85,11 +85,13 @@ export function operationalItemFactsFrom(
 
   for (const itemId of collectionItemIds) {
     const budgetItem = budgetItems.find((item) => item.collectionItemId === itemId);
-    const status = budgetItem?.status ?? "em_reparo";
-    if (status === "pronto" && !alreadyDeliveredItemIds.includes(itemId)) {
+    if (budgetItem === undefined) {
+      continue;
+    }
+    if (budgetItem.status === "pronto" && !alreadyDeliveredItemIds.includes(itemId)) {
       hasUndeliveredReadyItem = true;
     }
-    if (status === "em_reparo" && !alreadyDeliveredItemIds.includes(itemId)) {
+    if (budgetItem.status === "em_reparo" && !alreadyDeliveredItemIds.includes(itemId)) {
       hasInRepairItem = true;
     }
   }

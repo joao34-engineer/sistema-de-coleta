@@ -11,14 +11,17 @@ export default async function CustomerDeliveryRoute({ params }: Readonly<{ param
     <CustomerDeliveryPage
       collectionId={collection.id}
       officialCode={collection.officialCode}
-      items={collection.items.map((collectionItem) => {
+      items={collection.items.flatMap((collectionItem) => {
         const budgetItem = budgetItems.find((item) => item.collectionItemId === collectionItem.id);
-        return {
+        if (budgetItem === undefined || budgetItem.status === null) {
+          return [];
+        }
+        return [{
           id: collectionItem.id,
           description: collectionItem.description,
           quantity: collectionItem.quantity,
-          serviceOrderStatus: budgetItem?.status ?? "em_reparo",
-        };
+          serviceOrderStatus: budgetItem.status,
+        }];
       })}
       alreadyDeliveredItemIds={alreadyDeliveredItemIds}
       rowVersion={collection.rowVersion}

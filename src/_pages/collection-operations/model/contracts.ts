@@ -52,7 +52,10 @@ export const technicalBudgetSchema = z.object({
   expectedVersion: z.number().int().positive(),
   items: z.array(technicalBudgetItemSchema).min(1, "Ao menos um item no orcamento."),
   generalNotes: z.string().max(2000).nullable().optional(),
-});
+}).refine(
+  (data) => new Set(data.items.map((item) => item.itemId)).size === data.items.length,
+  { message: "O mesmo item não pode ser informado mais de uma vez.", path: ["items"] },
+);
 
 // 3. Budget Approval (M13)
 export const budgetApprovalSchema = z.object({

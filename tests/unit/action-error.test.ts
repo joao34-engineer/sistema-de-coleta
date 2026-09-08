@@ -31,6 +31,14 @@ describe("safe action errors", () => {
       ok: false,
       error: "O check-in de oficina deve incluir todos os itens da coleta.",
     });
+    expect(toSafeActionError(new Error("duplicate_budget_item"))).toEqual({
+      ok: false,
+      error: "O mesmo item não pode ser informado mais de uma vez no orçamento.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "duplicate_budget_item" })).toEqual({
+      ok: false,
+      error: "O mesmo item não pode ser informado mais de uma vez no orçamento.",
+    });
   });
 
   it("maps delivery item validation codes to Portuguese", () => {
@@ -95,6 +103,17 @@ describe("safe action errors", () => {
     expect(toSafeActionError({ code: "P0001", message: "collection_not_in_service" })).toEqual({
       ok: false,
       error: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso.",
+    });
+  });
+
+  it("maps service_order_reopen_status_unknown to Portuguese", () => {
+    expect(toSafeActionError(new Error("service_order_reopen_status_unknown"))).toEqual({
+      ok: false,
+      error: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada.",
+    });
+    expect(toSafeActionError({ code: "P0001", message: "service_order_reopen_status_unknown" })).toEqual({
+      ok: false,
+      error: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada.",
     });
   });
 

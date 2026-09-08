@@ -18,6 +18,7 @@ function mapLifecycleApiError(error: unknown): Omit<LifecycleApiError, "actorId"
   if (isSupabaseError(error) && typeof error.code === "string") {
     if (error.code === "P0001" && error.message === "idempotency_conflict") return { status: 409, code: "idempotency_conflict", message: "A chave de idempotencia foi reutilizada com outra requisicao." };
     if (error.code === "P0001" && error.message === "collection_not_draft") return { status: 409, code: "collection_not_draft", message: "A coleta não está em rascunho." };
+    if (error.code === "P0001" && error.message === "service_order_reopen_status_unknown") return { status: 409, code: "service_order_reopen_status_unknown", message: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada." };
     if (error.code === "P0001" && error.message === "invalid_cursor") return { status: 422, code: "invalid_cursor", message: "O cursor de paginação é inválido." };
     if (error.code === "P0001" && error.message === "customer_snapshot_immutable") return { status: 409, code: "immutable_record", message: "O registro documental é imutável." };
     if (error.code === "P0001" && error.message === "invalid_signer_tax_id") return { status: 422, code: "invalid_signer_tax_id", message: INVALID_SIGNER_TAX_ID_COPY };

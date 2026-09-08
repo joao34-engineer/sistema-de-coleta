@@ -27,6 +27,7 @@ function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorI
     if (error.code === "P0001" && error.message === "collection_not_cancelable_draft") return { status: 409, code: "collection_not_cancelable_draft", message: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho." };
     if (error.code === "P0001" && error.message === "collection_cannot_be_canceled") return { status: 409, code: "collection_cannot_be_canceled", message: "A coleta não pode ser cancelada no status atual." };
     if (error.code === "P0001" && error.message === "collection_not_canceled") return { status: 409, code: "collection_not_canceled", message: "A coleta não está cancelada para ser reaberta." };
+    if (error.code === "P0001" && error.message === "service_order_reopen_status_unknown") return { status: 409, code: "service_order_reopen_status_unknown", message: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada." };
     if (error.code === "P0001" && error.message === "service_order_not_found") return { status: 404, code: "service_order_not_found", message: "Ordem de serviço não encontrada para esta coleta." };
     if (error.code === "P0001" && error.message === "service_order_item_not_found") return { status: 404, code: "service_order_item_not_found", message: "Item da ordem de serviço não encontrado." };
     if (error.code === "P0001" && error.message === "collection_item_not_found") return { status: 404, code: "collection_item_not_found", message: "Item da coleta não encontrado ou já removido." };
@@ -34,6 +35,7 @@ function mapOperationsApiError(error: unknown): Omit<OperationsApiError, "actorI
     if (error.code === "P0001" && error.message === "duplicate_workshop_item") return { status: 422, code: "duplicate_workshop_item", message: "O mesmo item da coleta foi informado mais de uma vez no check-in." };
     if (error.code === "P0001" && error.message === "workshop_checkin_items_incomplete") return { status: 422, code: "workshop_checkin_items_incomplete", message: "O check-in de oficina deve incluir todos os itens da coleta." };
     if (error.code === "P0001" && error.message === "invalid_budget_request") return { status: 422, code: "validation_error", message: "Dados do orçamento técnico inválidos." };
+    if (error.code === "P0001" && error.message === "duplicate_budget_item") return { status: 422, code: "duplicate_budget_item", message: "O mesmo item não pode ser informado mais de uma vez no orçamento." };
     if (error.code === "P0001" && error.message === "invalid_budget_item") return { status: 422, code: "validation_error", message: "Item do orçamento inválido." };
     if (error.code === "P0001" && error.message === "invalid_approval_request") return { status: 422, code: "validation_error", message: "Dados de aprovação/rejeição inválidos." };
     if (error.code === "P0001" && error.message === "invalid_progress_request") return { status: 422, code: "validation_error", message: "Dados de progresso de serviço inválidos." };

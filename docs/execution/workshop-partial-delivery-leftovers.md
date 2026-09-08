@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1 **no remoto** 07/09/2026 (`20260907020000`); L2 **no remoto** 07/09/2026 (`20260907030000`); L3 e L7 em código; PR 5 **bloqueado** (Figma O02). **C1:** `migration list` local = remoto até `20260907220000` |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1 **no remoto** 07/09/2026 (`20260907020000`); L2 **no remoto** 07/09/2026 (`20260907030000`); L3 e L7 em código; L4 **no remoto** 07/09/2026 (`20260907230000`); L6 **em código** 08/09/2026 (`20260907240000`; **não** no remoto); PR 5 **bloqueado** (Figma O02). **C1:** `migration list` local = remoto até `20260907230000` |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -60,9 +60,9 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | L1 | Matriz `partial_delivery` + progresso sem item entregue (A2+A3+A12) | sim, `update_service_progress` | PR 3 | **no remoto** 07/09/2026 (`20260907020000`) |
 | L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **no remoto** 07/09/2026 (`20260907030000`) |
 | L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
-| L4 | Invariantes de item (A5+A6) | sim | L2 | **não**. Depois de L2. PR 5 espera este bloco `remaining` |
+| L4 | Invariantes de item (A5+A6) | sim | L2 | **no remoto** 07/09/2026 (`20260907230000`). PR 5 espera este bloco `remaining` |
 | L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **não** |
-| L6 | Reopen fallback OS (A7+A8) | sim | L1 | **não** |
+| L6 | Reopen fallback OS (A7+A8) | sim | L1 | **completo** em código 08/09/2026 (`20260907240000`; **não** no remoto) |
 | L7 | REST entrega + O04 counter + settings D1–D3 | não | — | **completo** 2026-09-07 |
 
 Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 com PR 5.
@@ -149,13 +149,13 @@ Conjunto **deliverable** (`deliver_to_customer` e `prepare_delivery_signature_in
 1. **Seleção UI:** só `service_order_items.status = 'pronto'` e ainda não entregues. `em_reparo` visíveis, **desabilitados**, copy **Continua em reparo**. Já entregues: **já entregue**.
 2. **`deliver_to_customer`** (9 args, `CREATE OR REPLACE` a partir de `20260906210000`):
    - Aceitar o conjunto deliverable (antes recusava `in_service`).
-   - Cada id em `p_delivered_item_ids` tem linha de OS com `status = 'pronto'`. Senão `item_not_ready` (422). Recusar `em_reparo` / item sem OS.
+   - Cada id em `p_delivered_item_ids` tem linha de OS **e** todas as linhas daquele item estão `pronto` (L4). Senão `item_not_ready` (422). Recusar `em_reparo` / item sem OS.
    - Guards 5.5 intactos (`duplicate_delivery_item`, `item_already_delivered`).
 3. **`prepare_delivery_signature_intent`** (mesma assinatura, `CREATE OR REPLACE` do corpo `20260823000000`): `delivery_term` aceita o **mesmo** conjunto. Sem isto, UI quebra em `ready` **e** em `in_service` antes de chegar ao deliver.
 4. **Status depois do termo:**
-   - `remaining = 0` → coleta + OS `delivered` (5.9).
-   - ainda há pendentes → coleta **`partial_delivery`** (não ficar em `in_service` depois de existir termo; filtros/hub já usam esse balde).
-   - OS: se algum restante `em_reparo` → `in_service`; se todos restantes `pronto` → `ready`; nenhum restante → `delivered`. (Antes o RPC punha OS `ready` em qualquer parcial — errado para mid-repair.)
+   - `remaining = 0` → coleta + OS `delivered` (5.9). **L4:** `remaining` conta só vivos não entregues **com** linha OS (`private.count_remaining_deliverable_items`); item sem orçamento não impede `delivered`.
+   - ainda há entregáveis pendentes → coleta **`partial_delivery`** (não ficar em `in_service` depois de existir termo; filtros/hub já usam esse balde).
+   - OS: se algum restante `em_reparo` → `in_service`; se todos restantes `pronto` → `ready`; nenhum restante entregável → `delivered`. (Antes o RPC punha OS `ready` em qualquer parcial — errado para mid-repair.)
 5. **`update_service_progress`**: alargar guard para `approved | in_service | partial_delivery` para o restante continuar em reparo. Sem isto, `partial_delivery` trava o progresso. Não aceitar `ready`/`delivered`. **L2** acrescenta `invoiced` ao guard e impede puxá-lo para `ready` (mesmo tratamento de `partial_delivery`).
 6. **Hub / 5.17:** `in_service` com algum Pronto não entregue: primary **Atualizar progresso**, extra **Entregar itens prontos**. `partial_delivery`: primary **Entregar ao cliente** só quando ainda houver Pronto não entregue; extra **Atualizar progresso** nesse caso se restar `em_reparo`. Sem Pronto pendente e com item ainda em reparo: primary **Atualizar progresso** (não duplicar no extra). Sem os dois fatos: sem CTA de oficina. `isWorkshopSegmentAllowed` segue a matriz. Progresso lista só itens ainda não entregues; `update_service_progress` recusa id já em `delivery_items` com `item_already_delivered`.
 7. **Copy:** `item_not_ready` em `operations-errors.ts` / `action-error.ts`. Manter código `collection_not_invoiced` (só alargar o `IN`). Overlay `database.types.ts` se types remote não entrar no PR.
@@ -219,9 +219,9 @@ Guards atuais (todos > 0): CHECK anónimo `workshop_checkin_items_quantity_obser
 
 **Decisão 2 — estado terminal (fechada 2026-09-07).** Coleta cujo único restante nunca foi recebido vai a **`delivered`**. Sem status novo: `collections_status_check` e os baldes da UI ficam iguais; a nuance vive na linha de check-in, na guia e em `missingItemIds` do evento.
 
-**`remaining` (deadlock resolvido).** Significa “ainda entregável e não entregue” — exclui item marcado missing. Dois caminhos **rejeitados**: inserir `delivery_items` para item missing (fabrica entrega do que nunca chegou e envenena o ledger de que o termo é construído); soft-delete de `collection_items` (anti-padrão proibido; o snapshot/PDF lê essa tabela e revisões futuras mudariam). A exclusão é `EXISTS` em `workshop_checkin_items`, nunca flag desnormalizada em `collection_items`. Usar `EXISTS`, não join simples: não há unique em `(collection_id, collection_item_id)` — linha duplicada de check-in multiplicaria a conta.
+**`remaining` (deadlock resolvido — L4 + contrato PR 5).** Hoje (pós-L4) significa “ainda entregável e não entregue”: vivo, fora de `delivery_items`, **com** linha OS. PR 5 acrescenta a exclusão de item marcado `missing`. Dois caminhos **rejeitados**: inserir `delivery_items` para item missing (fabrica entrega do que nunca chegou e envenena o ledger de que o termo é construído); soft-delete de `collection_items` (anti-padrão proibido; o snapshot/PDF lê essa tabela e revisões futuras mudariam). A exclusão de missing é `EXISTS` em `workshop_checkin_items`, nunca flag desnormalizada em `collection_items`. Usar `EXISTS`, não join simples: não há unique em `(collection_id, collection_item_id)` — linha duplicada de check-in multiplicaria a conta.
 
-**Sequência dura:** PR 5 edita o mesmo bloco `remaining` que o PR 3 reescreveu. O SQL do PR 5 nasce do corpo **shipped** do PR 3; **nunca** em paralelo com ele.
+**Sequência dura:** PR 5 edita os helpers `private.count_remaining_deliverable_items` / `any_remaining_in_repair` (`20260907230000`). **Nunca** copiar o bloco `remaining` de `07000000`. Não abrir em paralelo com L4 (já fechado).
 
 **Anti-padrões:** soft-delete do item; omitir do payload; mutar PDF sem revisão; só largar o CHECK; sentinel só em texto livre; `delivery_items` fantasma.
 
@@ -260,11 +260,11 @@ Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
 
 ### L4 / L5 / L6 — depois de L2
 
-- **L4:** `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS). Sem OS não bloqueia `delivered`. Unique parcial em `service_order_items`; `item_not_ready` = todas as linhas `pronto`; budget rejeita `item_id` duplicado. PR 5 herda este bloco.
+- **L4:** **no remoto** 07/09/2026 (`20260907230000`). `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS) via `private.count_remaining_deliverable_items` / `any_remaining_in_repair`. Sem OS não bloqueia `delivered`. Unique parcial `service_order_items_collection_item_uidx`; `item_not_ready` = todas as linhas `pronto` (depois de `collection_item_not_found`); budget rejeita `item_id` duplicado (`duplicate_budget_item`; Zod `technicalBudgetSchema`). Inventário remoto de duplicatas = 0. Evento de entrega: metadata `remaining`, `serviceOrderStatus`, `remainingInRepairItemIds`. Gate CI: `tests/unit/phase-5-item-invariants-migration.test.ts`. PR 5 herda os helpers. App: item sem OS não é `em_reparo`. SQL no remoto; UI/mapper no próximo deploy Vercel.
 - **L5:** pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`.
-- **L6:** fallback reopen: `partial_delivery` deriva OS como o PR 3 (`in_service` se restar `em_reparo`); `awaiting_approval` → `budgeted`; `else` raise; não deixar OS `canceled`.
+- **L6:** **completo em código** 08/09/2026 (`20260907240000`; **não** no remoto). Helper `private.service_order_status_from_remaining`; fallback `partial_delivery`/`invoiced` deriva OS pelos helpers L4; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown` (409). `deliver_to_customer` usa o mesmo helper para `next_os_status`. Gate CI: `tests/unit/phase-5-reopen-os-fallback-migration.test.ts`.
 
-**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`). **C6:** última run completa da auditoria = 532 passed / 18 skipped; L3/L7 acrescentaram testes unitários/componente.
+**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4 acrescentaram testes unitários depois.
 
 ---
 

@@ -29,6 +29,15 @@ describe("operations API delivery item codes (5.5)", () => {
     });
   });
 
+  it("maps duplicate_budget_item to 422 above the generic P0001 fallback", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "duplicate_budget_item" })).toEqual({
+      status: 422,
+      code: "duplicate_budget_item",
+      message: "O mesmo item não pode ser informado mais de uma vez no orçamento.",
+      actorId: null,
+    });
+  });
+
   it("maps item_not_ready to 422 above the generic P0001 fallback", () => {
     expect(toOperationsApiError({ code: "P0001", message: "item_not_ready" })).toEqual({
       status: 422,
@@ -90,4 +99,14 @@ describe("operations API cancel draft codes", () => {
     });
     expect(draft.message).not.toBe(cannot.message);
   });
+
+  it("maps service_order_reopen_status_unknown to 409 above the generic P0001 fallback", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "service_order_reopen_status_unknown" })).toEqual({
+      status: 409,
+      code: "service_order_reopen_status_unknown",
+      message: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada.",
+      actorId: null,
+    });
+  });
 });
+

@@ -8,17 +8,21 @@ export default async function ServiceProgressRoute({ params }: Readonly<{ params
   const { collection, budgetItems, alreadyDeliveredItemIds } = await loadCollectionForOperation(id, "progresso");
 
   const deliveredItemIds = new Set(alreadyDeliveredItemIds);
-  const progressItems = collection.items
-    .filter((collectionItem) => !deliveredItemIds.has(collectionItem.id))
-    .map((collectionItem) => {
-      const budgetItem = budgetItems.find((item) => item.collectionItemId === collectionItem.id);
-      return {
-        itemId: collectionItem.id,
-        itemDescription: collectionItem.description,
-        status: (budgetItem?.status ?? "em_reparo") as "em_reparo" | "pronto",
-        notes: budgetItem?.notes ?? null,
-      };
-    });
+  const progressItems = collection.items.flatMap((collectionItem) => {
+    if (deliveredItemIds.has(collectionItem.id)) {
+      return [];
+    }
+    const budgetItem = budgetItems.find((item) => item.collectionItemId === collectionItem.id);
+    if (budgetItem === undefined || budgetItem.status === null) {
+      return [];
+    }
+    return [{
+      itemId: collectionItem.id,
+      itemDescription: collectionItem.description,
+      status: budgetItem.status,
+      notes: budgetItem.notes ?? null,
+    }];
+  });
 
   return (
     <ServiceProgressPage

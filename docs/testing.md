@@ -21,7 +21,7 @@
 
 ## Comandos de CI
 
-O scaffold deve expor scripts consistentes: `lint`, `typecheck` (`tsc --noEmit`), `test`, `test:e2e` e `build`. O CI executa ao menos lint, typecheck, testes alterados/relevantes e build; producao usa instalacao limpa pelo lockfile.
+O scaffold deve expor scripts consistentes: `lint`, `typecheck` (`tsc --noEmit`), `test`, `test:e2e` e `build`. O CI executa ao menos lint, typecheck, testes alterados/relevantes e build; producao usa instalacao limpa pelo lockfile. SQL de leftovers (ex.: L4 `20260907230000`) entra no CI via testes textuais Vitest (`tests/unit/phase-5-*-migration.test.ts`). pgTAP em `supabase/tests/` nao esta no `package.json` nem no CI (L5).
 
 ## Dados de teste
 
