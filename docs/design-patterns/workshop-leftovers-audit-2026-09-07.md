@@ -6,7 +6,7 @@
 | **Data** | 2026-09-07 |
 | **Escopo** | Verificação das alegações de `docs/execution/workshop-partial-delivery-leftovers.md` |
 | **Método** | Auditoria original: leitura de código/SQL + `lint` / `typecheck` / `vitest` / `steiger` (nenhum comando de banco). Follow-up L4: `supabase db push` + `migration list --linked` |
-| **Alvos** | `20260907000000` / `07010000` (auditoria original); follow-up L4 `20260907230000_phase_5_item_invariants.sql` |
+| **Alvos** | `20260907000000` / `07010000` (auditoria original); follow-up L4 `20260907230000`; follow-up L6 `20260907240000_phase_5_reopen_os_fallback.sql` |
 
 ---
 
@@ -20,7 +20,7 @@ O que não se sustenta na auditoria original eram três coisas: **o fluxo mid-re
 
 **Follow-up 07/09/2026 (L4):** A5+A6 em código e **no remoto** (`20260907230000`). `migration list` local = remoto até `20260907230000`.
 
-**Follow-up 08/09/2026 (L6):** A7+A8 **corrigidos em código** (`20260907240000`). **Não** aplicada no remoto nesta sessão. B1/B2 (pgTAP) continuam abertos.
+**Follow-up 08/09/2026 (L6):** A7+A8 em código e **no remoto** (`20260907240000`). `db push` 08/09/2026; `migration list` local = remoto até `20260907240000`. B1/B2 (pgTAP) continuam abertos.
 
 ### Validação local reproduzida (2026-09-07)
 
@@ -157,7 +157,7 @@ O §8 do plano faz esse mesmo raciocínio para `workshop_checkin_items` ("usar `
 
 **Shipped L4** (`20260907230000` **no remoto**): unique parcial `service_order_items_collection_item_uidx` em `(organization_id, collection_id, collection_item_id) where collection_item_id is not null` (inventário remoto de duplicatas = 0). `item_not_ready` exige linha OS **e** todas as linhas `pronto`. `create_technical_budget` rejeita `item_id` duplicado (`duplicate_budget_item`); Zod `technicalBudgetSchema` no mesmo eixo. Não reabrir.
 
-### A7 · Fallback de reopen achata `partial_delivery`/`invoiced` para OS `ready` — **Médio** — **corrigido 2026-09-08 (L6, código; não no remoto)**
+### A7 · Fallback de reopen achata `partial_delivery`/`invoiced` para OS `ready` — **Médio** — **corrigido 2026-09-08 (L6)**
 
 ```306:317:sistema-coleta/supabase/migrations/20260907010000_phase_5_cancel_draft_and_service_order.sql
           when 'invoiced' then 'ready'
@@ -168,7 +168,7 @@ O PR 3, na migration imediatamente anterior, estabeleceu que uma coleta `partial
 
 Só é Médio porque o fallback é morto no caminho feliz (o cancel grava o status verdadeiro na coluna e o ramo primário o prefere). Alcançável para linhas canceladas antes desta migration — o plano mediu `count = 0` no remoto para essa forma, então nenhum dado vivo é afetado hoje.
 
-### A8 · Fallback sem rede de segurança: OS pode continuar `canceled` após reopen — **Médio** — **corrigido 2026-09-08 (L6, código; não no remoto)**
+### A8 · Fallback sem rede de segurança: OS pode continuar `canceled` após reopen — **Médio** — **corrigido 2026-09-08 (L6)**
 
 ```319:326:sistema-coleta/supabase/migrations/20260907010000_phase_5_cancel_draft_and_service_order.sql
       if restored_os_status is not null then
@@ -180,7 +180,7 @@ O `else null` do CASE pula o update. O comentário justifica com "collected / in
 
 A lacuna concreta é `awaiting_approval`: status válido de coleta (`collections_status_check`, `20260822125100:15`), pós-orçamento, portanto **com** OS, e ausente do mapeamento. Alcançabilidade baixa (nenhum RPC grava `awaiting_approval` hoje), por isso Médio. Um `else` caindo no próprio status da OS, ou um `raise`, tornaria o invariante incondicional.
 
-**Shipped L6** (`20260907240000`, **código; não no remoto**): helper `private.service_order_status_from_remaining`; fallback de ambos os reopens usa o helper para `partial_delivery`/`invoiced`, mapeia `awaiting_approval` → `budgeted`, RAISE `service_order_reopen_status_unknown` em vez de pular o UPDATE. `deliver_to_customer` usa o mesmo helper para `next_os_status`. Happy path (previous da OS preenchido) não consulta remaining.
+**Shipped L6** (`20260907240000` **no remoto**): helper `private.service_order_status_from_remaining`; fallback de ambos os reopens usa o helper para `partial_delivery`/`invoiced`, mapeia `awaiting_approval` → `budgeted`, RAISE `service_order_reopen_status_unknown` em vez de pular o UPDATE. `deliver_to_customer` usa o mesmo helper para `next_os_status`. Happy path (previous da OS preenchido) não consulta remaining.
 
 ### A9 · `invoiced` é rebaixado silenciosamente a `partial_delivery` — **Médio** — **corrigido 2026-09-07 (L2)**
 
@@ -251,14 +251,14 @@ Viola o "Zero `any`" do `sistema-coleta/AGENTS.md` e mascara um descompasso vivo
 
 ### C1 · "Migrations aplicadas no remoto" — sem lastro local na auditoria; **reconferido 07/09/2026**
 
-Nenhum comando de banco foi executado **na auditoria original**; o texto abaixo é o inventário daquela leitura de arquivos. **Follow-up:** `db push` 07/09/2026 aplicou `20260907020000` (L1), `20260907030000` (L2), `20260907220000` (`invalid_signer_tax_id`) e `20260907230000` (L4). `migration list` local = remoto até `20260907230000`.
+Nenhum comando de banco foi executado **na auditoria original**; o texto abaixo é o inventário daquela leitura de arquivos. **Follow-up:** `db push` 07/09/2026 aplicou `20260907020000` (L1), `20260907030000` (L2), `20260907220000` (`invalid_signer_tax_id`) e `20260907230000` (L4). `db push` 08/09/2026 aplicou `20260907240000` (L6). `migration list` local = remoto até `20260907240000`.
 
 1. **Cronologia impossível.** O diretório de traces do Supabase CLI tem três arquivos; o mais novo (`2026-09-07.ndjson`) tem mtime **06/09/2026 22:05:51**. As duas migrations têm mtime **07/09/2026 00:26:54** e **00:44:58** — ambas escritas **depois** da última atividade registrada do CLI nesta máquina. Nenhum trace foi tocado depois.
 2. **O SQL não aparece em trace nenhum.** Busca por `deliver_mid_repair`, `previous_status_before_cancellation`, `collection_not_cancelable_draft` e `item_not_ready` nos traces não retorna nada, embora os traces gravem `db.query.text` completo dos statements empurrados.
 3. **O último push registrado foi outra migration:** o corpo de `private.encode_collection_cursor`, isto é `20260906220000` (o fix de cursor), seguido de um `migration list`.
 4. **A frase "aplicada" veio de um commit só de docs** (`091429a docs(workshop): record PR 3 and PR 4 migrations as applied`, 12 linhas em dois `.md`). Nada foi executado por esse commit.
 
-Leitura honesta **na auditoria:** traces locais não sustentavam "aplicada". **Follow-up 07/09/2026:** `migration list` confirma PR 3/PR 4/L1/L2/L4 no remoto (até `20260907230000`).
+Leitura honesta **na auditoria:** traces locais não sustentavam "aplicada". **Follow-up 08/09/2026:** `migration list` confirma PR 3/PR 4/L1/L2/L4/L6 no remoto (até `20260907240000`).
 
 ### C2 · A regra "Não juntar 3+4" do próprio plano foi violada — **Médio**
 
@@ -268,7 +268,7 @@ Isso importa concretamente para o PR 5: o §8 do plano dizia que o SQL nascia do
 
 ### C3 · `docs/README.md` nunca recebeu a atualização do PR 3 / PR 4 — **Médio** — **emendado 2026-09-07**
 
-O índice **na auditoria** parava em `20260906220000`. **Follow-up:** a linha de leftovers lista PR 1–4 e L1/L2/L3/L7 em código; L1+L2+L4 **no remoto** (`07020000`/`07030000`/`07230000`). `docs/supabase.md` também lista até `20260907230000`.
+O índice **na auditoria** parava em `20260906220000`. **Follow-up:** a linha de leftovers lista PR 1–4 e L1/L2/L3/L7 em código; L1+L2+L4+L6 **no remoto** (`07020000`/`07030000`/`07230000`/`07240000`). `docs/supabase.md` também lista até `20260907240000`.
 
 ### C4 · Docs que ainda afirmam a regra antiga — **Baixo** — **parcialmente emendado 2026-09-07**
 
@@ -349,13 +349,13 @@ Um eixo por PR, como manda o plano original. Nada aqui autoriza abrir PR — é 
 
 | Prioridade | Itens | Por quê |
 | --- | --- | --- |
-| 1 | **C1** | **Fechado 07/09/2026:** `migration list` local = remoto até `20260907230000` (L1+L2+L4 aplicados; `07220000` `invalid_signer_tax_id` também) |
+| 1 | **C1** | **Fechado 08/09/2026:** `migration list` local = remoto até `20260907240000` (L1+L2+L4+L6 aplicados; `07220000` `invalid_signer_tax_id` também) |
 | 2 | **A2 + A3 + A12** | **Corrigido 2026-09-07** (código + `20260907020000` **no remoto**) |
 | 3 | **A4 + C5** | **Corrigido 2026-09-07 (L3)** — parse por linha; `quantityObserved > 0` no reader até o PR 5 |
 | 4 | **A1 + A9** | **Corrigido 2026-09-07 (L2)** (`20260907030000` **no remoto**). NF-e em `partial_delivery`; `invoiced` não rebaixa; progresso/CTA de `invoiced` = `partial_delivery` |
 | 5 | **A5 + A6** | **Corrigido 2026-09-07 (L4)** (`20260907230000` **no remoto**). `remaining` só entregáveis; unique parcial; `item_not_ready` = todas `pronto` |
 | 6 | **B1 + B2** | pgTAP para a cadeia de entrega e para o PR 4 (L5) |
-| 7 | **A7 + A8** | **Corrigido 2026-09-08 (L6)** em código (`20260907240000`; **não** no remoto). Helper remaining; RAISE se o fallback não mapear |
+| 7 | **A7 + A8** | **Corrigido 2026-09-08 (L6)** (`20260907240000` **no remoto**). Helper remaining; RAISE se o fallback não mapear |
 | 8 | **A10, A11, D1–D3** | **Corrigido 2026-09-07 (L7)** |
 | 9 | **C2–C4, C6** | C3/C4/C6 emendados 07/09/2026; C2 histórico (commit 3+4) |
 
