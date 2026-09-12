@@ -22,7 +22,7 @@ O que não se sustenta na auditoria original eram três coisas: **o fluxo mid-re
 
 **Follow-up 08/09/2026 (L6):** A7+A8 em código e **no remoto** (`20260907240000`). `db push` 08/09/2026; `migration list` local = remoto até `20260907240000`.
 
-**Follow-up 12/09/2026 (L5+L8+L9 + PR 5):** B1+B2 em código (pgTAP + gate textual PR 4; ainda fora do CI). B3/`request_hash`/registry (L8) e D4 (L9) em código. PR 5 **em código** (`20260912100000`; **sem** `db push`). Schema remoto inalterado (`20260907240000`).
+**Follow-up 12/09/2026 (L5+L8+L9 + PR 5):** B1+B2 em código (pgTAP + gate textual PR 4; ainda fora do CI). B3/`request_hash`/registry (L8) e D4 (L9) em código. PR 5 **no remoto** (`20260912100000`; `db push` 12/09/2026). `migration list` local = remoto até `20260912100000`.
 
 ### Validação local reproduzida (2026-09-07)
 
@@ -48,7 +48,7 @@ Registro do que a auditoria **descartou** como problema, para ninguém reabrir:
 - **PR 4: CHECK da coluna nova é exatamente o complemento** do `service_orders_status_check` (todos os status menos `canceled`). Nenhum `23514` esperando.
 - **PR 4: ambos os caminhos de reopen foram atualizados**, e `reopen_collection` é de fato alcançável por HTTP — não era opcional.
 - **PR 4: 409 é consistente.** Os oito guards de status de coleta em `operations-errors.ts:19-28` são todos 409; 422 é reservado a payload e regras de item. O código do erro é extraído de verdade (`PostgrestError.code`/`.message` preservados até os dois mappers).
-- **PR 5 em código 12/09/2026.** `arrival_status`, CHECK composto, unique, O02b, `item_not_received`. C5 reader aceita qtd 0 na união discriminada.
+- **PR 5 no remoto 12/09/2026.** `arrival_status`, CHECK composto, unique, O02b, `item_not_received`. C5 reader aceita qtd 0 na união discriminada.
 - **PR 1: as cinco alegações são verdadeiras**; `pb-28` é suficiente; não há header duplicado; `routes.companySettings` correto.
 - **Docs de produto atualizados.** `data-and-rules.md` §entrega e `mobile-workflows.md` documentam o conjunto deliverable, o fluxo mid-repair e (L4) remaining = itens com linha OS.
 
@@ -359,7 +359,7 @@ Um eixo por PR, como manda o plano original. Nada aqui autoriza abrir PR — é 
 
 | Prioridade | Itens | Por quê |
 | --- | --- | --- |
-| 1 | **C1** | **Fechado 08/09/2026:** `migration list` local = remoto até `20260907240000` (L1+L2+L4+L6 aplicados; `07220000` `invalid_signer_tax_id` também) |
+| 1 | **C1** | **Fechado 12/09/2026:** `migration list` local = remoto até `20260912100000` (inclui PR 5) |
 | 2 | **A2 + A3 + A12** | **Corrigido 2026-09-07** (código + `20260907020000` **no remoto**) |
 | 3 | **A4 + C5** | **Corrigido 2026-09-07 (L3)** — parse por linha; qtd 0 no reader **PR 5** 12/09/2026 |
 | 4 | **A1 + A9** | **Corrigido 2026-09-07 (L2)** (`20260907030000` **no remoto**). NF-e em `partial_delivery`; `invoiced` não rebaixa; progresso/CTA de `invoiced` = `partial_delivery` |
@@ -369,6 +369,6 @@ Um eixo por PR, como manda o plano original. Nada aqui autoriza abrir PR — é 
 | 8 | **A10, A11, D1–D3** | **Corrigido 2026-09-07 (L7).** **D4** 12/09/2026 (**L9**). D5 continua fora |
 | 9 | **B3 + hash + registry** | **Corrigido 12/09/2026 (L8).** Sem schema |
 | 10 | **C2–C4, C6** | C3/C4/C6 emendados 07–12/09/2026; C2 histórico (commit 3+4) |
-| 11 | **PR 5** | **Em código** 12/09/2026 (`20260912100000`). Sem `db push`. Herda helpers L4 + `NOT EXISTS` missing |
+| 11 | **PR 5** | **No remoto** 12/09/2026 (`20260912100000`). Herda helpers L4 + `NOT EXISTS` missing |
 
 **Não** reabrir o bloco `remaining` de `07000000`. PR 5 herda `private.count_remaining_deliverable_items` / `any_remaining_in_repair` com exclusão de missing.

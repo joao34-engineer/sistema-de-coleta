@@ -45,7 +45,7 @@ Isso contradizia o produto (`vision-and-scope.md` decisão 16, `mobile-workflows
 | **O05 · Cancelar** | `229:1377` | Cancelar guia emitida; histórico preservado | **PR 4.** Hub ainda esconde Cancel em `draft`. RPC recusa `draft` com `collection_not_cancelable_draft` (P0001 → HTTP **409**). OS vai a `canceled` e os dois reopens restauram. |
 | **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | **PR 1 + L9.** `MobilePageHeader` + `MobileBottomNav` com `aria-current="page"` no pathname (sem gate de hidratação). |
 
-O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “item não chegou”; o modelo `arrival_status` está em código (PR 5).
+O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “item não chegou”; o modelo `arrival_status` está **no remoto** (PR 5).
 
 ---
 
@@ -57,7 +57,7 @@ O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “ite
 | 2 | Backfills (só `SELECT`; UPDATE se count > 0) | talvez `UPDATE` pontual | OK humano | **completo** 2026-09-06 (remoto limpo; sem UPDATE) |
 | 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** em código 2026-09-07; `20260907000000` no remoto (dry-run 07/09/2026) |
 | 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** em código 2026-09-07; `20260907010000` no remoto (dry-run 07/09/2026) |
-| 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02b; SQL sobre helpers L4 | **em código** 12/09/2026 (`20260912100000`). Sem `db push` |
+| 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02b; SQL sobre helpers L4 | **no remoto** 12/09/2026 (`20260912100000`) |
 | L1 | Matriz `partial_delivery` + progresso sem item entregue (A2+A3+A12) | sim, `update_service_progress` | PR 3 | **no remoto** 07/09/2026 (`20260907020000`) |
 | L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **no remoto** 07/09/2026 (`20260907030000`) |
 | L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
@@ -199,7 +199,7 @@ CHECK da OS já inclui `canceled`. **Antes** o RPC não tocava `service_orders`:
 
 ## 8. PR 5 — Check-in “item não chegou”
 
-**Estado 12/09/2026:** **em código** (`20260912100000`). Humano confirmou O02b (`281:42`). Sem `db push`. Decisões 1 e 2 abaixo permanecem fechadas.
+**Estado 12/09/2026:** **no remoto** (`20260912100000`). Humano confirmou O02b (`281:42`) e o `db push`. Decisões 1 e 2 abaixo permanecem fechadas.
 
 Figma O02 **não** tem esse estado. Relaxar `quantity_observed > 0` sozinho é workaround e quebra 5.8.
 
@@ -230,7 +230,7 @@ Guards atuais (todos > 0): CHECK anónimo `workshop_checkin_items_quantity_obser
 
 **Aceite:** 2 itens, 1 missing → check-in ok, coleta `in_workshop`; orçamento só no item chegado; PDF original inalterado. Se o único restante for missing, coleta → `delivered`.
 
-Migration `20260912100000` no Git; aplicar no remoto só após `db push --dry-run` + OK humano.
+Migration `20260912100000` **no remoto** 12/09/2026 (`db push`; `migration list` local = remoto). `db:types:remote` regenerou `database.generated.ts` (`workshop_checkin_items.arrival_status`).
 
 ---
 

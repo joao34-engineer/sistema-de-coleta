@@ -1835,6 +1835,7 @@ export type Database = {
           labor_brl: number
           organization_id: number
           parts_brl: number
+          previous_status_before_cancellation: string | null
           status: string
           updated_at: string
         }
@@ -1850,6 +1851,7 @@ export type Database = {
           labor_brl: number
           organization_id: number
           parts_brl: number
+          previous_status_before_cancellation?: string | null
           status?: string
           updated_at?: string
         }
@@ -1865,6 +1867,7 @@ export type Database = {
           labor_brl?: number
           organization_id?: number
           parts_brl?: number
+          previous_status_before_cancellation?: string | null
           status?: string
           updated_at?: string
         }
@@ -2080,6 +2083,7 @@ export type Database = {
       }
       workshop_checkin_items: {
         Row: {
+          arrival_status: string
           collection_id: string
           collection_item_id: string
           condition_observed: string
@@ -2090,6 +2094,7 @@ export type Database = {
           quantity_observed: number
         }
         Insert: {
+          arrival_status?: string
           collection_id: string
           collection_item_id: string
           condition_observed: string
@@ -2100,6 +2105,7 @@ export type Database = {
           quantity_observed: number
         }
         Update: {
+          arrival_status?: string
           collection_id?: string
           collection_item_id?: string
           condition_observed?: string
@@ -2196,8 +2202,20 @@ export type Database = {
         Args: { p_lease_seconds?: number; p_worker_id: string }
         Returns: Json
       }
+      claim_document_job_for_document: {
+        Args: {
+          p_document_id: string
+          p_lease_seconds: number
+          p_worker_id: string
+        }
+        Returns: Json
+      }
       cleanup_document_render_upload_intents: {
         Args: { p_limit?: number }
+        Returns: Json
+      }
+      collection_dashboard_summary: {
+        Args: { p_in_progress: string[]; p_ready_for_delivery: string[] }
         Returns: Json
       }
       commit_collection_upload: {
@@ -2322,6 +2340,10 @@ export type Database = {
         }
         Returns: Json
       }
+      discard_collection_draft: {
+        Args: { p_collection_id: string; p_expected_version: number }
+        Returns: Json
+      }
       expire_collection_upload_intents: {
         Args: { p_limit?: number }
         Returns: {
@@ -2345,23 +2367,38 @@ export type Database = {
         Args: { p_collection_id: string }
         Returns: Json
       }
+      inspect_document_share: { Args: { p_token: string }; Returns: Json }
       list_collection_events: {
         Args: { p_collection_id: string; p_cursor: string; p_limit: number }
         Returns: Json
       }
       list_collections: {
         Args: {
-          p_code: string
-          p_cursor: string
-          p_customer: string
-          p_from: string
-          p_limit: number
-          p_phone: string
-          p_status: string
-          p_tax_id: string
-          p_to: string
+          p_code?: string
+          p_cursor?: string
+          p_customer?: string
+          p_from?: string
+          p_limit?: number
+          p_phone?: string
+          p_q?: string
+          p_status?: string
+          p_statuses?: string[]
+          p_tax_id?: string
+          p_to?: string
         }
         Returns: Json
+      }
+      peek_document_rate_limit: {
+        Args: {
+          p_limit: number
+          p_scope: string
+          p_subject_hash: string
+          p_window_seconds: number
+        }
+        Returns: {
+          allowed: boolean
+          retry_after_seconds: number
+        }[]
       }
       prepare_collection_upload: {
         Args: {
@@ -2440,6 +2477,22 @@ export type Database = {
           p_idempotency_hash: string
           p_lease_seconds?: number
           p_share_id: string
+        }
+        Returns: Json
+      }
+      reset_document_rate_limit: {
+        Args: {
+          p_scope: string
+          p_subject_hash: string
+          p_window_seconds: number
+        }
+        Returns: undefined
+      }
+      retry_document_job: {
+        Args: {
+          p_collection_id: string
+          p_document_id: string
+          p_job_type?: string
         }
         Returns: Json
       }
@@ -2597,12 +2650,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2626,11 +2679,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2651,11 +2704,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2676,11 +2729,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2693,11 +2746,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
