@@ -3,6 +3,7 @@
 > **✅ STATUS: EXECUTADA E CONCLUÍDA (22–23/08/2026)**
 > Todas as fases implementadas. Gate final verde: `steiger` 0 problemas · `lint` 0 erros (1 warning pré-existente) · `typecheck` limpo · `test` 89 passed / 18 skipped · `build` sucesso com 92 rotas (`/coletas/[id]` + 8 rotas `/oficina/*` registradas).
 > Único passo restante na época: smoke manual ponta a ponta. **Não reabrir esta sessão.** O scan posterior fechou oficina/auth/lista e **5.6** (entrega desde Pronto). 5.7 / 5.12 / 5.13 adiados 06/09/2026.
+> Matriz de CTA desta sessão é **pré-PR-3** (histórico). Matriz viva: `src/_pages/collection-operations/model/operational-actions.ts`. Não reescrever a tabela abaixo.
 
 ## Contexto
 

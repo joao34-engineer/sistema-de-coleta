@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
-import { saveTechnicalBudgetAction } from "@/_app/actions/phase3-flow.actions";
+import { saveTechnicalBudgetAction } from "../api/actions";
 
 type BudgetItemInput = Readonly<{
   id: string;

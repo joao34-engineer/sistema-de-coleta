@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
-import { deliverToCustomerAction } from "@/_app/actions/phase3-flow.actions";
+import { deliverToCustomerAction } from "../api/actions";
 import { customerDeliverySchema } from "../model/contracts";
 import {
   defaultDeliveredItemIds,

@@ -8,7 +8,7 @@ import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
-import { approveBudgetAction } from "@/_app/actions/phase3-flow.actions";
+import { approveBudgetAction } from "../api/actions";
 
 type Props = Readonly<{
   collectionId: string;

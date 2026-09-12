@@ -16,8 +16,8 @@ import {
   type InvoiceReferenceDTO,
   type CustomerDeliveryDTO,
   type CancelReopenDTO,
-} from "@/_pages/collection-operations/model/contracts";
-import { parseJsonFormField, customerDeliveryFormValues } from "@/_pages/collection-operations/model/workshop-rpc-items";
+} from "../model/contracts";
+import { parseJsonFormField, customerDeliveryFormValues } from "../model/workshop-rpc-items";
 import {
   workshopCheckIn,
   saveTechnicalBudget,
@@ -26,7 +26,7 @@ import {
   registerInvoiceReference,
   deliverToCustomer,
   cancelOrReopenCollection,
-} from "@/_pages/collection-operations/api/commands";
+} from "./commands";
 
 import { toSafeActionError } from "@/shared/lib/action-error";
 

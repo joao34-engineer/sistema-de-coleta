@@ -8,7 +8,7 @@ import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
-import { updateServiceProgressAction } from "@/_app/actions/phase3-flow.actions";
+import { updateServiceProgressAction } from "../api/actions";
 
 export type ProgressItem = Readonly<{
   itemId: string;

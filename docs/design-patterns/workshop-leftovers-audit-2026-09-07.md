@@ -6,7 +6,7 @@
 | **Data** | 2026-09-07 |
 | **Escopo** | Verificação das alegações de `docs/execution/workshop-partial-delivery-leftovers.md` |
 | **Método** | Auditoria original: leitura de código/SQL + `lint` / `typecheck` / `vitest` / `steiger` (nenhum comando de banco). Follow-up L4: `supabase db push` + `migration list --linked` |
-| **Alvos** | `20260907000000` / `07010000` (auditoria original); follow-up L4 `20260907230000`; follow-up L6 `20260907240000_phase_5_reopen_os_fallback.sql`; follow-up L5/L8/L9 12/09/2026 (testes + DAL + nav; **sem** migration nova); **D5** 12/09/2026 (hub/folha; **sem** schema) |
+| **Alvos** | `20260907000000` / `07010000` (auditoria original); follow-up L4 `20260907230000`; follow-up L6 `20260907240000_phase_5_reopen_os_fallback.sql`; follow-up L5/L8/L9 12/09/2026 (testes + DAL + nav; **sem** migration nova); **D5** 12/09/2026 (hub/folha; **sem** schema); **L10** 12/09/2026 (`20260912120000` **no remoto**) |
 
 ---
 
@@ -22,9 +22,15 @@ O que não se sustenta na auditoria original eram três coisas: **o fluxo mid-re
 
 **Follow-up 08/09/2026 (L6):** A7+A8 em código e **no remoto** (`20260907240000`). `db push` 08/09/2026; `migration list` local = remoto até `20260907240000`.
 
-**Follow-up 12/09/2026 (L5+L8+L9 + PR 5):** B1+B2 em código (pgTAP + gate textual PR 4; ainda fora do CI). B3/`request_hash`/registry (L8) e D4 (L9) em código. PR 5 **no remoto** (`20260912100000`; `db push` 12/09/2026). `migration list` local = remoto até `20260912100000`.
+**Follow-up 12/09/2026 (L5+L8+L9 + PR 5):** B1+B2 em código (pgTAP + gate textual PR 4; ainda fora do CI — Docker fora do projeto). B3/`request_hash`/registry (L8) e D4 (L9) em código. PR 5 **no remoto** (`20260912100000`; `db push` 12/09/2026).
 
 **Follow-up 12/09/2026 (D5):** hub `/configuracoes` mantém M11 (`Empresa` / `Dados institucionais`); folha `/configuracoes/empresa` usa `Perfil institucional` / `Razão social, CNPJ e rodapé da guia` (`model/settings-chrome.ts`). Sem migration.
+
+**Follow-up 12/09/2026 (L10):** nit §7 metadata OS em cancel/reopen **no remoto** (`20260912120000`; `db push` 12/09/2026). `migration list` local = remoto até `20260912120000`. SQL de produto desta auditoria: **fechado**.
+
+**Follow-up 12/09/2026 (higiene):** plano leftovers marcado **`closed`**. Resta inalterado: pgTAP fora do CI (Docker fora do projeto).
+
+**Follow-up 12/09/2026 (FSD oficina):** actions de um fluxo só em `collection-operations/api/actions.ts`. `draft-flow.actions.ts` permanece em `_app` (2+ slices).
 
 ### Validação local reproduzida (2026-09-07)
 
@@ -236,7 +242,7 @@ Os dois call sites reais (`collection-detail-hub.tsx:62-65`, `load-operation.ts:
 
 A "validação verde" do plano é TypeScript-only. **Nenhum** dos ramos SQL auditados acima é executado por CI. O precedente existe (`phase_5_workshop_check_in_complete_items_test.sql`), então é omissão, não falta de capacidade. **L4** acrescentou o gate textual `tests/unit/phase-5-item-invariants-migration.test.ts` (Vitest/CI).
 
-**Shipped L5** (12/09/2026, **sem** migration): `supabase/tests/phase_5_deliver_mid_repair_test.sql` (mid-repair, guards, invoiced, remaining L4) e `phase_5_cancel_reopen_service_order_test.sql` (draft, OS cancel, ambos os reopens, L6 unknown). Ainda **não** estão no `package.json` / CI; Docker local continua adiado. Não correr `supabase test db` no remoto linkado.
+**Shipped L5** (12/09/2026, **sem** migration): `supabase/tests/phase_5_deliver_mid_repair_test.sql` (mid-repair, guards, invoiced, remaining L4) e `phase_5_cancel_reopen_service_order_test.sql` (draft, OS cancel, ambos os reopens, L6 unknown; L10 estendeu metadata). Ainda **não** estão no `package.json` / CI. Docker está **fora deste projeto**; pgTAP permanece em disco. Não correr `supabase test db` no remoto linkado.
 
 ### B2 · A linha "Owns" do PR 4 promete testes que não existem — **Alto** — **em código 12/09/2026 (L5)**
 
@@ -278,12 +284,12 @@ Isso importa concretamente para o PR 5: o §8 do plano dizia que o SQL nascia do
 
 ### C3 · `docs/README.md` nunca recebeu a atualização do PR 3 / PR 4 — **Médio** — **emendado 2026-09-07 / 12/09/2026**
 
-O índice **na auditoria** parava em `20260906220000`. **Follow-up:** leftovers lista PR 1–4 e L1–L9 em código; PR 5 **no remoto** 12/09/2026 (`20260912100000`). `docs/supabase.md` lista o remoto até `20260912100000`.
+O índice **na auditoria** parava em `20260906220000`. **Follow-up:** leftovers lista PR 1–4 e L1–L10; PR 5 **no remoto** 12/09/2026 (`20260912100000`); L10 **no remoto** 12/09/2026 (`20260912120000`). `docs/supabase.md` lista o remoto até `20260912120000`.
 
-### C4 · Docs que ainda afirmam a regra antiga — **Baixo** — **parcialmente emendado 2026-09-07**
+### C4 · Docs que ainda afirmam a regra antiga — **Baixo** — **emendado 2026-09-07 / 12/09/2026**
 
-- `docs/design-patterns/system-scan-for-bugs.md` — **emendado:** Nota 5.6 inclui `in_service`; PR 3/PR 4/L4 **no remoto**. Cheiros residuais de NF-e só em `ready` e check-in sem “não chegou” **emendados 12/09/2026** (L2 + PR 5).
-- `docs/execution/phase-3c-reconnecting-ui.md` — matriz de CTA pré-PR-3 (`in_service` sem a extra "Entregar itens prontos"). Marcado como concluído, mas não arquivado e sem emenda no status. Histórico; a matriz viva está em `operational-actions.ts` + leftovers.
+- `docs/design-patterns/system-scan-for-bugs.md` — **emendado:** Nota 5.6 inclui `in_service`; PR 3/PR 4/L4 **no remoto**. Cheiros residuais de NF-e só em `ready` e check-in sem “não chegou” **emendados 12/09/2026** (L2 + PR 5). L4 deixou de afirmar PR 5 “bloqueado”. Plano leftovers **closed**.
+- `docs/execution/phase-3c-reconnecting-ui.md` — matriz de CTA pré-PR-3 (`in_service` sem a extra "Entregar itens prontos"). Marcado como concluído; banner 12/09/2026 aponta a matriz viva em `operational-actions.ts`. Histórico; **não** reescrever a tabela.
 - `docs/execution/fase3-5-ready-to-implement-fix-plan.md` — mesmo problema (plano **closed**; não reabrir).
 
 ### C5 · Inventário de guards do PR 5 está incompleto — **Médio** — **parse-by-row 2026-09-07 (L3); qtd 0 no PR 5 12/09/2026**
@@ -345,7 +351,7 @@ O prefix match em si está certo (`"/configuracoes/empresa".startsWith("/configu
 ## 7. Nits e observações menores
 
 - **`collection_events` não registra o fato mid-repair.** `20260907000000:232-248` é idêntico à versão anterior: grava `'partial', remaining > 0` mas não `remaining`, nem o status resultante da OS, nem quais itens seguem em reparo. `event_type` continua `'collection.delivered'` numa entrega parcial. O comportamento central do PR 3 (OS para `in_service` em vez de `ready`) não deixa rastro no log append-only. **Corrigido 2026-09-07 (L4)** em `20260907230000`: metadata ganha `remaining`, `serviceOrderStatus`, `remainingInRepairItemIds`. `event_type` permanece `collection.delivered`.
-- **PR 4 também não grava metadata da transição da OS.** O plano diz "não gravar **só** em `collection_events.metadata`", o que foi lido como "não gravar em metadata". Um `jsonb_build_object('serviceOrderPreviousStatus', …)` custaria nada e tornaria A7/A8 diagnosticáveis depois do fato.
+- **PR 4 também não grava metadata da transição da OS.** O plano diz "não gravar **só** em `collection_events.metadata`", o que foi lido como "não gravar em metadata". **Corrigido 12/09/2026 (L10)** em `20260912120000` **no remoto**: cancel grava `serviceOrderPreviousStatus`; ambos os reopens gravam `serviceOrderPreviousStatus` + `serviceOrderStatus`. A coluna da OS continua a fonte do reopen.
 - **`deliver_to_customer` atualiza a OS sem filtro de tenant** — **corrigido 2026-09-07 (L2)** em `20260907030000` (`where id = … and organization_id = collection_record.organization_id` na OS e na coleta). O corpo canónico anterior (`20260907000000:226`) só filtrava `id`.
 - **`item_not_ready` ofusca `collection_item_not_found`.** O check em `:121-134` corre **antes** do loop em `:136-145` no corpo PR 3, então id de outro tenant, removido ou inexistente devolvia "Somente itens marcados como Pronto podem ser entregues." **Corrigido 2026-09-07 (L4)** em `20260907230000`: membership primeiro (`collection_item_not_found`), depois readiness (`item_not_ready`), depois escrita.
 - **`request_hash` não cobre `p_delivered_item_ids`.** — **corrigido 12/09/2026 (L8).** `digestLifecycleRequest` inclui `deliveredItemIds` ordenados só na entrega; os outros comandos mantêm o payload antigo.
@@ -353,7 +359,7 @@ O prefix match em si está certo (`"/configuracoes/empresa".startsWith("/configu
 - **Códigos de entrega ausentes do registry estável** — **corrigido 12/09/2026 (L8).** `KNOWN_ACTION_FAILURE_CODES` inclui `item_not_ready`, `item_already_delivered`, `duplicate_delivery_item`, `collection_not_cancelable_draft`. L4 já tinha `duplicate_budget_item`.
 - **`update_service_progress` omite `updated_at = now()`** — **corrigido 2026-09-07 (L2)** nos três updates de OS em `20260907030000`. O corpo `07020000` omitia.
 - **`service_order_record` declarado e nunca usado** em `deliver_to_customer` — **corrigido 2026-09-07 (L2)** (variável removida no REPLACE).
-- **`_pages` importa de `_app`** (`customer-delivery-page.tsx:12`, `service-progress-page.tsx:11`), invertendo a hierarquia do `AGENTS.md` raiz. O Steiger não pega porque `steiger.config.ts:13` desabilita `fsd/typo-in-layer-name` para `_app`/`_pages`, então esses diretórios nunca são reconhecidos como camadas. Padrão pré-existente em todo o repo.
+- **`_pages` importa de `_app` (oficina)** — **corrigido 12/09/2026.** As sete páginas de `collection-operations/ui` importam `../api/actions`. `draft-flow.actions.ts` permanece em `_app` (wizard, 2+ slices). Steiger continua com `fsd/typo-in-layer-name` off em `_app`/`_pages` (Fase F).
 
 ---
 
@@ -363,16 +369,17 @@ Um eixo por PR, como manda o plano original. Nada aqui autoriza abrir PR — é 
 
 | Prioridade | Itens | Por quê |
 | --- | --- | --- |
-| 1 | **C1** | **Fechado 12/09/2026:** `migration list` local = remoto até `20260912100000` (inclui PR 5) |
+| 1 | **C1** | **Fechado 12/09/2026:** `migration list` local = remoto até `20260912120000` (inclui PR 5 + L10) |
 | 2 | **A2 + A3 + A12** | **Corrigido 2026-09-07** (código + `20260907020000` **no remoto**) |
 | 3 | **A4 + C5** | **Corrigido 2026-09-07 (L3)** — parse por linha; qtd 0 no reader **PR 5** 12/09/2026 |
 | 4 | **A1 + A9** | **Corrigido 2026-09-07 (L2)** (`20260907030000` **no remoto**). NF-e em `partial_delivery`; `invoiced` não rebaixa; progresso/CTA de `invoiced` = `partial_delivery` |
 | 5 | **A5 + A6** | **Corrigido 2026-09-07 (L4)** (`20260907230000` **no remoto**). `remaining` só entregáveis; unique parcial; `item_not_ready` = todas `pronto` |
-| 6 | **B1 + B2** | **Em código 12/09/2026 (L5).** pgTAP + gate textual PR 4; ainda fora do CI. Sem `db push` |
+| 6 | **B1 + B2** | **Em código 12/09/2026 (L5).** pgTAP + gate textual PR 4; ainda fora do CI (Docker fora do projeto). Sem `db push` |
 | 7 | **A7 + A8** | **Corrigido 2026-09-08 (L6)** (`20260907240000` **no remoto**). Helper remaining; RAISE se o fallback não mapear |
 | 8 | **A10, A11, D1–D3** | **Corrigido 2026-09-07 (L7).** **D4** 12/09/2026 (**L9**). **D5** 12/09/2026 |
 | 9 | **B3 + hash + registry** | **Corrigido 12/09/2026 (L8).** Sem schema |
-| 10 | **C2–C4, C6** | C3/C4/C6 emendados 07–12/09/2026; C2 histórico (commit 3+4) |
+| 10 | **C2–C4, C6** | C3/C4/C6 emendados 07–12/09/2026; C2 histórico (commit 3+4); plano leftovers **closed** 12/09/2026 |
 | 11 | **PR 5** | **No remoto** 12/09/2026 (`20260912100000`). Herda helpers L4 + `NOT EXISTS` missing |
+| 12 | **L10** | **No remoto** 12/09/2026 (`20260912120000`). Cancel/reopen events: `serviceOrderPreviousStatus` + `serviceOrderStatus` |
 
-**Não** reabrir o bloco `remaining` de `07000000`. PR 5 herda `private.count_remaining_deliverable_items` / `any_remaining_in_repair` com exclusão de missing.
+**Não** reabrir o bloco `remaining` de `07000000`. PR 5 herda `private.count_remaining_deliverable_items` / `any_remaining_in_repair` com exclusão de missing. Depois da linha 12, não resta SQL de produto nesta auditoria.

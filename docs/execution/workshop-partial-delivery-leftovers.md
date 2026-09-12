@@ -2,15 +2,8 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1–L4/L6 **no remoto** até `20260907240000`; L3/L5/L7/L8/L9 **em código** (L5 ainda fora do CI; L8/L9 **sem** migration). **D5** fechado 12/09/2026 (hub M11; folha `Perfil institucional`). PR 5 **no remoto** 12/09/2026 (`20260912100000`). **C1:** `migration list` local = remoto até `20260912100000` |
-| **Authority** | `informative` até o humano pedir um PR |
-| **Owner** | product / sistema-coleta |
-| **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
-| **Escopo** | Somente `sistema-coleta/`. **Não** 5.7 / 5.12 / 5.13. **Não** e-mail Resend. **Não** `db reset` |
-| **Figma** | [Protótipo navegável](https://www.figma.com/design/akpo5W8c3ViA1hvjeqg9YJ/Sistema-de-Coleta-MJT-%E2%80%94-Design-System-e-Fluxos?node-id=23-107) (`fileKey` `akpo5W8c3ViA1hvjeqg9YJ`, canvas `23:107`) |
-| **App** | Production `https://sistema-de-coleta.vercel.app` |
-| **Line budget** | Manter este arquivo abaixo de 500 linhas |
-| **Authority** | `informative` até o humano pedir um PR |
+| **Status** | **`closed`** 2026-09-12 — **não implementar neste arquivo**. SQL de produto **fechado** (remoto até `20260912120000`: PR 1–5 + L1/L2/L4/L6/L10). L3/L5/L7/L8/L9 **em código** sem schema. **D5** fechado. Actions de oficina em `collection-operations/api/actions.ts`. Residual adiado: pgTAP no CI (**não fazer**; Docker fora do projeto). Fora do plano: §9 |
+| **Authority** | `informative` (historical). Inventário: [`design-patterns/workshop-leftovers-audit-2026-09-07.md`](../design-patterns/workshop-leftovers-audit-2026-09-07.md) |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
 | **Escopo** | Somente `sistema-coleta/`. **Não** 5.7 / 5.12 / 5.13. **Não** e-mail Resend. **Não** `db reset` |
@@ -62,14 +55,15 @@ O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “ite
 | L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **no remoto** 07/09/2026 (`20260907030000`) |
 | L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
 | L4 | Invariantes de item (A5+A6) | sim | L2 | **no remoto** 07/09/2026 (`20260907230000`). PR 5 espera este bloco `remaining` |
-| L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **em código** 12/09/2026. `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI |
+| L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **em código** 12/09/2026. Ainda fora do CI (Docker fora do projeto) |
 | L6 | Reopen fallback OS (A7+A8) | sim | L1 | **no remoto** 08/09/2026 (`20260907240000`) |
 | L7 | REST entrega + O04 counter + settings D1–D3 | não | — | **completo** 2026-09-07 |
 | L8 | DAL tipada + `request_hash` de itens + registry (B3) | não | — | **em código** 12/09/2026. Sem schema / `db push` |
 | L9 | Nav `aria-current` (D4) | não | — | **em código** 12/09/2026 |
+| L10 | Metadata OS em cancel/reopen | sim | L6 | **no remoto** 12/09/2026 (`20260912120000`) |
 | D5 | Hub vs folha: títulos distintos | não | PR 1 | **completo** 12/09/2026. Hub M11; folha `Perfil institucional` (`settings-chrome.ts`) |
 
-Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 com PR 5.
+Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 com PR 5. Não juntar L10 com L5/CI.
 
 ---
 
@@ -176,7 +170,7 @@ Conjunto **deliverable** (`deliver_to_customer` e `prepare_delivery_signature_in
 
 ## 7. PR 4 — Cancelar rascunho vs cancelar OS
 
-**Estado 2026-09-07:** completo em código. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **no remoto** (dry-run 07/09/2026). Erro mapeado como HTTP **409**. Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection`.
+**Estado 2026-09-07:** completo em código. Migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **no remoto** (dry-run 07/09/2026). Erro mapeado como HTTP **409**. Reopen restaura a OS em `cancel_or_reopen_collection` e em `reopen_collection`. **L10** 12/09/2026: metadata OS nos eventos **no remoto** (`20260912120000`).
 
 Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem `DROP FUNCTION`; re-`GRANT EXECUTE` no REPLACE.
 
@@ -190,7 +184,7 @@ Corpo canónico: `cancel_or_reopen_collection` em `20260906180000` (6 args). Sem
 
 CHECK da OS já inclui `canceled`. **Antes** o RPC não tocava `service_orders`: cancelar `in_workshop`/`in_service` deixava OS viva. OS só existe após orçamento.
 
-**Correção:** coluna aditiva `service_orders.previous_status_before_cancellation` (nullable; CHECK = status da OS excepto `canceled`). Não gravar só em `collection_events.metadata` (reopen fica opaco). No cancel, se existir OS: gravar previous, `status = 'canceled'`. No reopen: restaurar previous e limpar a coluna; se previous null, mapear a partir do status restaurado da coleta. **L6** (`20260907240000`) substitui o fallback original (`ready|invoiced|partial_delivery→ready`, `else` skip): `partial_delivery`/`invoiced` via `private.service_order_status_from_remaining`; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown`. `collected`/`in_workshop` sem OS = no-op. Sem OS → no-op.
+**Correção:** coluna aditiva `service_orders.previous_status_before_cancellation` (nullable; CHECK = status da OS excepto `canceled`). Não gravar só em `collection_events.metadata` (reopen fica opaco). No cancel, se existir OS: gravar previous, `status = 'canceled'`. No reopen: restaurar previous e limpar a coluna; se previous null, mapear a partir do status restaurado da coleta. **L6** (`20260907240000`) substitui o fallback original (`ready|invoiced|partial_delivery→ready`, `else` skip): `partial_delivery`/`invoiced` via `private.service_order_status_from_remaining`; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown`. `collected`/`in_workshop` sem OS = no-op. Sem OS → no-op. **L10** (`20260912120000` **no remoto** 12/09/2026): os eventos também gravam `serviceOrderPreviousStatus` / `serviceOrderStatus` na metadata (diagnóstico); a coluna continua a fonte do reopen.
 
 **Não** cancelar OS em `draft`. **Não** `DELETE`. **Não** deixar OS `canceled` após reopen.
 
@@ -264,16 +258,17 @@ Migration `20260912100000` **no remoto** 12/09/2026 (`db push`; `migration list`
 
 `customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). **D4** fechado em L9. **D5** fechado 12/09/2026.
 
-### L4 / L5 / L6 — depois de L2
+### L4 / L5 / L6 / L10 — depois de L2
 
 - **L4:** **no remoto** 07/09/2026 (`20260907230000`). `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS) via `private.count_remaining_deliverable_items` / `any_remaining_in_repair`. Sem OS não bloqueia `delivered`. Unique parcial `service_order_items_collection_item_uidx`; `item_not_ready` = todas as linhas `pronto` (depois de `collection_item_not_found`); budget rejeita `item_id` duplicado (`duplicate_budget_item`; Zod `technicalBudgetSchema`). Inventário remoto de duplicatas = 0. Evento de entrega: metadata `remaining`, `serviceOrderStatus`, `remainingInRepairItemIds`. Gate CI: `tests/unit/phase-5-item-invariants-migration.test.ts`. PR 5 herda os helpers. App: item sem OS não é `em_reparo`. SQL no remoto; UI/mapper no próximo deploy Vercel.
-- **L5:** **em código** 12/09/2026. pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual PR 4 `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI (`supabase test db` local; Docker adiado). **Sem** `db push`.
+- **L5:** **em código** 12/09/2026. pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual PR 4 `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI: Docker está **fora deste projeto**; pgTAP permanece em disco. Gate executado = Vitest textual. **Sem** `db push`. Não correr `supabase test db` no remoto linkado.
 - **L6:** **no remoto** 08/09/2026 (`20260907240000`). Helper `private.service_order_status_from_remaining`; fallback `partial_delivery`/`invoiced` deriva OS pelos helpers L4; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown` (409). `deliver_to_customer` usa o mesmo helper para `next_os_status`. Gate CI: `tests/unit/phase-5-reopen-os-fallback-migration.test.ts`.
 - **L8:** **em código** 12/09/2026. `executePhase3Command` genérico (`OperationsFunctions`); zero `rpc as any`; hash de entrega com `deliveredItemIds` ordenados; quatro códigos no registry. Sem migration.
 - **L9:** **em código** 12/09/2026. Bottom nav `aria-current="page"` a partir do pathname (SSR).
+- **L10:** **no remoto** 12/09/2026 (`20260912120000`). `CREATE OR REPLACE` de `reopen_collection` / `cancel_or_reopen_collection`: eventos ganham `serviceOrderPreviousStatus` (cancel + reopen) e `serviceOrderStatus` (reopen). A coluna da OS continua a fonte do reopen. Gate: `tests/unit/phase-5-cancel-reopen-os-event-metadata-migration.test.ts`. pgTAP L5 estendido (`plan(20)`). `db push` 12/09/2026; `migration list` local = remoto até `20260912120000`.
 - **D5:** **completo** 12/09/2026. Hub `/configuracoes` = M11 (`Empresa` / `Dados institucionais`); folha `/configuracoes/empresa` = `Perfil institucional` / `Razão social, CNPJ e rodapé da guia`. Sem schema.
 
-**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto; cheiros NF-e/`não chegou` 12/09/2026). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4/L5/L8/L9/D5 acrescentaram testes depois.
+**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto; PR 5 **não** bloqueado; cheiros NF-e/`não chegou` 12/09/2026); este plano **closed** 12/09/2026; phase-3c só disclaimer de matriz viva. **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4/L5/L8/L9/L10/D5 acrescentaram testes depois.
 
 ---
 

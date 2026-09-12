@@ -45,7 +45,7 @@ Se apenas parte dos itens estiver pronta, a entrega parcial e permitida. Os iten
 
 ## Consulta interna
 
-A busca deve aceitar codigo exato, parte do codigo, cliente, CPF/CNPJ, telefone, status e periodo. A tela de detalhe mostra cabecalho, itens, fotos, documentos, NF-e vinculada e timeline.
+A busca deve aceitar codigo exato, parte do codigo, cliente, CPF/CNPJ, telefone, status e periodo. A tela de detalhe mostra cabecalho, itens, fotos, documentos, NF-e vinculada e timeline. Eventos de cancelamento e reabertura na timeline incluem o status da ordem de servico na metadata (`serviceOrderPreviousStatus` / `serviceOrderStatus`); a coluna da OS continua a fonte da reabertura.
 
 O produto sera desenhado para dois contextos: coleta em celular, com uso rapido e uma mao, e escritorio em desktop, com tabelas, filtros, timeline e revisao de documentos. O desktop nao sera tratado como uma ampliacao simples da tela mobile.
 

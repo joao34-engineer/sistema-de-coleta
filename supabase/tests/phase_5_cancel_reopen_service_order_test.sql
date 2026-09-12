@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(20);
 
 create temporary table l5_cancel_ctx (
   org_id bigint,
@@ -177,6 +177,19 @@ select is(
   'cancel stores OS previous_status_before_cancellation'
 );
 
+select is(
+  (
+    select metadata->>'serviceOrderPreviousStatus'
+    from public.collection_events
+    where collection_id = (select service_id from l5_cancel_ctx)
+      and event_type = 'collection.canceled'
+    order by created_at desc
+    limit 1
+  ),
+  'in_service',
+  'cancel event records serviceOrderPreviousStatus'
+);
+
 select throws_ok(
   $sql$
     select public.cancel_or_reopen_collection(
@@ -225,6 +238,32 @@ select is(
 );
 
 select is(
+  (
+    select metadata->>'serviceOrderPreviousStatus'
+    from public.collection_events
+    where collection_id = (select service_id from l5_cancel_ctx)
+      and event_type = 'collection.reopened'
+    order by created_at desc
+    limit 1
+  ),
+  'in_service',
+  'workshop reopen event records serviceOrderPreviousStatus'
+);
+
+select is(
+  (
+    select metadata->>'serviceOrderStatus'
+    from public.collection_events
+    where collection_id = (select service_id from l5_cancel_ctx)
+      and event_type = 'collection.reopened'
+    order by created_at desc
+    limit 1
+  ),
+  'in_service',
+  'workshop reopen event records restored serviceOrderStatus'
+);
+
+select is(
   (select public.cancel_or_reopen_collection(
     (select lifecycle_id from l5_cancel_ctx),
     1,
@@ -253,6 +292,19 @@ select is(
   (select status from public.service_orders where id = (select lifecycle_os_id from l5_cancel_ctx)),
   'in_service',
   'lifecycle reopen_collection restores OS in_service'
+);
+
+select is(
+  (
+    select metadata->>'serviceOrderStatus'
+    from public.collection_events
+    where collection_id = (select lifecycle_id from l5_cancel_ctx)
+      and event_type = 'collection.reopened'
+    order by created_at desc
+    limit 1
+  ),
+  'in_service',
+  'lifecycle reopen_collection event records restored serviceOrderStatus'
 );
 
 select throws_ok(

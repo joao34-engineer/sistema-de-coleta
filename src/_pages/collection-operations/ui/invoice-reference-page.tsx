@@ -8,7 +8,7 @@ import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
-import { registerInvoiceReferenceAction } from "@/_app/actions/phase3-flow.actions";
+import { registerInvoiceReferenceAction } from "../api/actions";
 
 type ExistingInvoice = Readonly<{
   number: string;

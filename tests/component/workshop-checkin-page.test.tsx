@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/coletas/11111111-1111-4111-8111-111111111111/oficina/checkin",
 }));
 
-vi.mock("@/_app/actions/phase3-flow.actions", () => ({
+vi.mock("@/_pages/collection-operations/api/actions", () => ({
   workshopCheckInAction: (...args: unknown[]) => workshopCheckInAction(...args),
 }));
 

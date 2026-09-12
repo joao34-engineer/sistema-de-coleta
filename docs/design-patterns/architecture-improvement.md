@@ -112,7 +112,7 @@ A Fase 3 já evita isso:
 
 ```mermaid
 flowchart LR
-  UI["Client Component"] --> SA["phase3-flow.actions.ts"]
+  UI["Client Component"] --> SA["collection-operations/api/actions.ts"]
   SA --> Cmd["operations/api/commands.ts"]
   Cmd --> RPC["supabase.rpc"]
   RH["app/api/collections/[id]/..."] --> Cmd
@@ -267,7 +267,7 @@ app/                              # SOMENTE convenção Next
 
 src/
   _app/
-    actions/                      # fachada "use server" por fluxo (já existe)
+    actions/                      # fachada "use server" só se compõe 2+ slices (`draft-flow`)
     api-routes/                   # handlers que não pertencem a um slice de página
     pwa/  offline/  errors/
 
@@ -275,11 +275,12 @@ src/
     ui/                           # páginas e folhas client
     model/                        # schemas Zod, view-models, copy
     api/
+      actions.ts                  # "use server" de um fluxo só (oficina: collection-operations)
       commands.ts                 # DAL de escrita: DTO in → DTO/result out
       queries.ts                  # DAL de leitura: DTO
       http.ts                     # OPCIONAL: Request → comando → NextResponse
     index.ts                      # UI + tipos públicos (cliente-safe)
-    index.server.ts               # queries/comandos (server-only)
+    index.server.ts               # queries/comandos (server-only; sem actions)
 
   shared/
     auth/                         # sessão + requireAdmin (cache por request)
@@ -381,7 +382,7 @@ O handler **não** conhece Supabase.
 | **Command** | `finalizeCollection`, `workshopCheckIn`, … | Nome = caso de uso; sem classe `ICommandHandler` |
 | **DTO / API minimization** | Já na política do projeto | Continuar; nunca `select('*')` para a UI |
 | **Result / discriminated union** | `ActionResult`, status de geração de documento | Preferir a `throw` para falha de negócio conhecida, quando o mapper já existe |
-| **Facade** | `_app/actions/*-flow.actions.ts` | Útil para o wizard (vários comandos). Manter fino |
+| **Facade** | `_app/actions/draft-flow.actions.ts` (wizard, 2+ slices). Actions de um fluxo só: `_pages/<slice>/api/actions.ts` | Útil para o wizard. Oficina vive no slice. Manter fino |
 | **Saga / compensation** | Upload de assinatura (prepare → upload → commit / cancel) e `generation-saga.server.ts` | Já necessário; não criar orquestrador genérico |
 | **Factory** | `createLifecycleSupabaseClient` / `createOperationsSupabaseClient` | Pode convergirs para um helper + tipo de RPC, sem “container” |
 | **Cache por request** | `cache(requireAuthenticatedAdministrator)` | API do React; 5 linhas |

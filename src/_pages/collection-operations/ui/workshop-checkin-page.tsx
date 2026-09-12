@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
-import { workshopCheckInAction } from "@/_app/actions/phase3-flow.actions";
+import { workshopCheckInAction } from "../api/actions";
 import { workshopCheckInSchema } from "../model/contracts";
 import {
   arrivalCounterLabel,

@@ -13,7 +13,7 @@ Este arquivo é o inventário **completo** do scan de 29/08/2026, com status atu
 
 **Aberto de propósito:** nenhum eixo de código do scan. **Adiados 06/09/2026:** **5.7** (SignaturePad na aprovação), **5.12** / **5.13** (UI clientes/contatos/veículos). Fora do scan: Fase 4 chats 5–7 e gates remotos 1A.
 
-**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**active**). PR 1 a PR 4 fechados (`20260907000000` / `07010000` **no remoto**); L1+L2+L4 no remoto (`07020000` / `07030000` / `07230000`); PR 5 **no remoto** 12/09/2026 (`20260912100000`); **D5** fechado 12/09/2026 (hub M11; folha perfil institucional). Auditoria: [`workshop-leftovers-audit-2026-09-07.md`](./workshop-leftovers-audit-2026-09-07.md).
+**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**closed** 12/09/2026). PR 1 a PR 4 fechados (`20260907000000` / `07010000` **no remoto**); L1+L2+L4 no remoto (`07020000` / `07030000` / `07230000`); PR 5 **no remoto** 12/09/2026 (`20260912100000`); **L10** **no remoto** 12/09/2026 (`20260912120000`, metadata OS em cancel/reopen); **D5** fechado 12/09/2026 (hub M11; folha perfil institucional). Auditoria: [`workshop-leftovers-audit-2026-09-07.md`](./workshop-leftovers-audit-2026-09-07.md). Actions de oficina em `collection-operations/api/actions.ts`. Residual adiado do plano leftovers: pgTAP no CI (**não fazer**).
 
 ---
 
@@ -24,7 +24,7 @@ A casca (login, lista, detalhe, wizard offline, PWA) existe. O ciclo de **coleta
 O que **ainda** está aberto neste inventário:
 
 1. Recertificação, não código: 1.3 reload/Back; 4.4 429/503 no QR; share WhatsApp.
-2. Fora do scan original, pedido 2026-09-06: ver plano [`workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) — não misturar com 5.7/5.12/5.13.
+2. Fora do scan original, pedido 2026-09-06: plano [`workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) **closed** 12/09/2026 — não misturar com 5.7/5.12/5.13. Residual adiado: pgTAP no CI (**não fazer**). Actions de oficina em `collection-operations/api/actions.ts`.
 
 **Fechado 06/09/2026 (não reabrir):** 5.6 no remoto (`20260906210000`) e no deploy Production; cursor de paginação compacto (`20260906220000`, incidente dashboard “Não foi possível carregar as coletas”).
 
@@ -384,7 +384,7 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 
 **Leftovers PR 4 — feito 07/09/2026.** Implementado e revisado; migration `20260907010000_phase_5_cancel_draft_and_service_order.sql` **no remoto**. Cancel de `draft` passa a `collection_not_cancelable_draft` (P0001) no lugar do `23514` opaco. Coluna nullable `service_orders.previous_status_before_cancellation`. Os dois caminhos de reopen restauram a OS.
 
-**Leftovers L4 — feito 07/09/2026.** `20260907230000` **no remoto**. `remaining` = vivos não entregues **com** linha OS; unique parcial em `service_order_items`; `item_not_ready` = todas as linhas `pronto`; orçamento recusa `item_id` duplicado. PR 5 (check-in “não chegou”) continua bloqueado no Figma O02 e herda os helpers de remaining.
+**Leftovers L4 — feito 07/09/2026.** `20260907230000` **no remoto**. `remaining` = vivos não entregues **com** linha OS; unique parcial em `service_order_items`; `item_not_ready` = todas as linhas `pronto`; orçamento recusa `item_id` duplicado. PR 5 (check-in “não chegou”) **no remoto** 12/09/2026 (`20260912100000`) herda esses helpers.
 
 **Incidente cursor 06/09/2026 — fechado.** `encode_collection_cursor` passou a emitir RFC 4648 base64url compacto (`20260906220000`, remoto aplicado). Dashboard / “carregar mais” deixam de falhar quando `nextCursor` existe. Zod e decode permanecem estritos. Não reabrir sanitização no cliente.
 
