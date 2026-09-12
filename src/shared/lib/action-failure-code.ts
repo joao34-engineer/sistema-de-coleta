@@ -25,6 +25,7 @@ const KNOWN_ACTION_FAILURE_CODES: ReadonlySet<string> = new Set([
   "duplicate_delivery_item",
   "item_already_delivered",
   "item_not_ready",
+  "item_not_received",
   "service_order_reopen_status_unknown",
   "collection_not_draft",
   "immutable_record",

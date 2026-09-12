@@ -67,4 +67,4 @@ No modo remoto, a senha nunca é lida ou alterada pelo script. `SUPABASE_SECRET_
 
 Comece por [AGENTS.md](AGENTS.md) e [docs/README.md](docs/README.md). Os documentos de execução ficam abaixo de 500 linhas e devem ser seguidos na ordem indicada.
 
-Não utilizar client administrativo do Supabase no navegador, não confiar somente na interface para autorização e não transformar o manifest da Fase 0 em service worker/offline. Offline e sincronização ficam para a Fase 4.
+Não utilizar client administrativo do Supabase no navegador e não confiar somente na interface para autorização. A casca PWA (manifest, service worker de shell e instalação) segue o ADR 0005; no iPhone a instalação real é Adicionar à Tela de Início no Safari.

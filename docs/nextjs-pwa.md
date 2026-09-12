@@ -45,6 +45,10 @@ Nao cachear resposta autenticada, documento privado, consulta de coleta, erro de
 
 Aplicar CSP adequada aos hosts usados, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` ou `frame-ancestors 'none'`, `Referrer-Policy: strict-origin-when-cross-origin`, HSTS em producao HTTPS e Permissions-Policy bloqueando recursos nao usados. Revisar a CSP ao adicionar e-mail, analitica, fontes ou upload.
 
+## Instalacao no iPhone
+
+O atalho standalone no iPhone nasce so no Safari: Compartilhar (icone quadrado com seta) → Adicionar à Tela de Início. O app nao esta na App Store. Chrome, Firefox e Edge no iOS nao disparam `beforeinstallprompt`; a UI pede para abrir o mesmo endereco no Safari. O layout usa `viewport-fit=cover` e `apple-touch-icon` 180×180; a barra de status permanece `default` porque o cabecalho e claro.
+
 ## Testes PWA
 
 Testar instalacao em Android/iOS, inicio em modo standalone, conexao interrompida antes/depois da assinatura, reabertura com rascunho pendente, reenvio idempotente apos reconexao e atualizacao do service worker.

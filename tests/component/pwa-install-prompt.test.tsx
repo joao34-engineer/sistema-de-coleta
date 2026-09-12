@@ -6,6 +6,10 @@ import { InstallPrompt } from "@/_app/pwa/ui/install-prompt";
 
 const IOS_SAFARI_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+const IOS_CHROME_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1";
+const ANDROID_CHROME_UA =
+  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
 
 function stubMatchMedia(standalone: boolean): void {
   window.matchMedia = (query: string): MediaQueryList => {
@@ -28,6 +32,16 @@ function stubUserAgent(userAgent: string): void {
     configurable: true,
     get: () => userAgent,
   });
+}
+
+function dispatchBeforeInstallPrompt(): void {
+  const event = new Event("beforeinstallprompt", { cancelable: true });
+  Object.defineProperties(event, {
+    platforms: { value: ["web"] },
+    prompt: { value: async () => undefined },
+    userChoice: { value: Promise.resolve({ outcome: "accepted", platform: "web" }) },
+  });
+  window.dispatchEvent(event);
 }
 
 describe("InstallPrompt", () => {
@@ -54,5 +68,24 @@ describe("InstallPrompt", () => {
     expect(screen.getByRole("status", { name: pwaCopy.installTitle })).toBeInTheDocument();
     expect(screen.getByText(pwaCopy.iosInstallDescription)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: pwaCopy.iosInstallDismiss })).toBeInTheDocument();
+  });
+
+  it("tells Chrome on iPhone to open Safari instead of showing the Share steps", () => {
+    stubUserAgent(IOS_CHROME_UA);
+    render(<InstallPrompt />);
+    expect(screen.getByRole("status", { name: pwaCopy.installTitle })).toBeInTheDocument();
+    expect(screen.getByText(pwaCopy.iosOpenInSafariDescription)).toBeInTheDocument();
+    expect(screen.queryByText(pwaCopy.iosInstallDescription)).not.toBeInTheDocument();
+  });
+
+  it("shows the native install button after beforeinstallprompt on Android", async () => {
+    stubUserAgent(ANDROID_CHROME_UA);
+    render(<InstallPrompt />);
+    expect(screen.queryByRole("button", { name: pwaCopy.installConfirm })).not.toBeInTheDocument();
+
+    dispatchBeforeInstallPrompt();
+
+    expect(await screen.findByRole("button", { name: pwaCopy.installConfirm })).toBeInTheDocument();
+    expect(screen.getByText(pwaCopy.installDescription)).toBeInTheDocument();
   });
 });

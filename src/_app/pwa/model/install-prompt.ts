@@ -27,14 +27,23 @@ export function isStandaloneDisplay(): boolean {
   return navigatorWithStandalone.standalone === true;
 }
 
+const IOS_DEVICE_PATTERN = /iPhone|iPad|iPod/i;
+const IOS_NON_SAFARI_BROWSER_PATTERN = /CriOS|FxiOS|OPiOS|EdgiOS/i;
+
+export function isIosDevice(userAgent: string): boolean {
+  return IOS_DEVICE_PATTERN.test(userAgent);
+}
+
+export function isIosNonSafariBrowser(userAgent: string): boolean {
+  return isIosDevice(userAgent) && IOS_NON_SAFARI_BROWSER_PATTERN.test(userAgent);
+}
+
 export function isIosSafari(userAgent: string): boolean {
-  const isIosDevice = /iPhone|iPad|iPod/i.test(userAgent);
-  if (!isIosDevice) {
+  if (!isIosDevice(userAgent) || isIosNonSafariBrowser(userAgent)) {
     return false;
   }
 
-  const isOtherIosBrowser = /CriOS|FxiOS|OPiOS|EdgiOS/i.test(userAgent);
-  return /Safari/i.test(userAgent) && !isOtherIosBrowser;
+  return /Safari/i.test(userAgent);
 }
 
 export function wasInstallPromptDismissed(): boolean {

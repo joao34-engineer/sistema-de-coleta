@@ -95,4 +95,18 @@ describe("seedBudgetItemsFromCollection", () => {
       }),
     ).toEqual([]);
   });
+
+  it("omits missing check-in items from the empty-budget seed", () => {
+    const result = seedBudgetItemsFromCollection({
+      collectionItems: [
+        { id: itemA, description: "Motor elétrico" },
+        { id: itemB, description: "Bomba d'água" },
+      ],
+      budgetItems: [],
+      missingItemIds: [itemB],
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.collectionItemId).toBe(itemA);
+  });
 });

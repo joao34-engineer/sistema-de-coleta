@@ -20,6 +20,7 @@ const failureMessages: Readonly<Record<string, string>> = {
   duplicate_delivery_item: "O mesmo item foi informado mais de uma vez na entrega.",
   item_already_delivered: "Um ou mais itens já foram entregues em um termo anterior.",
   item_not_ready: "Somente itens marcados como Pronto podem ser entregues.",
+  item_not_received: "Este item não chegou na oficina e não pode entrar em orçamento, progresso ou entrega.",
   collection_not_cancelable_draft: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
   collection_cannot_be_canceled: "A coleta não pode ser cancelada no status atual.",
   collection_not_canceled: "A coleta não está cancelada para ser reaberta.",

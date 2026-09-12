@@ -91,7 +91,7 @@ export function OfflinePendingBanner({ actor }: Props) {
 
   if (collapsed && drafts.length > 0) {
     return (
-      <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md p-3">
+      <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
         <Button type="button" variant="secondary" onClick={() => setCollapsed(false)}>
           {offlineCopy.showPending}
         </Button>

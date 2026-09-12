@@ -38,7 +38,7 @@ function revalidateDetail(collectionId: string): void {
 }
 
 export type WorkshopCheckInActionResult =
-  | ActionSuccess<{ status: "in_workshop" }>
+  | ActionSuccess<{ status: "in_workshop" | "delivered" }>
   | ActionFailure;
 
 export async function workshopCheckInAction(collectionId: string, formData: FormData): Promise<WorkshopCheckInActionResult> {

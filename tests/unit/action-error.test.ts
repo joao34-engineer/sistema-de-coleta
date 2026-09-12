@@ -74,6 +74,10 @@ describe("safe action errors", () => {
       ok: false,
       error: "Somente itens marcados como Pronto podem ser entregues.",
     });
+    expect(toSafeActionError(new Error("item_not_received"))).toEqual({
+      ok: false,
+      error: "Este item não chegou na oficina e não pode entrar em orçamento, progresso ou entrega.",
+    });
   });
 
   it("maps collection_not_cancelable_draft to Portuguese", () => {

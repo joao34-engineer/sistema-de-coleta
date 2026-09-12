@@ -23,6 +23,7 @@ describe("Phase 4 Operations & Workshop Zod Contracts", () => {
         {
           itemId: sampleUuid,
           itemDescription: "Motor WEG 15HP",
+          arrivalStatus: "arrived",
           quantityObserved: 2,
           conditionObserved: "Sem avarias visíveis",
         },
@@ -32,6 +33,27 @@ describe("Phase 4 Operations & Workshop Zod Contracts", () => {
 
     const result = workshopCheckInSchema.safeParse(validCheckIn);
     expect(result.success).toBe(true);
+
+    const missingCheckIn = {
+      ...validCheckIn,
+      items: [
+        {
+          itemId: sampleUuid,
+          itemDescription: "Ferro industrial",
+          arrivalStatus: "missing",
+          quantityObserved: 0,
+          conditionObserved: "nao_recebido",
+          divergenceNotes: "Não veio na carga",
+        },
+      ],
+    };
+    expect(workshopCheckInSchema.safeParse(missingCheckIn).success).toBe(true);
+    expect(
+      workshopCheckInSchema.safeParse({
+        ...missingCheckIn,
+        items: [{ ...missingCheckIn.items[0], divergenceNotes: "" }],
+      }).success,
+    ).toBe(false);
 
     const invalidCheckIn = { ...validCheckIn, administratorName: "" };
     expect(workshopCheckInSchema.safeParse(invalidCheckIn).success).toBe(false);

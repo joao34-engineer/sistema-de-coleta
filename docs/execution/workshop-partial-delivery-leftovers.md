@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1 **no remoto** 07/09/2026 (`20260907020000`); L2 **no remoto** 07/09/2026 (`20260907030000`); L3 e L7 em código; L4 **no remoto** 07/09/2026 (`20260907230000`); L5 **em código** 12/09/2026 (pgTAP + gate textual PR 4; ainda fora do CI); L6 **no remoto** 08/09/2026 (`20260907240000`); PR 5 **bloqueado** (Figma O02). **C1:** `migration list` local = remoto até `20260907240000` |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1–L4/L6 **no remoto** até `20260907240000`; L3/L5/L7/L8/L9 **em código** (L5 ainda fora do CI; L8/L9 **sem** migration). PR 5 **no remoto** 12/09/2026 (`20260912100000`). **C1:** `migration list` local = remoto até `20260912100000` |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -40,11 +40,12 @@ Isso contradizia o produto (`vision-and-scope.md` decisão 16, `mobile-workflows
 | --- | --- | --- | --- |
 | **O04 · Entrega ao cliente** | `229:1343` | Subtítulo **Somente itens prontos**. Item 1 ✓ “Pronta para retirada”. Item 2 □ “Continua em reparo”. “1 de 2 itens serão entregues”. | **PR 3.** Só `pronto` selecionável; `em_reparo` visível, desabilitado, **Continua em reparo**. RPC recusa o resto com `item_not_ready` (422). Conjunto deliverable: `in_service` \| `ready` \| `invoiced` \| `partial_delivery`. |
 | **M14 · Serviço** | `229:1546` | “Itens prontos 1 de 2”; um item Pronto e outro Em reparo no mesmo progresso | **PR 3.** `in_service` com Pronto não entregue: extra **Entregar itens prontos**. Progresso continua no restante (`partial_delivery` não volta a `ready`). |
-| **O02 · Entrada na oficina** | `229:1266` | Só **Conferido** e **Divergência**, ambos com qtd observada 1. **Não há** “não chegou” / qtd 0 | **PR 5 bloqueado.** CHECK `quantity_observed > 0` + conjunto completo (5.8); UI ainda três inputs livres, sem toggle “Não chegou”. |
+| **O02 · Entrada na oficina** | `229:1266` | Só **Conferido** e **Divergência**, ambos com qtd observada 1 | **PR 5.** UI e modelo vêm de **O02b** (`281:42`): terceiro segmento **Não chegou**. |
+| **O02b · Não chegou** | `281:42` | Conferido \| Divergência \| **Não chegou**; qtd 0 + motivo; “Recebidos 1 de 2 · 1 não chegou” | **PR 5 no remoto** 12/09/2026. `arrival_status`; 100% missing → `delivered`. |
 | **O05 · Cancelar** | `229:1377` | Cancelar guia emitida; histórico preservado | **PR 4.** Hub ainda esconde Cancel em `draft`. RPC recusa `draft` com `collection_not_cancelable_draft` (P0001 → HTTP **409**). OS vai a `canceled` e os dois reopens restauram. |
-| **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | **PR 1.** `MobilePageHeader` (Empresa / Dados institucionais, Voltar → `/dashboard`) + `MobileBottomNav`. Figma não pede chevron; o header usa o par do hub. |
+| **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | **PR 1 + L9.** `MobilePageHeader` + `MobileBottomNav` com `aria-current="page"` no pathname (sem gate de hidratação). |
 
-O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não chegou” (ausente no protótipo). Esse eixo precisa de tela nova alinhada a O02, não de relaxar o CHECK.
+O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “item não chegou”; o modelo `arrival_status` está em código (PR 5).
 
 ---
 
@@ -56,7 +57,7 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | 2 | Backfills (só `SELECT`; UPDATE se count > 0) | talvez `UPDATE` pontual | OK humano | **completo** 2026-09-06 (remoto limpo; sem UPDATE) |
 | 3 | Entrega mid-repair (RPC + hub + UI O04) | sim, mesmo 9-arg `deliver_to_customer` | — | **completo** em código 2026-09-07; `20260907000000` no remoto (dry-run 07/09/2026) |
 | 4 | Cancel: recusar `draft` + OS `canceled` | sim, `cancel_or_reopen_collection` | — | **completo** em código 2026-09-07; `20260907010000` no remoto (dry-run 07/09/2026) |
-| 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02; SQL sobre o corpo shipped pós-L4 | **bloqueado** (Figma O02; decisões de modelo fechadas 2026-09-07) |
+| 5 | Check-in “não chegou” | sim, CHECK + RPC + UI | Figma O02b; SQL sobre helpers L4 | **em código** 12/09/2026 (`20260912100000`). Sem `db push` |
 | L1 | Matriz `partial_delivery` + progresso sem item entregue (A2+A3+A12) | sim, `update_service_progress` | PR 3 | **no remoto** 07/09/2026 (`20260907020000`) |
 | L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **no remoto** 07/09/2026 (`20260907030000`) |
 | L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
@@ -64,6 +65,8 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **em código** 12/09/2026. `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI |
 | L6 | Reopen fallback OS (A7+A8) | sim | L1 | **no remoto** 08/09/2026 (`20260907240000`) |
 | L7 | REST entrega + O04 counter + settings D1–D3 | não | — | **completo** 2026-09-07 |
+| L8 | DAL tipada + `request_hash` de itens + registry (B3) | não | — | **em código** 12/09/2026. Sem schema / `db push` |
+| L9 | Nav `aria-current` (D4) | não | — | **em código** 12/09/2026 |
 
 Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 com PR 5.
 
@@ -196,13 +199,13 @@ CHECK da OS já inclui `canceled`. **Antes** o RPC não tocava `service_orders`:
 
 ## 8. PR 5 — Check-in “item não chegou”
 
-**Estado 2026-09-07:** **bloqueado** na tela Figma O02 (ainda não tem “não chegou”). Decisões 1 e 2 fechadas abaixo. Não abrir o PR até o humano confirmar a tela.
+**Estado 12/09/2026:** **em código** (`20260912100000`). Humano confirmou O02b (`281:42`). Sem `db push`. Decisões 1 e 2 abaixo permanecem fechadas.
 
 Figma O02 **não** tem esse estado. Relaxar `quantity_observed > 0` sozinho é workaround e quebra 5.8.
 
 Guards atuais (todos > 0): CHECK anónimo `workshop_checkin_items_quantity_observed_check` (`20260822125100` col. 804); RPC `20260906150000` `invalid_workshop_item`; Zod `quantityObserved: z.number().positive()` em `contracts.ts`; UI `min={1}`. Completeness 5.8 é outro guard (`workshop_checkin_items_incomplete`).
 
-**Recon (o PR é maior do que o texto antigo implicava):** o código de hoje **não** tem toggle Conferido | Divergência — três inputs livres (texto/número) por linha. Montar O02 é um build maior. Orçamento, progresso e entrega **nunca** leem `workshop_checkin_items`; cada um precisa do filtro de missing.
+**Recon (o PR é maior do que o texto antigo implicava):** antes do PR 5 o código **não** tinha toggle Conferido | Divergência — três inputs livres por linha. O02b (`281:42`) está em código: segmentos + card missing. Orçamento filtra missing; progresso e entrega **não** leem `workshop_checkin_items` (já dropam item sem linha OS).
 
 **Modelo próprio (overlay operacional; não reescreve a guia emitida):**
 
@@ -213,13 +216,13 @@ Guards atuais (todos > 0): CHECK anónimo `workshop_checkin_items_quantity_obser
 5. 5.8 continua: **todo** item vivo entra no payload. Missing é uma linha, não omissão. Coleta pode ir a `in_workshop` quando o roster está conferido (chegado ou missing).
 6. Evento `collection.workshop.checked_in`: `itemCount`, `arrivedCount`, `missingCount`, `missingItemIds[]` (sem PII). Não depender só da nota livre.
 7. Itens `missing` **não** entram em orçamento/progresso/entrega. Permanecem na guia como coletados e não recebidos.
-8. UI O02: Conferido | Divergência | **Não chegou**. “Não chegou” zera qtd e exige nota. (Hoje esses toggles não existem no código — ver recon acima.)
+8. UI O02b: Conferido | Divergência | **Não chegou**. “Não chegou” zera qtd e exige nota.
 
 **Decisão 1 — representação (fechada 2026-09-07).** `arrival_status` é o discriminador único; o sentinel é consequência do CHECK, não convenção. As duas opções originais foram **rejeitadas**: sentinel solto em `condition_observed` é inaplicável (a coluna é `text` livre com só check de tamanho — nada impede uma linha `arrived` carregar o sentinel); largar o `NOT NULL` enfraqueceria o invariante de toda linha chegada por causa de um caso raro, a ambiguidade que este documento proíbe. Retroativamente seguro: toda linha existente tem `quantity_observed > 0` e recebe o default `arrived`; o CHECK novo já é satisfeito, sem backfill.
 
 **Decisão 2 — estado terminal (fechada 2026-09-07).** Coleta cujo único restante nunca foi recebido vai a **`delivered`**. Sem status novo: `collections_status_check` e os baldes da UI ficam iguais; a nuance vive na linha de check-in, na guia e em `missingItemIds` do evento.
 
-**`remaining` (deadlock resolvido — L4 + contrato PR 5).** Hoje (pós-L4) significa “ainda entregável e não entregue”: vivo, fora de `delivery_items`, **com** linha OS. PR 5 acrescenta a exclusão de item marcado `missing`. Dois caminhos **rejeitados**: inserir `delivery_items` para item missing (fabrica entrega do que nunca chegou e envenena o ledger de que o termo é construído); soft-delete de `collection_items` (anti-padrão proibido; o snapshot/PDF lê essa tabela e revisões futuras mudariam). A exclusão de missing é `EXISTS` em `workshop_checkin_items`, nunca flag desnormalizada em `collection_items`. Usar `EXISTS`, não join simples: não há unique em `(collection_id, collection_item_id)` — linha duplicada de check-in multiplicaria a conta.
+**`remaining` (deadlock resolvido — L4 + contrato PR 5).** Hoje (pós-L4) significa “ainda entregável e não entregue”: vivo, fora de `delivery_items`, **com** linha OS. PR 5 acrescenta a exclusão de item marcado `missing`. Dois caminhos **rejeitados**: inserir `delivery_items` para item missing (fabrica entrega do que nunca chegou e envenena o ledger de que o termo é construído); soft-delete de `collection_items` (anti-padrão proibido; o snapshot/PDF lê essa tabela e revisões futuras mudariam). A exclusão de missing é `EXISTS` em `workshop_checkin_items`, nunca flag desnormalizada em `collection_items`. Unique `workshop_checkin_items_collection_item_uidx` + `EXISTS` (não join).
 
 **Sequência dura:** PR 5 edita os helpers `private.count_remaining_deliverable_items` / `any_remaining_in_repair` (`20260907230000`). **Nunca** copiar o bloco `remaining` de `07000000`. Não abrir em paralelo com L4 (já fechado).
 
@@ -227,7 +230,7 @@ Guards atuais (todos > 0): CHECK anónimo `workshop_checkin_items_quantity_obser
 
 **Aceite:** 2 itens, 1 missing → check-in ok, coleta `in_workshop`; orçamento só no item chegado; PDF original inalterado. Se o único restante for missing, coleta → `delivered`.
 
-Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
+Migration `20260912100000` no Git; aplicar no remoto só após `db push --dry-run` + OK humano.
 
 ---
 
@@ -252,19 +255,21 @@ Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
 
 ### L3 — DAL parse por linha (A4+C5) — completo 2026-09-07
 
-`parseOperationsRows` em `operations-row-parse.ts`: skip `collectionItemId` null; throw no resto. `getBudgetItems` / `getWorkshopCheckInItems` usam o helper. Hub não engole mais `getBudgetItems` com `.catch(() => [])`. `loadCollectionForOperation` devolve `{ collection, budgetItems, alreadyDeliveredItemIds }` (entrega/progresso/orçamento/aprovação sem double-fetch). `quantityObserved` continua `.positive()` até o PR 5.
+`parseOperationsRows` em `operations-row-parse.ts`: skip `collectionItemId` null; throw no resto. `getBudgetItems` / `getWorkshopCheckInItems` usam o helper. Hub não engole mais `getBudgetItems` com `.catch(() => [])`. `loadCollectionForOperation` devolve `{ collection, budgetItems, alreadyDeliveredItemIds }` (entrega/progresso/orçamento/aprovação sem double-fetch). `quantityObserved` aceita `0` com união discriminada (`arrived` / `missing`) no PR 5.
 
 ### L7 — REST + O04 + settings (A10, A11, D1–D3) — completo 2026-09-07
 
-`customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). D4/D5 fora.
+`customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). **D4** fechado em L9. D5 fora.
 
 ### L4 / L5 / L6 — depois de L2
 
 - **L4:** **no remoto** 07/09/2026 (`20260907230000`). `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS) via `private.count_remaining_deliverable_items` / `any_remaining_in_repair`. Sem OS não bloqueia `delivered`. Unique parcial `service_order_items_collection_item_uidx`; `item_not_ready` = todas as linhas `pronto` (depois de `collection_item_not_found`); budget rejeita `item_id` duplicado (`duplicate_budget_item`; Zod `technicalBudgetSchema`). Inventário remoto de duplicatas = 0. Evento de entrega: metadata `remaining`, `serviceOrderStatus`, `remainingInRepairItemIds`. Gate CI: `tests/unit/phase-5-item-invariants-migration.test.ts`. PR 5 herda os helpers. App: item sem OS não é `em_reparo`. SQL no remoto; UI/mapper no próximo deploy Vercel.
-- **L5:** **em código** 12/09/2026. pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual PR 4 `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI (`supabase test db` local; Docker adiado).
+- **L5:** **em código** 12/09/2026. pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual PR 4 `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI (`supabase test db` local; Docker adiado). **Sem** `db push`.
 - **L6:** **no remoto** 08/09/2026 (`20260907240000`). Helper `private.service_order_status_from_remaining`; fallback `partial_delivery`/`invoiced` deriva OS pelos helpers L4; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown` (409). `deliver_to_customer` usa o mesmo helper para `next_os_status`. Gate CI: `tests/unit/phase-5-reopen-os-fallback-migration.test.ts`.
+- **L8:** **em código** 12/09/2026. `executePhase3Command` genérico (`OperationsFunctions`); zero `rpc as any`; hash de entrega com `deliveredItemIds` ordenados; quatro códigos no registry. Sem migration.
+- **L9:** **em código** 12/09/2026. Bottom nav `aria-current="page"` a partir do pathname (SSR). D5 continua fora.
 
-**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4 acrescentaram testes unitários depois.
+**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4/L5/L8/L9 acrescentaram testes depois.
 
 ---
 

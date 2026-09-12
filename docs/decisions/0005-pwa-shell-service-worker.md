@@ -16,11 +16,12 @@ O Coleta MJT precisa ser instalável e abrir em `standalone` no campo. HTML aute
 
 3. **Atualização com confirmação.** O `install` não chama `skipWaiting()`. A página envia `SKIP_WAITING` depois que o operador confirma o banner. Um reload silencioso não deve descartar trabalho futuro.
 
-4. **Instalação.** Manifest com `display: standalone` e ícones; prompt Android via `beforeinstallprompt` e instrução iOS Safari. Sem fila, IndexedDB ou backup neste chat.
+4. **Instalação.** Manifest com `display: standalone` e ícones, incluindo `apple-touch-icon` 180×180. Prompt Android via `beforeinstallprompt`. iPhone Safari: Compartilhar → Adicionar à Tela de Início. Chrome, Firefox e Edge no iOS: instrução para abrir no Safari (único caminho de ícone standalone). Sem fila, IndexedDB ou backup neste chat.
 
 ## Consequências
 
 - O app instala e atualiza com consentimento, sem cachear HTML, API ou PDF.
+- No iPhone, `beforeinstallprompt` não existe; o ícone real só nasce no Safari. Outros navegadores iOS só encaminham para o Safari.
 - Fila offline, observabilidade e testes de campo permanecem nos chats seguintes.
 
 ## Fora do escopo

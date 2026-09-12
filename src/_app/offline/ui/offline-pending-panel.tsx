@@ -49,7 +49,7 @@ export function OfflinePendingPanel({
       : offlineCopy.retry;
 
   return (
-    <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md p-3">
+    <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
       <section
         aria-labelledby="offline-pending-title"
         className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-surface)]"

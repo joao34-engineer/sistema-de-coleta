@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { getCollectionDetail } from "@/_pages/collection-lifecycle/api/queries";
 import type { CollectionDetailDTO } from "@/_pages/collection-lifecycle/model/contracts";
-import { getBudgetItems, loadAlreadyDeliveredItemIds } from "@/_pages/collection-operations/api/queries";
+import { getBudgetItems, getMissingCheckInItemIds, loadAlreadyDeliveredItemIds } from "@/_pages/collection-operations/api/queries";
 import {
   isWorkshopSegmentAllowed,
   operationalItemFactsFrom,
@@ -14,6 +14,7 @@ export type CollectionOperationLoad = Readonly<{
   collection: CollectionDetailDTO;
   budgetItems: Awaited<ReturnType<typeof getBudgetItems>>;
   alreadyDeliveredItemIds: readonly string[];
+  missingCheckInItemIds: readonly string[];
 }>;
 
 const workshopItemSegments: ReadonlySet<OperationalSegment> = new Set([
@@ -35,10 +36,15 @@ export async function loadCollectionForOperation(
     workshopItemSegments.has(segment) ||
     collection.status === "in_service" ||
     collection.status === "partial_delivery";
+  const loadMissing = segment === "orcamento";
 
-  const [budgetItems, alreadyDeliveredItemIds] = needsWorkshopItems
-    ? await Promise.all([getBudgetItems(id), loadAlreadyDeliveredItemIds(id)])
-    : [[], [] as const];
+  const [budgetItems, alreadyDeliveredItemIds, missingCheckInItemIds] = needsWorkshopItems
+    ? await Promise.all([
+        getBudgetItems(id),
+        loadAlreadyDeliveredItemIds(id),
+        loadMissing ? getMissingCheckInItemIds(id) : Promise.resolve([] as const),
+      ])
+    : [[], [] as const, [] as const];
 
   let itemFacts: OperationalItemFacts | undefined;
   if (
@@ -57,5 +63,5 @@ export async function loadCollectionForOperation(
     redirect(`/coletas/${id}`);
   }
 
-  return { collection, budgetItems, alreadyDeliveredItemIds };
+  return { collection, budgetItems, alreadyDeliveredItemIds, missingCheckInItemIds };
 }

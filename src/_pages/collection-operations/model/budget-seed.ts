@@ -8,6 +8,7 @@ export type BudgetFormLine = BudgetItem & {
 type SeedBudgetItemsInput = Readonly<{
   collectionItems: ReadonlyArray<Pick<CollectionItemSummary, "id" | "description">>;
   budgetItems: ReadonlyArray<BudgetItem>;
+  missingItemIds?: ReadonlyArray<string>;
 }>;
 
 /**
@@ -17,18 +18,24 @@ type SeedBudgetItemsInput = Readonly<{
 export function seedBudgetItemsFromCollection({
   collectionItems,
   budgetItems,
+  missingItemIds = [],
 }: SeedBudgetItemsInput): ReadonlyArray<BudgetFormLine> {
+  const missingIds = new Set(missingItemIds);
+
   if (budgetItems.length > 0) {
-    return budgetItems.map((item) => ({
-      ...item,
-      itemDescription:
-        collectionItems.find((collectionItem) => collectionItem.id === item.collectionItemId)?.description ??
-        "Item da coleta",
-    }));
+    return budgetItems
+      .filter((item) => !missingIds.has(item.collectionItemId))
+      .map((item) => ({
+        ...item,
+        itemDescription:
+          collectionItems.find((collectionItem) => collectionItem.id === item.collectionItemId)?.description ??
+          "Item da coleta",
+      }));
   }
 
-  if (collectionItems.length > 0) {
-    return collectionItems.map((collectionItem) => ({
+  const arrivedItems = collectionItems.filter((collectionItem) => !missingIds.has(collectionItem.id));
+  if (arrivedItems.length > 0) {
+    return arrivedItems.map((collectionItem) => ({
       id: collectionItem.id,
       collectionItemId: collectionItem.id,
       itemDescription: collectionItem.description,

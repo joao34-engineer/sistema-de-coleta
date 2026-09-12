@@ -27,7 +27,7 @@ export function MobilePageHeader({
   logoAlt,
 }: MobilePageHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex min-h-[80px] w-full flex-col justify-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-xs">
+    <header className="sticky top-0 z-30 flex min-h-[80px] w-full flex-col justify-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] shadow-xs">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {backHref ? (

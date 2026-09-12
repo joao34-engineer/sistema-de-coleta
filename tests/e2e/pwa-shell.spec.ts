@@ -20,7 +20,16 @@ test("serves a standalone web manifest with icons", async ({ request }) => {
   expect(manifest).toEqual(
     expect.objectContaining({
       display: "standalone",
-      icons: expect.arrayContaining([expect.objectContaining({ src: expect.any(String) })]),
+      icons: expect.arrayContaining([
+        expect.objectContaining({ src: "/icons/apple-touch-icon.png", sizes: "180x180" }),
+        expect.objectContaining({ src: expect.any(String) }),
+      ]),
     }),
   );
+});
+
+test("serves the 180 apple-touch-icon", async ({ request }) => {
+  const response = await request.get("/icons/apple-touch-icon.png");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"] ?? "").toMatch(/image\/png/);
 });

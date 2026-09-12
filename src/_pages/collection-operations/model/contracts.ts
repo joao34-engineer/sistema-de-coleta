@@ -19,14 +19,31 @@ export const taxIdSchema = z
   .transform(normalizeDigits)
   .refine((value) => isValidCpf(value) || isValidCnpj(value), "Informe um CPF ou CNPJ válido.");
 
-// 1. Workshop Entry Check-In (O02)
-export const workshopCheckInItemSchema = z.object({
+const workshopCheckInItemBase = {
   itemId: uuidSchema,
   itemDescription: z.string().min(1),
-  quantityObserved: z.number().positive(),
+};
+
+export const workshopCheckInArrivedItemSchema = z.object({
+  ...workshopCheckInItemBase,
+  arrivalStatus: z.literal("arrived"),
+  quantityObserved: z.number().positive("Informe uma quantidade observada maior que zero."),
   conditionObserved: z.string().min(1, "Informe a condição observada."),
   divergenceNotes: z.string().max(1000).nullable().optional(),
 });
+
+export const workshopCheckInMissingItemSchema = z.object({
+  ...workshopCheckInItemBase,
+  arrivalStatus: z.literal("missing"),
+  quantityObserved: z.literal(0),
+  conditionObserved: z.literal("nao_recebido"),
+  divergenceNotes: z.string().trim().min(1, "Informe o motivo de o item não ter chegado.").max(1000),
+});
+
+export const workshopCheckInItemSchema = z.discriminatedUnion("arrivalStatus", [
+  workshopCheckInArrivedItemSchema,
+  workshopCheckInMissingItemSchema,
+]);
 
 export const workshopCheckInSchema = z.object({
   collectionId: uuidSchema,
@@ -129,7 +146,7 @@ export type CancelReopenDTO = z.infer<typeof cancelReopenSchema>;
 // Result schemas for operations commands
 export const workshopCheckInResultSchema = z.object({
   collectionId: uuidSchema,
-  status: z.literal("in_workshop"),
+  status: z.enum(["in_workshop", "delivered"]),
   rowVersion: z.number().int().positive(),
   administratorName: z.string(),
 });

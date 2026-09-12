@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { pwaCopy } from "../model/pwa-copy";
 import {
   isBeforeInstallPromptEvent,
+  isIosNonSafariBrowser,
   isIosSafari,
   isStandaloneDisplay,
   persistInstallPromptDismissed,
@@ -19,6 +20,18 @@ function subscribeNever(): () => void {
 
 function useIsClient(): boolean {
   return useSyncExternalStore(subscribeNever, () => true, () => false);
+}
+
+function iosInstallCopy(userAgent: string): string | null {
+  if (isIosSafari(userAgent)) {
+    return pwaCopy.iosInstallDescription;
+  }
+
+  if (isIosNonSafariBrowser(userAgent)) {
+    return pwaCopy.iosOpenInSafariDescription;
+  }
+
+  return null;
 }
 
 export function InstallPrompt() {
@@ -63,14 +76,15 @@ export function InstallPrompt() {
     return null;
   }
 
-  if (isIosSafari(window.navigator.userAgent) && deferredPrompt === null) {
+  const iosInstallDescription = iosInstallCopy(window.navigator.userAgent);
+  if (iosInstallDescription !== null && deferredPrompt === null) {
     return (
       <PwaBanner role="status" labelledBy="pwa-install-title" describedBy="pwa-install-description">
         <h2 id="pwa-install-title" className="text-[16px] font-semibold text-[var(--color-text)]">
           {pwaCopy.installTitle}
         </h2>
         <p id="pwa-install-description" className="mt-1 text-[14px] text-[var(--color-muted)]">
-          {pwaCopy.iosInstallDescription}
+          {iosInstallDescription}
         </p>
         <div className="mt-4">
           <Button type="button" variant="secondary" onClick={dismiss}>

@@ -134,20 +134,48 @@ export async function getInvoiceReference(collectionId: string) {
   return invoiceReferenceViewSchema.safeParse(normalizeOperationsPayload(data)).data ?? null;
 }
 
-export const workshopCheckInItemViewSchema = z.object({
-  id: uuidSchema,
+export const workshopCheckInItemViewSchema = z.discriminatedUnion("arrivalStatus", [
+  z.object({
+    id: uuidSchema,
+    collectionItemId: uuidSchema,
+    arrivalStatus: z.literal("arrived"),
+    quantityObserved: z.number().positive(),
+    conditionObserved: z.string(),
+    divergenceNotes: z.string().nullable(),
+  }),
+  z.object({
+    id: uuidSchema,
+    collectionItemId: uuidSchema,
+    arrivalStatus: z.literal("missing"),
+    quantityObserved: z.number().min(0).max(0),
+    conditionObserved: z.string(),
+    divergenceNotes: z.string().nullable(),
+  }),
+]);
+
+const missingCheckInItemIdSchema = z.object({
   collectionItemId: uuidSchema,
-  quantityObserved: z.number().positive(),
-  conditionObserved: z.string(),
-  divergenceNotes: z.string().nullable(),
 });
 
 export async function getWorkshopCheckInItems(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
     .from("workshop_checkin_items")
-    .select("*")
+    .select("id, collection_item_id, quantity_observed, condition_observed, divergence_notes, arrival_status")
     .eq("collection_id", collectionId);
   if (error) throw error;
   return parseOperationsRows(workshopCheckInItemViewSchema, normalizeOperationsPayload(data));
+}
+
+export async function getMissingCheckInItemIds(collectionId: string): Promise<readonly string[]> {
+  const supabase = await createOperationsSupabaseClient();
+  const { data, error } = await supabase
+    .from("workshop_checkin_items")
+    .select("collection_item_id")
+    .eq("collection_id", collectionId)
+    .eq("arrival_status", "missing");
+  if (error) throw error;
+  return parseOperationsRows(missingCheckInItemIdSchema, normalizeOperationsPayload(data)).map(
+    (row) => row.collectionItemId,
+  );
 }

@@ -18,6 +18,7 @@ describe("workshop RPC item mappers", () => {
           quantityObserved: 2,
           conditionObserved: "ok",
           divergenceNotes: "faltou 1",
+          arrivalStatus: "arrived",
         },
       ]),
     ).toEqual([
@@ -27,6 +28,7 @@ describe("workshop RPC item mappers", () => {
         quantity_observed: 2,
         condition_observed: "ok",
         divergence_notes: "faltou 1",
+        arrival_status: "arrived",
       },
     ]);
   });

@@ -6,6 +6,7 @@ export type WorkshopCheckInRpcItem = Readonly<{
   quantity_observed: number;
   condition_observed: string;
   divergence_notes: string | null;
+  arrival_status: "arrived" | "missing";
 }>;
 
 export type TechnicalBudgetRpcItem = Readonly<{
@@ -30,6 +31,7 @@ export function toWorkshopCheckInRpcItems(items: WorkshopCheckInDTO["items"]): r
     quantity_observed: item.quantityObserved,
     condition_observed: item.conditionObserved,
     divergence_notes: item.divergenceNotes ?? null,
+    arrival_status: item.arrivalStatus,
   }));
 }
 

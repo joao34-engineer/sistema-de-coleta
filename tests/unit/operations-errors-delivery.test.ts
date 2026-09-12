@@ -46,6 +46,15 @@ describe("operations API delivery item codes (5.5)", () => {
       actorId: null,
     });
   });
+
+  it("maps item_not_received to 422 above the generic P0001 fallback", () => {
+    expect(toOperationsApiError({ code: "P0001", message: "item_not_received" })).toEqual({
+      status: 422,
+      code: "item_not_received",
+      message: "Este item não chegou na oficina e não pode entrar em orçamento, progresso ou entrega.",
+      actorId: null,
+    });
+  });
 });
 
 describe("operations API cancel draft codes", () => {
