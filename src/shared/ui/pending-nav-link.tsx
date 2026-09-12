@@ -16,6 +16,7 @@ type PendingNavLinkProps = Readonly<{
   pendingClassName?: string;
   prefetch?: boolean | "auto";
   "aria-label"?: string;
+  "aria-current"?: "page";
 }>;
 
 function PendingNavLinkContent({
@@ -47,12 +48,14 @@ export function PendingNavLink({
   pendingClassName = DEFAULT_PENDING_CLASS,
   prefetch,
   "aria-label": ariaLabel,
+  "aria-current": ariaCurrent,
 }: PendingNavLinkProps) {
   const linkProps = {
     href,
     ...(className !== undefined ? { className } : {}),
     ...(prefetch !== undefined ? { prefetch } : {}),
     ...(ariaLabel !== undefined ? { "aria-label": ariaLabel } : {}),
+    ...(ariaCurrent !== undefined ? { "aria-current": ariaCurrent } : {}),
   };
 
   return (

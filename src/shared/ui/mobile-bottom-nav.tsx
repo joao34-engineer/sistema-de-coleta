@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
-import { useHydrated } from "@/shared/lib/pwa/use-hydrated";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 type IconComponent = (props: { className?: string }) => ReactNode;
@@ -56,12 +55,11 @@ const navItems: ReadonlyArray<NavItem> = [
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const hydrated = useHydrated();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex min-h-[84px] w-full max-w-md items-center justify-around rounded-t-[18px] border-t border-[var(--color-border)] bg-[var(--color-surface)] px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] shadow-lg">
       {navItems.map((item) => {
-        const isActive = hydrated && (pathname ?? "").startsWith(item.matchPrefix);
+        const isActive = (pathname ?? "").startsWith(item.matchPrefix);
         const Icon = item.icon;
 
         return (
@@ -75,6 +73,7 @@ export function MobileBottomNav() {
             }`}
             contentClassName="flex h-full w-full flex-col items-center justify-center rounded-[12px]"
             pendingClassName="bg-[var(--color-surface-neutral)] opacity-80 ring-2 ring-[var(--color-primary)]/40"
+            {...(isActive ? { "aria-current": "page" as const } : {})}
           >
             <Icon className="h-6 w-6" />
             <span className="mt-1 text-[11px] tracking-tight">{item.label}</span>

@@ -75,4 +75,15 @@ describe("PendingNavLink", () => {
     expect(html).toContain('aria-busy="false"');
     expect(html).not.toContain("is-opening");
   });
+
+  it("forwards aria-current=page onto the link", () => {
+    vi.mocked(useLinkStatus).mockReturnValue({ pending: false });
+    render(
+      <PendingNavLink href={"/coletas" as Route} aria-current="page">
+        Coletas
+      </PendingNavLink>,
+    );
+
+    expect(screen.getByRole("link", { name: "Coletas" })).toHaveAttribute("aria-current", "page");
+  });
 });

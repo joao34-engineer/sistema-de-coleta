@@ -40,6 +40,15 @@ describe("toActionFailureCode", () => {
     expect(toActionFailureCode(new Error("invalid_signer_tax_id"))).toBe("invalid_signer_tax_id");
   });
 
+  it("preserves delivery and draft-cancel machine codes", () => {
+    expect(toActionFailureCode(new Error("item_not_ready"))).toBe("item_not_ready");
+    expect(toActionFailureCode(new Error("item_already_delivered"))).toBe("item_already_delivered");
+    expect(toActionFailureCode(new Error("duplicate_delivery_item"))).toBe("duplicate_delivery_item");
+    expect(toActionFailureCode(new Error("collection_not_cancelable_draft"))).toBe(
+      "collection_not_cancelable_draft",
+    );
+  });
+
   it("preserves authentication_required", () => {
     expect(toActionFailureCode(new Error("authentication_required"))).toBe("authentication_required");
   });

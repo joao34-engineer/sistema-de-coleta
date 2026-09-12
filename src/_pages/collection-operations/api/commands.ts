@@ -3,7 +3,6 @@ import "server-only";
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
-import { createOperationsSupabaseClient } from "./operations-supabase";
 import {
   WorkshopCheckInDTO,
   TechnicalBudgetDTO,
@@ -20,45 +19,65 @@ import {
   customerDeliveryResultSchema,
   cancelReopenResultSchema,
 } from "../model/contracts";
+import { digestLifecycleRequest } from "../model/lifecycle-request-hash";
 import { toServiceProgressRpcItems, toTechnicalBudgetRpcItems, toWorkshopCheckInRpcItems } from "../model/workshop-rpc-items";
+import { createOperationsSupabaseClient, type OperationsFunctions } from "./operations-supabase";
 
 async function digestSha256(file: File): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function digestLifecycleRequest(operation: string, collectionId: string, expectedVersion: number, reason?: string): Promise<string> {
-  const payload = JSON.stringify({ operation, collectionId, expectedVersion, reason: reason ?? null });
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
+type Phase3CommandName = {
+  [K in keyof OperationsFunctions]: OperationsFunctions[K]["Args"] extends {
+    p_collection_id: string;
+    p_expected_version: number;
+    p_idempotency_key: string;
+    p_request_hash: string;
+  }
+    ? K
+    : never;
+}[keyof OperationsFunctions];
+
+type Phase3CommandOptions = Readonly<{
+  reason?: string;
+  deliveredItemIds?: ReadonlyArray<string>;
+}>;
 
 export function validatePngSignature(file: unknown): file is File {
   if (!(file instanceof File) || file.type !== "image/png" || file.size === 0 || file.size > 2 * 1024 * 1024) return false;
   return true;
 }
 
-type RpcArgs = Record<string, unknown>;
+function withLifecycleHash<T extends { p_idempotency_key: string; p_request_hash: string }>(
+  rpcArgs: Omit<T, "p_idempotency_key" | "p_request_hash">,
+  p_idempotency_key: string,
+  p_request_hash: string,
+): T {
+  return { ...rpcArgs, p_idempotency_key, p_request_hash } as T;
+}
 
-async function executePhase3Command<T extends z.ZodTypeAny>(
-  functionName: "workshop_check_in" | "create_technical_budget" | "approve_technical_budget" | "update_service_progress" | "register_invoice_reference" | "deliver_to_customer" | "cancel_or_reopen_collection",
-  rpcArgs: RpcArgs,
-  resultSchema: T,
+async function executePhase3Command<TName extends Phase3CommandName, TSchema extends z.ZodTypeAny>(
+  functionName: TName,
+  rpcArgs: Omit<OperationsFunctions[TName]["Args"], "p_idempotency_key" | "p_request_hash">,
+  resultSchema: TSchema,
   idempotencyKey: string,
-  reason?: string
-): Promise<z.infer<T>> {
+  options?: Phase3CommandOptions,
+): Promise<z.infer<TSchema>> {
   const administrator = await requireAuthenticatedAdministrator();
   try {
     const supabase = await createOperationsSupabaseClient();
     const requestHash = await digestLifecycleRequest(
       functionName,
-      (rpcArgs["p_collection_id"] as string) ?? "",
-      (rpcArgs["p_expected_version"] as number) ?? 0,
-      reason
+      rpcArgs.p_collection_id,
+      rpcArgs.p_expected_version,
+      options?.reason,
+      options?.deliveredItemIds === undefined ? undefined : { deliveredItemIds: options.deliveredItemIds },
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rpc = supabase.rpc as any;
-    const { data, error } = await rpc(functionName, { ...rpcArgs, p_idempotency_key: idempotencyKey, p_request_hash: requestHash });
+    const { data, error } = await supabase.rpc(
+      functionName,
+      withLifecycleHash<OperationsFunctions[TName]["Args"]>(rpcArgs, idempotencyKey, requestHash),
+    );
     if (error) throw error;
     const parsed = resultSchema.safeParse(data);
     if (!parsed.success) throw new Error("operations_command_contract_invalid");
@@ -123,6 +142,9 @@ export async function workshopCheckIn(
     }
     if (requestId) logTransactionFailure({ requestId, operation: commitSucceeded ? "workshop_checkin_post_commit" : "workshop_checkin", code: commitSucceeded ? "post_commit_response_failed" : "upload_or_commit_failed", actorId: administrator.userId, status: 500 });
     throw attachActorId(error, administrator.userId);
+  }
+  if (intentId === null) {
+    throw new Error("upload_intent_contract_invalid");
   }
   return executePhase3Command(
     "workshop_check_in",
@@ -271,6 +293,9 @@ export async function deliverToCustomer(
     if (requestId) logTransactionFailure({ requestId, operation: commitSucceeded ? "delivery_post_commit" : "delivery", code: commitSucceeded ? "post_commit_response_failed" : "upload_or_commit_failed", actorId: administrator.userId, status: 500 });
     throw attachActorId(error, administrator.userId);
   }
+  if (intentId === null) {
+    throw new Error("upload_intent_contract_invalid");
+  }
   return executePhase3Command(
     "deliver_to_customer",
     {
@@ -283,7 +308,8 @@ export async function deliverToCustomer(
       p_signature_intent_id: intentId,
     },
     customerDeliveryResultSchema,
-    input.signatureIntentId
+    input.signatureIntentId,
+    { deliveredItemIds: input.deliveredItemIds },
   );
 }
 

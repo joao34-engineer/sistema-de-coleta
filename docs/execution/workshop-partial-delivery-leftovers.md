@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1 **no remoto** 07/09/2026 (`20260907020000`); L2 **no remoto** 07/09/2026 (`20260907030000`); L3 e L7 em código; L4 **no remoto** 07/09/2026 (`20260907230000`); L6 **no remoto** 08/09/2026 (`20260907240000`); PR 5 **bloqueado** (Figma O02). **C1:** `migration list` local = remoto até `20260907240000` |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1 **no remoto** 07/09/2026 (`20260907020000`); L2 **no remoto** 07/09/2026 (`20260907030000`); L3 e L7 em código; L4 **no remoto** 07/09/2026 (`20260907230000`); L5 **em código** 12/09/2026 (pgTAP + gate textual PR 4; ainda fora do CI); L6 **no remoto** 08/09/2026 (`20260907240000`); PR 5 **bloqueado** (Figma O02). **C1:** `migration list` local = remoto até `20260907240000` |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -61,7 +61,7 @@ O Figma **autoriza** entrega parcial mid-repair. **Não** autoriza “item não 
 | L2 | NF-e em `partial_delivery` + preservar `invoiced` (A1+A9) | sim | L1 | **no remoto** 07/09/2026 (`20260907030000`) |
 | L3 | DAL parse por linha (A4+C5) | não | — | **completo** 2026-09-07 |
 | L4 | Invariantes de item (A5+A6) | sim | L2 | **no remoto** 07/09/2026 (`20260907230000`). PR 5 espera este bloco `remaining` |
-| L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **não** |
+| L5 | pgTAP entrega + cancel/reopen (B1+B2) | testes SQL | L2/L4 | **em código** 12/09/2026. `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI |
 | L6 | Reopen fallback OS (A7+A8) | sim | L1 | **no remoto** 08/09/2026 (`20260907240000`) |
 | L7 | REST entrega + O04 counter + settings D1–D3 | não | — | **completo** 2026-09-07 |
 
@@ -261,7 +261,7 @@ Só abrir este PR depois do humano confirmar a tela (Figma ainda não a tem).
 ### L4 / L5 / L6 — depois de L2
 
 - **L4:** **no remoto** 07/09/2026 (`20260907230000`). `remaining` = itens **entregáveis** (vivos, não entregues, **com** linha OS) via `private.count_remaining_deliverable_items` / `any_remaining_in_repair`. Sem OS não bloqueia `delivered`. Unique parcial `service_order_items_collection_item_uidx`; `item_not_ready` = todas as linhas `pronto` (depois de `collection_item_not_found`); budget rejeita `item_id` duplicado (`duplicate_budget_item`; Zod `technicalBudgetSchema`). Inventário remoto de duplicatas = 0. Evento de entrega: metadata `remaining`, `serviceOrderStatus`, `remainingInRepairItemIds`. Gate CI: `tests/unit/phase-5-item-invariants-migration.test.ts`. PR 5 herda os helpers. App: item sem OS não é `em_reparo`. SQL no remoto; UI/mapper no próximo deploy Vercel.
-- **L5:** pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`.
+- **L5:** **em código** 12/09/2026. pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual PR 4 `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI (`supabase test db` local; Docker adiado).
 - **L6:** **no remoto** 08/09/2026 (`20260907240000`). Helper `private.service_order_status_from_remaining`; fallback `partial_delivery`/`invoiced` deriva OS pelos helpers L4; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown` (409). `deliver_to_customer` usa o mesmo helper para `next_os_status`. Gate CI: `tests/unit/phase-5-reopen-os-fallback-migration.test.ts`.
 
 **C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4 acrescentaram testes unitários depois.
