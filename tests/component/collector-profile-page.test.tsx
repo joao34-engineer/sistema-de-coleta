@@ -8,10 +8,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/configuracoes",
 }));
 
-vi.mock("next/image", () => ({
-  default: ({ src, alt }: { src: string; alt: string }) =>
-    require("react").createElement("img", { src, alt }),
-}));
+vi.mock("next/image", async () => {
+  const React = await import("react");
+  return {
+    default: ({ src, alt }: { src: string; alt: string }) =>
+      React.createElement("img", { src, alt }),
+  };
+});
 
 const administrator: AuthenticatedAdministrator = {
   userId: "11111111-1111-1111-1111-111111111111",
@@ -31,5 +34,13 @@ describe("CollectorProfilePage", () => {
     const form = screen.getByRole("button", { name: "Sair" }).closest("form");
     expect(form).toHaveAttribute("action", "/api/auth/sign-out");
     expect(form).toHaveAttribute("method", "post");
+  });
+
+  it("keeps the M11 hub heading distinct from the issuer leaf", () => {
+    render(<CollectorProfilePage administrator={administrator} />);
+
+    expect(screen.getByRole("heading", { name: "Empresa" })).toBeInTheDocument();
+    expect(screen.getByText("Dados institucionais")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Perfil institucional" })).not.toBeInTheDocument();
   });
 });

@@ -6,7 +6,7 @@
 | **Data** | 2026-09-07 |
 | **Escopo** | Verificação das alegações de `docs/execution/workshop-partial-delivery-leftovers.md` |
 | **Método** | Auditoria original: leitura de código/SQL + `lint` / `typecheck` / `vitest` / `steiger` (nenhum comando de banco). Follow-up L4: `supabase db push` + `migration list --linked` |
-| **Alvos** | `20260907000000` / `07010000` (auditoria original); follow-up L4 `20260907230000`; follow-up L6 `20260907240000_phase_5_reopen_os_fallback.sql`; follow-up L5/L8/L9 12/09/2026 (testes + DAL + nav; **sem** migration nova) |
+| **Alvos** | `20260907000000` / `07010000` (auditoria original); follow-up L4 `20260907230000`; follow-up L6 `20260907240000_phase_5_reopen_os_fallback.sql`; follow-up L5/L8/L9 12/09/2026 (testes + DAL + nav; **sem** migration nova); **D5** 12/09/2026 (hub/folha; **sem** schema) |
 
 ---
 
@@ -23,6 +23,8 @@ O que não se sustenta na auditoria original eram três coisas: **o fluxo mid-re
 **Follow-up 08/09/2026 (L6):** A7+A8 em código e **no remoto** (`20260907240000`). `db push` 08/09/2026; `migration list` local = remoto até `20260907240000`.
 
 **Follow-up 12/09/2026 (L5+L8+L9 + PR 5):** B1+B2 em código (pgTAP + gate textual PR 4; ainda fora do CI). B3/`request_hash`/registry (L8) e D4 (L9) em código. PR 5 **no remoto** (`20260912100000`; `db push` 12/09/2026). `migration list` local = remoto até `20260912100000`.
+
+**Follow-up 12/09/2026 (D5):** hub `/configuracoes` mantém M11 (`Empresa` / `Dados institucionais`); folha `/configuracoes/empresa` usa `Perfil institucional` / `Razão social, CNPJ e rodapé da guia` (`model/settings-chrome.ts`). Sem migration.
 
 ### Validação local reproduzida (2026-09-07)
 
@@ -276,11 +278,11 @@ Isso importa concretamente para o PR 5: o §8 do plano dizia que o SQL nascia do
 
 ### C3 · `docs/README.md` nunca recebeu a atualização do PR 3 / PR 4 — **Médio** — **emendado 2026-09-07 / 12/09/2026**
 
-O índice **na auditoria** parava em `20260906220000`. **Follow-up:** leftovers lista PR 1–4 e L1–L9 em código; PR 5 **em código** 12/09/2026 (`20260912100000`, sem `db push`). `docs/supabase.md` lista o remoto até `20260907240000`.
+O índice **na auditoria** parava em `20260906220000`. **Follow-up:** leftovers lista PR 1–4 e L1–L9 em código; PR 5 **no remoto** 12/09/2026 (`20260912100000`). `docs/supabase.md` lista o remoto até `20260912100000`.
 
 ### C4 · Docs que ainda afirmam a regra antiga — **Baixo** — **parcialmente emendado 2026-09-07**
 
-- `docs/design-patterns/system-scan-for-bugs.md` — **emendado:** Nota 5.6 inclui `in_service`; PR 3/PR 4/L4 **no remoto**.
+- `docs/design-patterns/system-scan-for-bugs.md` — **emendado:** Nota 5.6 inclui `in_service`; PR 3/PR 4/L4 **no remoto**. Cheiros residuais de NF-e só em `ready` e check-in sem “não chegou” **emendados 12/09/2026** (L2 + PR 5).
 - `docs/execution/phase-3c-reconnecting-ui.md` — matriz de CTA pré-PR-3 (`in_service` sem a extra "Entregar itens prontos"). Marcado como concluído, mas não arquivado e sem emenda no status. Histórico; a matriz viva está em `operational-actions.ts` + leftovers.
 - `docs/execution/fase3-5-ready-to-implement-fix-plan.md` — mesmo problema (plano **closed**; não reabrir).
 
@@ -300,7 +302,7 @@ Nota lateral: `getWorkshopCheckInItems` **não tem nenhum caller** em `src/` ou 
 
 ### C6 · Contagem de testes desatualizada — **Nit**
 
-O plano diz "521 testes". A execução local da auditoria (07/09/2026) dava **532 passed, 18 skipped**. L3/L7/L4/L5/L8/L9 acrescentaram testes depois dessa snapshot; não recontar aqui.
+O plano diz "521 testes". A execução local da auditoria (07/09/2026) dava **532 passed, 18 skipped**. L3/L7/L4/L5/L8/L9/D5 acrescentaram testes depois dessa snapshot; não recontar aqui.
 
 ---
 
@@ -332,9 +334,11 @@ O prefix match em si está certo (`"/configuracoes/empresa".startsWith("/configu
 
 **Shipped L9:** `isActive` usa só o pathname (válido no SSR); `PendingNavLink` encaminha `aria-current="page"`. `useHydrated` permanece no pending de navegação. Testes: `tests/component/mobile-bottom-nav.test.tsx` + forwarding em `pending-nav-link.test.tsx`.
 
-### D5 · Hub e folha agora têm `<h1>` e subtítulo idênticos — **Baixo**
+### D5 · Hub e folha agora têm `<h1>` e subtítulo idênticos — **Baixo** — **corrigido 12/09/2026**
 
-`collector-profile-page.tsx:18-20` (`/configuracoes`) e `company-settings-page.tsx:13-14` (`/configuracoes/empresa`) renderizam ambos "Empresa" / "Dados institucionais". Duas páginas distintas, uma identidade. O PR 1 copiou o par do hub deliberadamente, então a colisão está shipped.
+`collector-profile-page.tsx` (`/configuracoes`) e `company-settings-page.tsx` (`/configuracoes/empresa`) renderizavam ambos "Empresa" / "Dados institucionais". Duas páginas distintas, uma identidade. O PR 1 copiou o par do hub deliberadamente.
+
+**Shipped 12/09/2026:** hub mantém M11 (`Empresa` / `Dados institucionais`); folha usa `Perfil institucional` / `Razão social, CNPJ e rodapé da guia` via `model/settings-chrome.ts`. Testes: `tests/unit/company-settings-chrome.test.ts` + páginas de componente + e2e `heading` da folha.
 
 ---
 
@@ -366,7 +370,7 @@ Um eixo por PR, como manda o plano original. Nada aqui autoriza abrir PR — é 
 | 5 | **A5 + A6** | **Corrigido 2026-09-07 (L4)** (`20260907230000` **no remoto**). `remaining` só entregáveis; unique parcial; `item_not_ready` = todas `pronto` |
 | 6 | **B1 + B2** | **Em código 12/09/2026 (L5).** pgTAP + gate textual PR 4; ainda fora do CI. Sem `db push` |
 | 7 | **A7 + A8** | **Corrigido 2026-09-08 (L6)** (`20260907240000` **no remoto**). Helper remaining; RAISE se o fallback não mapear |
-| 8 | **A10, A11, D1–D3** | **Corrigido 2026-09-07 (L7).** **D4** 12/09/2026 (**L9**). D5 continua fora |
+| 8 | **A10, A11, D1–D3** | **Corrigido 2026-09-07 (L7).** **D4** 12/09/2026 (**L9**). **D5** 12/09/2026 |
 | 9 | **B3 + hash + registry** | **Corrigido 12/09/2026 (L8).** Sem schema |
 | 10 | **C2–C4, C6** | C3/C4/C6 emendados 07–12/09/2026; C2 histórico (commit 3+4) |
 | 11 | **PR 5** | **No remoto** 12/09/2026 (`20260912100000`). Herda helpers L4 + `NOT EXISTS` missing |

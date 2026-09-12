@@ -8,10 +8,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/coletas",
 }));
 
-vi.mock("next/image", () => ({
-  default: ({ src, alt }: { src: string; alt: string }) =>
-    require("react").createElement("img", { src, alt }),
-}));
+vi.mock("next/image", async () => {
+  const React = await import("react");
+  return {
+    default: ({ src, alt }: { src: string; alt: string }) =>
+      React.createElement("img", { src, alt }),
+  };
+});
 
 vi.mock("next/link", async () => {
   const React = await import("react");

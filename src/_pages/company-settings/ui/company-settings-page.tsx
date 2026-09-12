@@ -2,6 +2,7 @@ import type { Route } from "next";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { leafChrome } from "../model/settings-chrome";
 import { CompanySettingsForm } from "./company-settings-form";
 
 type Props = Readonly<{ settings: CompanySettingsDTO; backHref: Route }>;
@@ -10,8 +11,8 @@ export function CompanySettingsPage({ settings, backHref }: Props) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
       <MobilePageHeader
-        title="Empresa"
-        subtitle="Dados institucionais"
+        title={leafChrome.title}
+        subtitle={leafChrome.subtitle}
         backHref={backHref}
       />
 

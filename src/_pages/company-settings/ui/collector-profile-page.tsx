@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { SignOutForm } from "@/shared/ui/sign-out-form";
 import { operatorDisplayName } from "@/shared/auth/operator-display-name";
+import { hubChrome } from "../model/settings-chrome";
 
 type Props = Readonly<{
   administrator: AuthenticatedAdministrator;
@@ -16,8 +17,8 @@ export function CollectorProfilePage({ administrator }: Props) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
       <MobilePageHeader
-        title="Empresa"
-        subtitle="Dados institucionais"
+        title={hubChrome.title}
+        subtitle={hubChrome.subtitle}
         backHref={"/coletas" as Route}
       />
 

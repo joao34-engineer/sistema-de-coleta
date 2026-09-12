@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1–L4/L6 **no remoto** até `20260907240000`; L3/L5/L7/L8/L9 **em código** (L5 ainda fora do CI; L8/L9 **sem** migration). PR 5 **no remoto** 12/09/2026 (`20260912100000`). **C1:** `migration list` local = remoto até `20260912100000` |
+| **Status** | `active` — **não implementar neste arquivo**; um eixo por leftover. PR 1–4 **completos**; L1–L4/L6 **no remoto** até `20260907240000`; L3/L5/L7/L8/L9 **em código** (L5 ainda fora do CI; L8/L9 **sem** migration). **D5** fechado 12/09/2026 (hub M11; folha `Perfil institucional`). PR 5 **no remoto** 12/09/2026 (`20260912100000`). **C1:** `migration list` local = remoto até `20260912100000` |
 | **Authority** | `informative` até o humano pedir um PR |
 | **Owner** | product / sistema-coleta |
 | **Pedido** | 2026-09-06: Figma `23:107`, trap `/configuracoes/empresa`, entrega mid-repair, check-in “não chegou”, cancel OS, backfills |
@@ -43,7 +43,7 @@ Isso contradizia o produto (`vision-and-scope.md` decisão 16, `mobile-workflows
 | **O02 · Entrada na oficina** | `229:1266` | Só **Conferido** e **Divergência**, ambos com qtd observada 1 | **PR 5.** UI e modelo vêm de **O02b** (`281:42`): terceiro segmento **Não chegou**. |
 | **O02b · Não chegou** | `281:42` | Conferido \| Divergência \| **Não chegou**; qtd 0 + motivo; “Recebidos 1 de 2 · 1 não chegou” | **PR 5 no remoto** 12/09/2026. `arrival_status`; 100% missing → `delivered`. |
 | **O05 · Cancelar** | `229:1377` | Cancelar guia emitida; histórico preservado | **PR 4.** Hub ainda esconde Cancel em `draft`. RPC recusa `draft` com `collection_not_cancelable_draft` (P0001 → HTTP **409**). OS vai a `canceled` e os dois reopens restauram. |
-| **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | **PR 1 + L9.** `MobilePageHeader` + `MobileBottomNav` com `aria-current="page"` no pathname (sem gate de hidratação). |
+| **M11 · Configurações** | `229:1462` | Header Empresa + **bottom nav** (Configurações ativo). Sem chevron Voltar no header | **PR 1 + L9 + D5.** Hub: **Empresa** / **Dados institucionais**. Folha `/configuracoes/empresa`: **Perfil institucional** / **Razão social, CNPJ e rodapé da guia**. Nav com `aria-current="page"` no pathname. |
 
 O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “item não chegou”; o modelo `arrival_status` está **no remoto** (PR 5).
 
@@ -67,6 +67,7 @@ O Figma **autoriza** entrega parcial mid-repair. O02b (`281:42`) autoriza “ite
 | L7 | REST entrega + O04 counter + settings D1–D3 | não | — | **completo** 2026-09-07 |
 | L8 | DAL tipada + `request_hash` de itens + registry (B3) | não | — | **em código** 12/09/2026. Sem schema / `db push` |
 | L9 | Nav `aria-current` (D4) | não | — | **em código** 12/09/2026 |
+| D5 | Hub vs folha: títulos distintos | não | PR 1 | **completo** 12/09/2026. Hub M11; folha `Perfil institucional` (`settings-chrome.ts`) |
 
 Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 com PR 5.
 
@@ -84,6 +85,8 @@ Não juntar 3+5. Não juntar 3+4. Não juntar L2 com L1/L3/L7. Não juntar L4 co
 - `backHref={"/dashboard" as Route}` — origem do CTA “Configurações da Empresa”.
 - `MobileBottomNav` no fundo (`matchPrefix: "/configuracoes"` já marca Configurações ativo).
 - Shell `max-w-md` + `pb-28` como `collector-profile-page.tsx`. Manter `CompanySettingsForm`; não reescrever issuer/logo.
+
+**D5 (12/09/2026):** a folha deixa de copiar o par M11. Hub permanece **Empresa** / **Dados institucionais**; `/configuracoes/empresa` usa **Perfil institucional** / **Razão social, CNPJ e rodapé da guia** (`model/settings-chrome.ts`).
 
 **Owns:** `src/_pages/company-settings/ui/company-settings-page.tsx`. Não tocar RPC.
 
@@ -259,7 +262,7 @@ Migration `20260912100000` **no remoto** 12/09/2026 (`db push`; `migration list`
 
 ### L7 — REST + O04 + settings (A10, A11, D1–D3) — completo 2026-09-07
 
-`customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). **D4** fechado em L9. D5 fora.
+`customerDeliveryFormValues` (usa `parseJsonFormField`) na rota REST e na Server Action. Counter O04: `{selected} de {items.length}`. Settings: coluna única no `max-w-md`; copy da guia/PDF restaurada; `?from=/configuracoes` allowlist (`/dashboard` default). **D4** fechado em L9. **D5** fechado 12/09/2026.
 
 ### L4 / L5 / L6 — depois de L2
 
@@ -267,9 +270,10 @@ Migration `20260912100000` **no remoto** 12/09/2026 (`db push`; `migration list`
 - **L5:** **em código** 12/09/2026. pgTAP `phase_5_deliver_mid_repair_test.sql` + `phase_5_cancel_reopen_service_order_test.sql`; gate textual PR 4 `tests/unit/phase-5-cancel-draft-and-service-order-migration.test.ts`. Ainda fora do CI (`supabase test db` local; Docker adiado). **Sem** `db push`.
 - **L6:** **no remoto** 08/09/2026 (`20260907240000`). Helper `private.service_order_status_from_remaining`; fallback `partial_delivery`/`invoiced` deriva OS pelos helpers L4; `awaiting_approval` → `budgeted`; `else` RAISE `service_order_reopen_status_unknown` (409). `deliver_to_customer` usa o mesmo helper para `next_os_status`. Gate CI: `tests/unit/phase-5-reopen-os-fallback-migration.test.ts`.
 - **L8:** **em código** 12/09/2026. `executePhase3Command` genérico (`OperationsFunctions`); zero `rpc as any`; hash de entrega com `deliveredItemIds` ordenados; quatro códigos no registry. Sem migration.
-- **L9:** **em código** 12/09/2026. Bottom nav `aria-current="page"` a partir do pathname (SSR). D5 continua fora.
+- **L9:** **em código** 12/09/2026. Bottom nav `aria-current="page"` a partir do pathname (SSR).
+- **D5:** **completo** 12/09/2026. Hub `/configuracoes` = M11 (`Empresa` / `Dados institucionais`); folha `/configuracoes/empresa` = `Perfil institucional` / `Razão social, CNPJ e rodapé da guia`. Sem schema.
 
-**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4/L5/L8/L9 acrescentaram testes depois.
+**C2** (histórico): PR 3+4 vieram no mesmo commit — não reescrever git. **C4:** scan emendado (conjunto inclui `in_service`; L4 no remoto; cheiros NF-e/`não chegou` 12/09/2026). **C6:** snapshot da auditoria = 532 passed / 18 skipped; L3/L7/L4/L5/L8/L9/D5 acrescentaram testes depois.
 
 ---
 

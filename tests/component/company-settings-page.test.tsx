@@ -41,8 +41,8 @@ describe("CompanySettingsPage", () => {
 
   it("renders mobile chrome with issuer copy under the header", () => {
     render(<CompanySettingsPage settings={baseSettings} backHref="/dashboard" />);
-    expect(screen.getByRole("heading", { name: "Empresa" })).toBeInTheDocument();
-    expect(screen.getByText("Dados institucionais")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Perfil institucional" })).toBeInTheDocument();
+    expect(screen.getByText("Razão social, CNPJ e rodapé da guia")).toBeInTheDocument();
     expect(screen.getByText(/guia de coleta \(PDF\)/i)).toBeInTheDocument();
     expect(screen.queryByText(/futuramente/i)).not.toBeInTheDocument();
   });

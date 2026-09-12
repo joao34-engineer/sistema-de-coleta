@@ -21,7 +21,7 @@
 
 ## Comandos de CI
 
-O scaffold deve expor scripts consistentes: `lint`, `typecheck` (`tsc --noEmit`), `test`, `test:e2e` e `build`. O CI executa ao menos lint, typecheck, testes alterados/relevantes e build; producao usa instalacao limpa pelo lockfile. SQL de leftovers (ex.: L4 `20260907230000`, PR 4 `20260907010000`, PR 5 `20260912100000`) entra no CI via testes textuais Vitest (`tests/unit/phase-5-*-migration.test.ts`). pgTAP em `supabase/tests/` nao esta no `package.json` nem no CI; L5 adicionou `phase_5_deliver_mid_repair_test.sql` e `phase_5_cancel_reopen_service_order_test.sql`; PR 5 adicionou `phase_5_workshop_check_in_missing_items_test.sql` para `supabase test db` local.
+O scaffold deve expor scripts consistentes: `lint`, `typecheck` (`tsc --noEmit`), `test`, `test:e2e` e `build`. O CI executa ao menos lint, typecheck, testes alterados/relevantes e build; producao usa instalacao limpa pelo lockfile. SQL de leftovers (ex.: L4 `20260907230000`, PR 4 `20260907010000`, PR 5 `20260912100000`) entra no CI via testes textuais Vitest (`tests/unit/phase-5-*-migration.test.ts`). pgTAP em `supabase/tests/` nao esta no `package.json` nem no CI; L5 adicionou `phase_5_deliver_mid_repair_test.sql` e `phase_5_cancel_reopen_service_order_test.sql`; PR 5 adicionou `phase_5_workshop_check_in_missing_items_test.sql` para `supabase test db` local. D5 (hub vs folha) cobre `tests/unit/company-settings-chrome.test.ts`, as paginas de componente de configuracoes e o `heading` da folha em `tests/e2e/administrator-smoke.spec.ts`.
 
 ## Dados de teste
 

@@ -16,7 +16,7 @@ test("administrator can open the protected foundation routes", async ({ page }) 
 
   await page.getByRole("link", { name: "Configurações da Empresa" }).click();
   await expect(page).toHaveURL(/\/configuracoes\/empresa$/);
-  await expect(page.getByRole("heading", { name: "Dados institucionais" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Perfil institucional" })).toBeVisible();
 
   await page.goto("/dashboard");
   await page.getByRole("button", { name: "Sair" }).click();

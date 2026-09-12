@@ -8,10 +8,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
 }));
 
-vi.mock("next/image", () => ({
-  default: ({ src, alt }: { src: string; alt: string }) =>
-    require("react").createElement("img", { src, alt }),
-}));
+vi.mock("next/image", async () => {
+  const React = await import("react");
+  return {
+    default: ({ src, alt }: { src: string; alt: string }) =>
+      React.createElement("img", { src, alt }),
+  };
+});
 
 const administrator: AuthenticatedAdministrator = {
   userId: "11111111-1111-1111-1111-111111111111",

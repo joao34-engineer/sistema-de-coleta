@@ -13,7 +13,7 @@ Este arquivo é o inventário **completo** do scan de 29/08/2026, com status atu
 
 **Aberto de propósito:** nenhum eixo de código do scan. **Adiados 06/09/2026:** **5.7** (SignaturePad na aprovação), **5.12** / **5.13** (UI clientes/contatos/veículos). Fora do scan: Fase 4 chats 5–7 e gates remotos 1A.
 
-**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**active**). PR 1 a PR 4 fechados (`20260907000000` / `07010000` **no remoto**); L1+L2+L4 no remoto (`07020000` / `07030000` / `07230000`); PR 5 **no remoto** 12/09/2026 (`20260912100000`). Auditoria: [`workshop-leftovers-audit-2026-09-07.md`](./workshop-leftovers-audit-2026-09-07.md).
+**Como usar:** um eixo por PR. Não reimplementar linhas **feito**. Plano de execução que fechou B13/B23–B27/B30/5.1–5.5/5.8–5.11: [`execution/fase3-5-ready-to-implement-fix-plan.md`](../execution/fase3-5-ready-to-implement-fix-plan.md) (**closed**). Cheap cleanup 5.14–5.18: `30d8621`. Leftovers 2026-09-06 (Figma O04 mid-repair, trap settings, cancel OS, check-in missing): [`execution/workshop-partial-delivery-leftovers.md`](../execution/workshop-partial-delivery-leftovers.md) (**active**). PR 1 a PR 4 fechados (`20260907000000` / `07010000` **no remoto**); L1+L2+L4 no remoto (`07020000` / `07030000` / `07230000`); PR 5 **no remoto** 12/09/2026 (`20260912100000`); **D5** fechado 12/09/2026 (hub M11; folha perfil institucional). Auditoria: [`workshop-leftovers-audit-2026-09-07.md`](./workshop-leftovers-audit-2026-09-07.md).
 
 ---
 
@@ -399,8 +399,8 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 - [`architecture-improvement.md`](./architecture-improvement.md) — organização de código (A–H), não correção funcional. Não tratar como bug do scan.
 - Cheiros residuais **sem eixo até pedido explícito**:
   - UI de entrega lista todos os itens da coleta (já entregues desabilitados); não restringe à progressão **Pronto** do orçamento. A RPC também não exige item `pronto`. **PR 3 feito 07/09/2026 — migration `20260907000000` aplicada:** conjunto deliverable inclui `in_service`; `item_not_ready` (422); OS segue o restante.
-  - `register_invoice_reference` só aceita `status = ready` (NF-e depois de `delivered` / `partial_delivery` impossível).
-  - Check-in: `quantity_observed > 0` + conjunto completo — não dá para registrar “item não chegou”.
+  - `register_invoice_reference` aceita `ready | partial_delivery` (L2, `20260907030000` **no remoto**). NF-e depois de `delivered` continua eixo separado.
+  - Check-in “item não chegou”: **PR 5 feito 12/09/2026** — migration `20260912100000` **no remoto**; `arrival_status = missing`, qtd 0, `item_not_received`.
   - Backfills opcionais (OS `ready` com coleta `delivered`; `canceled_at` em coleta reaberta): `SELECT` + OK humano, não código. **Auditado 06/09/2026 no remoto `sistema-coleta-mjt`: remoto limpo** — ambas as sondas `count = 0`, mais o inventário de coleta `canceled` com OS viva também `0`. Nenhum `UPDATE`, nenhuma migration. Reauditar com os mesmos `SELECT` antes de qualquer backfill futuro.
   - `draft-items-page` / `draft-review-page` sem rota (wizard vivo é `CollectionCapturePage`).
   - `cancel_or_reopen_collection` aceita cancelar `draft` e quebra o CHECK de identidade; hub não oferece esse CTA. **PR 4 feito 07/09/2026 — migration `20260907010000` aplicada:** `collection_not_cancelable_draft` no lugar do `23514` opaco; aponta para `discard_collection_draft`.
