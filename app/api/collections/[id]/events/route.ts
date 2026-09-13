@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { getCollectionEvents, toLifecycleApiError } from "@/_pages/collection-lifecycle/index.server";
-import { apiErrorResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
-import { collectionCursorSchema } from "@/_pages/collection-lifecycle/model/pagination";
+import { apiErrorResponse, collectionCursorSchema, getCollectionEvents, noStoreJson, toLifecycleApiError, validationErrorResponse } from "@/_pages/collection-lifecycle/index.server";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 export const dynamic = "force-dynamic";

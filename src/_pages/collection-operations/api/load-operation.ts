@@ -1,17 +1,18 @@
+import "server-only";
+
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
-import { getCollectionDetail } from "@/_pages/collection-lifecycle/api/queries";
-import type { CollectionDetailDTO } from "@/_pages/collection-lifecycle/model/contracts";
-import { getBudgetItems, getMissingCheckInItemIds, loadAlreadyDeliveredItemIds } from "@/_pages/collection-operations/api/queries";
+import { getCollectionDetail } from "@/_pages/collection-lifecycle/index.server";
+import { getBudgetItems, getMissingCheckInItemIds, loadAlreadyDeliveredItemIds } from "./queries";
 import {
   isWorkshopSegmentAllowed,
   operationalItemFactsFrom,
   type OperationalItemFacts,
   type OperationalSegment,
-} from "@/_pages/collection-operations/model/operational-actions";
+} from "../model/operational-actions";
 
 export type CollectionOperationLoad = Readonly<{
-  collection: CollectionDetailDTO;
+  collection: NonNullable<Awaited<ReturnType<typeof getCollectionDetail>>>;
   budgetItems: Awaited<ReturnType<typeof getBudgetItems>>;
   alreadyDeliveredItemIds: readonly string[];
   missingCheckInItemIds: readonly string[];

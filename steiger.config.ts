@@ -15,6 +15,16 @@ const steigerConfig = defineConfig([
       "fsd/no-public-api-sidestep": "off",
     },
   },
+  {
+    files: [
+      "./src/_pages/collection-operations/api/load-operation.ts",
+      "./src/_pages/collection-operations/ui/collection-detail-hub-route.tsx",
+    ],
+    rules: {
+      // Hub/oficina compose lifecycle detail + ops queries. Fase H / entities/collection would remove this.
+      "fsd/forbidden-imports": "off",
+    },
+  },
 ]);
 
 export default steigerConfig;

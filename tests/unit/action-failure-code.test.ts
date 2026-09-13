@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toActionFailureCode, toFinalizeActionFailureCode } from "@/shared/lib/action-failure-code";
 
-vi.mock("@/_pages/collection-drafts/api/drafts.server", () => ({
+vi.mock("@/_pages/collection-drafts/api/commands", () => ({
   addItem: vi.fn(),
   getDraft: vi.fn(),
   patchDraft: vi.fn(),
@@ -9,7 +9,7 @@ vi.mock("@/_pages/collection-drafts/api/drafts.server", () => ({
   removeItem: vi.fn(),
 }));
 
-import { addItem } from "@/_pages/collection-drafts/api/drafts.server";
+import { addItem } from "@/_pages/collection-drafts/api/commands";
 import { addItemToDraftAction } from "@/_pages/collection-drafts/api/actions";
 import { AuthenticationRequiredError } from "@/shared/auth/require-admin";
 

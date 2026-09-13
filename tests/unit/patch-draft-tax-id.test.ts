@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { patchDraft } from "@/_pages/collection-drafts/api/drafts.server";
+import { patchDraft } from "@/_pages/collection-drafts/api/http";
 
 const collectionId = "22222222-2222-4222-8222-222222222222";
 

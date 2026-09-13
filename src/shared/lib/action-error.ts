@@ -1,53 +1,7 @@
+import { classifyCommandError } from "@/shared/lib/command-error";
+
 export type SafeActionFailure = Readonly<{ ok: false; error: string }>;
 
-const failureMessages: Readonly<Record<string, string>> = {
-  authentication_required: "Sessão expirada. Entre novamente para continuar.",
-  administrator_access_denied: "Você não tem permissão para esta operação.",
-  stale_version: "A coleta foi atualizada por outra operação. Recarregue a página e revise os dados.",
-  idempotency_conflict: "Esta operação já foi enviada com outros dados. Atualize a página antes de tentar de novo.",
-  duplicate_workshop_item: "O mesmo item da coleta foi informado mais de uma vez no check-in.",
-  duplicate_budget_item: "O mesmo item não pode ser informado mais de uma vez no orçamento.",
-  workshop_checkin_items_incomplete: "O check-in de oficina deve incluir todos os itens da coleta.",
-  workshop_checkin_not_collected: "A coleta precisa estar no status 'coletada' para o check-in de oficina.",
-  budget_not_in_workshop: "A coleta precisa estar 'em oficina' para registrar o orçamento.",
-  budget_not_in_budget: "A coleta precisa estar 'em orçamento' para aprovar ou rejeitar.",
-  service_order_not_in_service: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso.",
-  collection_not_in_service: "A coleta precisa estar aprovada, em reparo, em entrega parcial ou faturada para atualizar o progresso.",
-  invoice_not_ready: "A coleta precisa estar pronta ou em entrega parcial para registrar a NF-e.",
-  collection_not_ready: "A coleta precisa estar pronta ou em entrega parcial para registrar a NF-e.",
-  delivery_not_invoiced: "A coleta precisa estar em reparo, pronta, faturada ou em entrega parcial para entregar ao cliente.",
-  collection_not_invoiced: "A coleta precisa estar em reparo, pronta, faturada ou em entrega parcial para entregar ao cliente.",
-  duplicate_delivery_item: "O mesmo item foi informado mais de uma vez na entrega.",
-  item_already_delivered: "Um ou mais itens já foram entregues em um termo anterior.",
-  item_not_ready: "Somente itens marcados como Pronto podem ser entregues.",
-  item_not_received: "Este item não chegou na oficina e não pode entrar em orçamento, progresso ou entrega.",
-  collection_not_cancelable_draft: "A coleta em rascunho não pode ser cancelada. Descarte o rascunho.",
-  collection_cannot_be_canceled: "A coleta não pode ser cancelada no status atual.",
-  collection_not_canceled: "A coleta não está cancelada para ser reaberta.",
-  service_order_reopen_status_unknown: "Não foi possível restaurar a ordem de serviço. A coleta permanece cancelada.",
-  validation_error: "Revise os dados informados e tente novamente.",
-};
-
 export function toSafeActionError(error: unknown): SafeActionFailure {
-  if (error instanceof Error) {
-    const mapped = failureMessages[error.message];
-    if (mapped) return { ok: false, error: mapped };
-    const supabaseCode = (error as Readonly<{ code?: string }>).code;
-    if (supabaseCode && failureMessages[supabaseCode]) {
-      return { ok: false, error: failureMessages[supabaseCode] ?? "Não foi possível concluir a operação." };
-    }
-    if (error.message === "invalid_signature_file") return { ok: false, error: "A assinatura enviada não é um PNG válido." };
-  }
-  const code = (error as Readonly<{ code?: unknown }>).code;
-  if (typeof code === "string") {
-    const mapped = failureMessages[code];
-    if (mapped) return { ok: false, error: mapped };
-    const message = (error as Readonly<{ message?: unknown }>).message;
-    if (typeof message === "string" && failureMessages[message]) {
-      return { ok: false, error: failureMessages[message] };
-    }
-    if (code === "P0001") return { ok: false, error: "A coleta não atende aos requisitos desta operação." };
-    if (code === "40001") return { ok: false, error: failureMessages["stale_version"] ?? "Recarregue a página e tente novamente." };
-  }
-  return { ok: false, error: "Não foi possível concluir a operação. Verifique a conexão e tente novamente." };
+  return { ok: false, error: classifyCommandError(error).actionMessage };
 }

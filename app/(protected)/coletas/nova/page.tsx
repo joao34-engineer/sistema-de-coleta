@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { CollectionCapturePage } from "@/_pages/collection-drafts/ui/collection-capture-page";
+import { CollectionCapturePage } from "@/_pages/collection-drafts";
 
 type Props = Readonly<{
   searchParams: Promise<{ rascunho?: string }>;

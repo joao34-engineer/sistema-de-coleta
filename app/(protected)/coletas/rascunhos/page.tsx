@@ -1,7 +1,5 @@
-import { listCollections } from "@/_pages/collection-lifecycle/api/queries";
-import { collectionQuerySchema } from "@/_pages/collection-lifecycle/model/contracts";
-import { flattenSearchParams } from "@/_pages/collection-lifecycle/model/list-search";
-import { CollectionsListPage } from "@/_pages/collection-lifecycle/ui/collections-list-page";
+import { CollectionsListPage } from "@/_pages/collection-lifecycle";
+import { collectionQuerySchema, flattenSearchParams, listCollections } from "@/_pages/collection-lifecycle/index.server";
 
 export const dynamic = "force-dynamic";
 

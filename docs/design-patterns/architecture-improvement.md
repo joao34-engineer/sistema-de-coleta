@@ -2,10 +2,10 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | DAL **congelada** (`active` / `normative`). Fases A–H de migração permanecem `planned` — **não autorizam implementação** sem pedido explícito |
+| **Status** | DAL **congelada** (`active` / `normative`). Fases A–E **feitas**. Fases F–H de migração permanecem `planned` — **não autorizam implementação** sem pedido explícito |
 | **Authority** | `normative` na decisão DAL (secção abaixo + [ADR 0009](../decisions/0009-data-access-layer.md)). Resto do plano = `informative` |
 | **Owner** | product / sistema-coleta |
-| **Last verified** | 2026-08-29 |
+| **Last verified** | 2026-09-13 |
 | **Escopo** | Somente `sistema-coleta/` |
 | **Pedido** | Análise explícita do humano; DAL congelada em 2026-08-29 para não reabrir as 3 abordagens do Next.js |
 
@@ -27,7 +27,7 @@ O [Data Security guide](https://nextjs.org/docs/app/guides/data-security) do Nex
 
 Registro formal: [ADR 0009](../decisions/0009-data-access-layer.md). Lei de preflight: [`AGENTS.md`](../../AGENTS.md).
 
-O resto deste documento (fases A–H) explica o *gap* do código atual em relação a essa lei. Fechar o gap só com pedido explícito e um eixo por PR.
+O resto deste documento (Fases A–E **feitas**; fases F–H) explica o *gap* do código atual em relação a essa lei. Fechar o gap restante só com pedido explícito e um eixo por PR.
 
 ---
 
@@ -46,7 +46,7 @@ O projeto **já tem uma arquitetura boa o suficiente**. O problema não é “fa
 | Fase 1 (clientes, rascunho, itens) | `collection-drafts`, `customers` | Função de negócio recebe `Request` e devolve `NextResponse` |
 | Fase 2 (documentos) | `collection-documents` | Comandos + portas + saga — o melhor pedaço do app |
 | Fase 3 (oficina) | `collection-operations` | Comando tipado → Action fina — o padrão a copiar |
-| Casca Next | `app/` | A maior parte é fina; alguns loaders e helpers vazaram para a rota |
+| Casca Next | `app/` | Hub e oficina reexportam o slice; listagem/dashboard ainda compõem na rota (Fase D não cobre) |
 
 A regra de ouro (consequência da DAL congelada):
 
@@ -86,7 +86,7 @@ sistema-coleta/
       customers/                HTTP-shaped (Request → NextResponse)
       collection-drafts/        HTTP-shaped + fila offline (boa)
       collection-lifecycle/     comandos/queries tipados (boa)
-      collection-operations/    comandos tipados + actions (boa)
+      collection-operations/    comandos, loaders, hub/oficina *Route (boa)
       collection-documents/     rendering + delivery + public (melhor isolamento)
       company-settings/
     shared/                     auth, db, ui, config, lib (às vezes vaza domínio)
@@ -107,6 +107,8 @@ flowchart LR
 ```
 
 A Action **simula HTTP** para chamar uma função que já roda no mesmo processo. Isso duplica serialização, esconde o contrato tipado e torna o stack trace ilegível.
+
+**Atualização:** Fase A (2026-09-12) fechou o `new Request` interno. Fase E (2026-09-13) fechou auth/detalhe repetidos com `cache()` no mesmo RSC. O diagrama acima é o cheiro histórico da Fase 1.
 
 A Fase 3 já evita isso:
 
@@ -149,16 +151,9 @@ Isso viola SRP, dificulta teste unitário do comando e é o oposto do [Data Acce
 
 Não apagar a API HTTP. Ela serve preview, testes de contrato, workers (`/api/internal/...`) e verificação pública. O erro é **a Action depender da forma HTTP**.
 
-### 4.3 Lógica vazou para `app/`
+### 4.3 Lógica vazou para `app/` — **fechado na Fase D** (hub + oficina)
 
-O FSD do projeto diz: `app/` só reexporta ou delega. Hoje existem arquivos de composição/regra na árvore de rota:
-
-- `app/(protected)/coletas/[id]/load-hub.ts`
-- `app/(protected)/coletas/[id]/load-operation.ts` (quase o mesmo que o anterior)
-- `app/(protected)/coletas/[id]/oficina/budget-total.ts`
-- `app/(protected)/coletas/[id]/page.tsx` monta o view-model do hub (mapeamento que deveria viver no slice)
-
-A [documentação de project structure do Next.js](https://nextjs.org/docs/app/getting-started/project-structure) permite colocation em `app/`, mas **este** repositório já escolheu a estratégia “arquivos fora de `app/`”. Ser consistente é mais importante do que a opção teórica.
+O FSD do projeto diz: `app/` só reexporta ou delega. Os loaders/helpers de hub e oficina saíram de `app/(protected)/coletas/[id]/` para `collection-operations` (`api/load-operation.ts`, `model/budget-seed.ts` / `hub-view.ts` / `workshop-views.ts`, `ui/*-route.tsx`). `load-hub.ts` era código morto (mesmo nome que o loader vivo, assinatura diferente) e foi **apagado**, não mesclado. Listagem, rascunhos e dashboard ainda compõem na rota — fora desta fase.
 
 ### 4.4 Duplicação de primitivos
 
@@ -166,11 +161,11 @@ Cópias quase literais entre slices:
 
 | Primitivo | Onde se repete |
 | :--- | :--- |
-| `digestSha256` / `digestLifecycleRequest` / `validatePngSignature` | `collection-lifecycle/api/commands.ts` e `collection-operations/api/commands.ts` |
+| `digestSha256` / `digestLifecycleRequest` / `validatePngSignature` | Fechado na Fase C: `shared/lib/file/sha256-hex.ts` e `shared/lib/file/png-signature.ts`; os dois `commands.ts` importam |
 | Client Supabase + cookies | `supabase-server.ts`, `lifecycle-supabase.ts`, `operations-supabase.ts`, verificação pública |
 | `verifyCollectionDocument` | `collection-documents/api/public/verification.ts` — o duplicado em `api/public-verification.ts` foi removido (scan 5.16, `30d8621`) |
 | Helpers HTTP (`noStore`, parse JSON, idempotency) | `http-response.ts` vs funções locais em drafts/customers |
-| Mapeamento de erro de domínio → mensagem | `lifecycle-errors.ts` vs `action-error.ts` vs `operations-errors.ts` |
+| Mapeamento de erro de domínio → mensagem | Fechado na Fase B: `shared/lib/command-error.ts`; wrappers delegam |
 
 Não criar um “utils.ts” genérico. Extrair **só** esses primitivos nomeados, para `shared/lib/` (infra) ou um único módulo de erro de comando.
 
@@ -193,9 +188,9 @@ import { WorkshopCheckInPage } from "@/_pages/collection-operations/ui/workshop-
 
 O `index.ts` / `index.server.ts` existe em vários slices, mas não é o contrato que o resto do app usa. Isso torna refactors assustadores: qualquer arquivo interno é API de fato.
 
-### 4.7 Reads sem memoização de request
+### 4.7 Reads sem memoização de request — **fechado na Fase E** (2026-09-13)
 
-`requireAuthenticatedAdministrator()` e `getCollectionDetail()` são chamados em layout, página e comandos **sem** `cache()` do React. O [guia de autenticação do Next.js](https://nextjs.org/docs/app/guides/authentication) recomenda `cache()` no DAL para não repetir sessão/consulta no mesmo request (layout + page + action do mesmo tick).
+`requireAuthenticatedAdministrator` e `getCollectionDetail` usam `cache()` do React no DAL. O [guia de autenticação do Next.js](https://nextjs.org/docs/app/guides/authentication) pede isso para não repetir sessão/consulta no mesmo request (layout + page + queries do mesmo tick). Server Actions continuam a reautenticar: cada POST é um request novo. Sem `use cache` / ISR em rotas autenticadas.
 
 ### 4.8 O que **não** é um problema
 
@@ -381,11 +376,11 @@ O handler **não** conhece Supabase.
 | **Port + adapter (hexagonal leve)** | Offline e saga de PDF já usam | Não generalizar para CRUD de cliente |
 | **Command** | `finalizeCollection`, `workshopCheckIn`, … | Nome = caso de uso; sem classe `ICommandHandler` |
 | **DTO / API minimization** | Já na política do projeto | Continuar; nunca `select('*')` para a UI |
-| **Result / discriminated union** | `ActionResult`, status de geração de documento | Preferir a `throw` para falha de negócio conhecida, quando o mapper já existe |
+| **Result / discriminated union** | `ActionResult`; mapper em `shared/lib/command-error.ts` | Preferir a `throw` para falha de negócio conhecida; Action e `route.ts` traduzem pelo mapper |
 | **Facade** | `_app/actions/draft-flow.actions.ts` (wizard, 2+ slices). Actions de um fluxo só: `_pages/<slice>/api/actions.ts` | Útil para o wizard. Oficina vive no slice. Manter fino |
 | **Saga / compensation** | Upload de assinatura (prepare → upload → commit / cancel) e `generation-saga.server.ts` | Já necessário; não criar orquestrador genérico |
 | **Factory** | `createLifecycleSupabaseClient` / `createOperationsSupabaseClient` | Pode convergirs para um helper + tipo de RPC, sem “container” |
-| **Cache por request** | `cache(requireAuthenticatedAdministrator)` | API do React; 5 linhas |
+| **Cache por request** | **Fase E feita:** `cache(requireAuthenticatedAdministrator)` e `cache(getCollectionDetail)` | API do React; sem `use cache` / ISR |
 
 ### Padrões que **não** aplicar
 
@@ -453,7 +448,7 @@ Hoje, o único candidato **real** a `entities/collection` é o conteúdo de `sha
 
 Nenhuma fase abaixo é rewrite. Cada uma deve deixar `npm run check` verde e o contrato HTTP da Fase 1A intacto.
 
-### Fase A — Desacoplar HTTP da Fase 1 (maior ROI)
+### Fase A — Desacoplar HTTP da Fase 1 (maior ROI) — **feita** (2026-09-12)
 
 **Faz:** em `customers` e `collection-drafts`, extrair `commands.ts` / `queries.ts` que devolvem DTO. `http.ts` (ou o `route.ts`) só traduz. Actions chamam o comando direto.
 
@@ -461,29 +456,35 @@ Nenhuma fase abaixo é rewrite. Cada uma deve deixar `npm run check` verde e o c
 
 **Aceite:** zero `new Request("http://localhost")` em actions; testes de contrato HTTP existentes continuam verdes.
 
-### Fase B — Um mapper de erro de comando
+### Fase B — Um mapper de erro de comando — **feita** (2026-09-12)
 
 **Faz:** um módulo `shared/lib/command-error.ts` (ou equivalente) com `code` estável → status HTTP **e** mensagem de Action. `lifecycle-errors`, `operations-errors` e `action-error` passam a delegar.
 
 **Não faz:** i18n, nem classes de erro para cada código SQL.
 
-### Fase C — Primitivos de arquivo e hash
+### Fase C — Primitivos de arquivo e hash — **feita** (2026-09-12)
 
 **Faz:** `digestSha256`, validação PNG (header + tamanho), hash de idempotência em `shared/lib/`. Os dois `commands.ts` importam.
 
+Módulos: `src/shared/lib/file/sha256-hex.ts` (`digestSha256`, `digestLifecycleRequest`) e `src/shared/lib/file/png-signature.ts` (`validatePngSignature`, `assertPngSignatureHeader`, `isPngHeader`). Agrupados em `shared/lib/file/` com `file-validation.ts` para o limite Steiger de `shared/lib`.
+
 **Não faz:** pasta `shared/lib/crypto/` com 8 arquivos.
 
-### Fase D — `app/` de volta a fino
+### Fase D — `app/` de volta a fino — **feita** (2026-09-12)
 
 **Faz:** mover `load-hub` / `load-operation` / `budget-total` e o mapeamento do hub para `collection-operations` (ou `collection-lifecycle` + composição no `index.server`). Deduplicar os dois loaders. Páginas de oficina só importam a página FSD.
 
 **Não faz:** colocation nova dentro de `app/(protected)/...`.
 
-### Fase E — DAL de sessão com `cache()`
+Entregue: `loadCollectionForOperation` em `collection-operations/api/load-operation.ts`; `budgetTotalOf` em `model/budget-seed.ts` (um `reduce` no hub UI); mappers em `model/hub-view.ts` e `model/workshop-views.ts`; `CollectionDetailHubRoute` + oito `*Route` de oficina exportados por `index.server.ts`. Páginas em `app/(protected)/coletas/[id]` e `oficina/*` só reexportam. `load-hub.ts` estava morto e foi apagado. Composição hub/oficina → lifecycle DAL: exceção pontual de `fsd/forbidden-imports` nos dois arquivos que chamam `getCollectionDetail` (até Fase H / `entities/collection`).
+
+### Fase E — DAL de sessão com `cache()` — **feita** (2026-09-13)
 
 **Faz:** `export const requireAuthenticatedAdministrator = cache(async () => { ... })` (ou wrapper). Opcional: `cache` em `getCollectionDetail` por `collectionId`.
 
 **Não faz:** cache cruzando requests (`use cache` / ISR) em rotas autenticadas. Dados de coleta continuam `force-dynamic` / `no-store`.
+
+Entregue: `cache()` em `src/shared/auth/require-admin.ts` (`requireAuthenticatedAdministrator`; `ForPage` permanece wrapper fino). `cache()` em `getCollectionDetail(collectionId)` em `collection-lifecycle/api/queries.ts`. Vitest mocka `react.cache` como identidade nos testes de auth e detalhe (sem contexto RSC o wrap vazaria entre casos). Mesmo eixo que [`performance.md`](./performance.md) Passos 2.1–2.3.
 
 ### Fase F — Public API das slices
 
@@ -545,10 +546,11 @@ O app ficou mais fácil de manter quando:
 1. Um engenheiro acha “onde finalizar / adicionar item / check-in” em **um** arquivo de comando, sem passar por JSON interno.
 2. `app/` não contém regra, soma de orçamento, nem loader duplicado.
 3. Actions e `route.ts` não conhecem Supabase.
-4. Não há `new Request` interno para falar consigo mesmo.
-5. Primitivos de assinatura/hash existem numa vez.
-6. Steiger volta a proteger a API pública das slices.
+4. Não há `new Request` interno para falar consigo mesmo. — **A**
+5. Primitivos de assinatura/hash existem numa vez. — **C**
+6. Steiger volta a proteger a API pública das slices. — **F (aberta)**
 7. Nenhuma RPC, RLS, número oficial ou contrato HTTP da Fase 1A foi “simplificado”.
+8. Auth e detalhe da coleta memoizados no mesmo request (`cache()`). — **E**
 
 Se um PR não move o ponteiro nesses itens, não é melhoria de arquitetura — é ruído.
 

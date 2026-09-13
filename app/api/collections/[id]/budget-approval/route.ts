@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { budgetApprovalSchema, budgetApproval, toOperationsApiError } from "@/_pages/collection-operations/index.server";
-import { apiErrorResponse, noStoreJson, validationErrorResponse, idempotencyKeyFrom, idempotencyKeyRequiredResponse, jsonBody } from "@/_pages/collection-lifecycle/api/http-response";
+import { apiErrorResponse, idempotencyKeyFrom, idempotencyKeyRequiredResponse, jsonBody, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/index.server";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 export const dynamic = "force-dynamic";

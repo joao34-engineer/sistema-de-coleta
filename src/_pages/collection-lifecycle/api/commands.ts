@@ -2,25 +2,13 @@ import "server-only";
 
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
+import { assertPngSignatureHeader, validatePngSignature } from "@/shared/lib/file/png-signature";
+import { digestLifecycleRequest, digestSha256 } from "@/shared/lib/file/sha256-hex";
 import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
 import { createLifecycleSupabaseClient, createLifecycleUserStorageClient } from "./lifecycle-supabase";
 import { lifecycleCommandResultSchema, signatureCommandResultSchema, type SignatureInput } from "../model/contracts";
 
-async function digestSha256(file: File): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-async function digestLifecycleRequest(operation: string, collectionId: string, expectedVersion: number, reason?: string): Promise<string> {
-  const payload = JSON.stringify({ operation, collectionId, expectedVersion, reason: reason ?? null });
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-export function validatePngSignature(file: unknown): file is File {
-  if (!(file instanceof File) || file.type !== "image/png" || file.size === 0 || file.size > 2 * 1024 * 1024) return false;
-  return true;
-}
+export { validatePngSignature };
 
 const uploadIntentSchema = z.object({
   intentId: z.string().uuid().optional(),
@@ -89,9 +77,7 @@ async function compensateSignatureUpload(supabase: Awaited<ReturnType<typeof cre
 
 export async function saveCollectionSignature(collectionId: string, input: SignatureInput, file: File, requestId?: string) {
   const administrator = await requireAuthenticatedAdministrator();
-  const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  const pngHeader = [137, 80, 78, 71, 13, 10, 26, 10];
-  if (header.length !== pngHeader.length || header.some((value, index) => value !== pngHeader[index])) throw new Error("invalid_signature_file");
+  await assertPngSignatureHeader(file);
   const supabase = await createLifecycleSupabaseClient();
   const fileSha256 = await digestSha256(file);
   let intentId: string | null = null;

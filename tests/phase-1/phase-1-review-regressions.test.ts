@@ -30,7 +30,7 @@ function expectDirectFiveHundredResponsesToBeLogged(value: string): void {
 describe("Fase 1A reviewer regression gates", () => {
   it("returns the immutable evidence digest in every evidence DTO", () => {
     const model = source("src/_pages/collection-drafts/model/draft.ts");
-    const api = source("src/_pages/collection-drafts/api/drafts.server.ts");
+    const api = source("src/_pages/collection-drafts/api/draft-db.ts");
 
     expect(model).toMatch(/EvidenceDTO[\s\S]*?sha256:\s*string/);
     expect(api).toMatch(/function mapEvidence[\s\S]*?sha256:\s*row\.sha256/);
@@ -63,7 +63,7 @@ describe("Fase 1A reviewer regression gates", () => {
   });
 
   it("does not compensate a storage object after its database commit succeeded but DTO mapping fails", () => {
-    const draftApi = source("src/_pages/collection-drafts/api/drafts.server.ts");
+    const draftApi = source("src/_pages/collection-drafts/api/commands.ts");
     const lifecycleCommands = source("src/_pages/collection-lifecycle/api/commands.ts");
 
     expect(draftApi).toMatch(/commitSucceeded|uploadCommitted|committedSuccessfully/);
@@ -85,7 +85,7 @@ describe("Fase 1A reviewer regression gates", () => {
 
   it("creates a customer and its initial address atomically and permits only one primary address", () => {
     const sql = migration();
-    const customerApi = source("src/_pages/customers/api/customers.server.ts");
+    const customerApi = source("src/_pages/customers/api/commands.ts");
 
     expect(sql).toMatch(/create(?: unique)? index[\s\S]{0,200}customer_addresses[\s\S]{0,200}where\s+is_primary/i);
     expect(sql).toMatch(/function public\.create_customer_with_address/);
@@ -94,9 +94,8 @@ describe("Fase 1A reviewer regression gates", () => {
 
   it("records a safe failure log before every direct 5xx response", () => {
     const files = [
-      "src/_pages/collection-drafts/api/drafts.server.ts",
-      "src/_pages/customers/api/customers.server.ts",
-      "src/_pages/customers/api/customer-addresses.server.ts",
+      "src/_pages/collection-drafts/api/http.ts",
+      "src/_pages/customers/api/http.ts",
     ];
 
     for (const file of files) expectDirectFiveHundredResponsesToBeLogged(source(file));

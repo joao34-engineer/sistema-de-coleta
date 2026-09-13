@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { digestLifecycleRequest } from "@/_pages/collection-operations/model/lifecycle-request-hash";
+import { digestLifecycleRequest } from "@/shared/lib/file/sha256-hex";
 
 const idA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const idB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";

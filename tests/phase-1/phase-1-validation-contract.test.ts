@@ -3,8 +3,8 @@ import { customerInputSchema, customerSearchSchema } from "@/_pages/customers/mo
 import { criticalCommandSchema, signatureInputSchema } from "@/_pages/collection-lifecycle/model/contracts";
 import { toLifecycleApiError } from "@/_pages/collection-lifecycle/api/lifecycle-errors";
 import { isValidCpf, isValidCpfOrCnpj } from "@/shared/lib/cpf";
+import { validateEvidenceFile } from "@/shared/lib/file/file-validation";
 import { normalizeBrazilianPhone } from "@/shared/lib/phone";
-import { validateEvidenceFile } from "@/shared/lib/file-validation";
 
 const validPng = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 

@@ -1,5 +1,5 @@
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { CollectionCapturePage } from "@/_pages/collection-drafts/ui/collection-capture-page";
+import { CollectionCapturePage } from "@/_pages/collection-drafts";
 
 type Props = Readonly<{
   params: Promise<{ id: string }>;

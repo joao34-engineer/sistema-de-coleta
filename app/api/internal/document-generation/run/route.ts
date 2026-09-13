@@ -1,5 +1,5 @@
-import { isWorkerRequestAuthorized, runDocumentWorkerBatch } from "@/_pages/collection-documents/api/delivery/index.server";
-import { jsonBody, noStoreJson } from "@/_pages/collection-lifecycle/api/http-response";
+import { isWorkerRequestAuthorized, runDocumentWorkerBatch } from "@/_pages/collection-documents/index.server";
+import { jsonBody, noStoreJson } from "@/_pages/collection-lifecycle/index.server";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return { ...actual, cache: <T extends (...args: never[]) => unknown>(fn: T) => fn };
+});
+
 const collectionId = "11111111-1111-4111-8111-111111111111";
 
 const testState = vi.hoisted(() => ({

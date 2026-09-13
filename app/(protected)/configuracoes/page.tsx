@@ -1,5 +1,5 @@
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
-import { CollectorProfilePage } from "@/_pages/company-settings/ui/collector-profile-page";
+import { CollectorProfilePage } from "@/_pages/company-settings";
 
 export const dynamic = "force-dynamic";
 

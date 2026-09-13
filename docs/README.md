@@ -33,8 +33,8 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | Clean code e fronteiras | [coding-standards.md](coding-standards.md) |
 | Testes e validacao | [testing.md](testing.md) |
 | Decisoes de arquitetura | [decisions/](decisions/) — DAL unica: [0009](decisions/0009-data-access-layer.md) (**congelada**) |
-| Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — decisao DAL normativa; fases A–H planned |
-| Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) |
+| Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — decisao DAL normativa; A–E feitas; F–H planned |
+| Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) — Fases 1–2 feitas (`cache()` auth = architecture E); 3–7 planned |
 | Inventario de bugs (scan 29/08/2026) | [design-patterns/system-scan-for-bugs.md](design-patterns/system-scan-for-bugs.md) — codigo Fases 0–5 fechado (5.6 entrega desde Pronto); 5.7/5.12/5.13 **adiados**; **nao reimplementar** linhas **feito** |
 | Telas Figma M01 / M06 (2026-09-07) | [design-system/figma-m01-m06-screens.md](design-system/figma-m01-m06-screens.md) — `/dashboard` e `/coletas` vs frames `229:1060` e `232:38` |
 

@@ -1,6 +1,5 @@
-import { isWorkerRequestAuthorized } from "@/_pages/collection-documents/api/delivery/index.server";
-import { cleanupExpiredDocumentRenderIntents } from "@/_pages/collection-documents/api/rendering/cleanup.server";
-import { jsonBody, noStoreJson } from "@/_pages/collection-lifecycle/api/http-response";
+import { cleanupExpiredDocumentRenderIntents, isWorkerRequestAuthorized } from "@/_pages/collection-documents/index.server";
+import { jsonBody, noStoreJson } from "@/_pages/collection-lifecycle/index.server";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";

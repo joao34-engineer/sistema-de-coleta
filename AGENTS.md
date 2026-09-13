@@ -31,7 +31,7 @@ Antes de editar codigo, configuracao, migration ou infraestrutura:
 - Next.js App Router + TypeScript em modo estrito + PWA.
 - Supabase: Auth, PostgreSQL, Storage privado e RLS.
 - FSD adaptado a Next: `app/` na raiz e `src/_app`, `src/_pages`, `src/shared`; demais camadas so quando justificadas.
-- **Data Access Layer unica (congelada, ADR 0009).** Leituras e mutacoes passam por modulos `server-only` (`src/_pages/<slice>/api/queries.ts` e `commands.ts` + `src/shared/auth`). Server Actions e Route Handlers so adaptam. Proibido: `fetch` da propria `/api` no servidor, `new Request("http://localhost/...")` interno, query no `page.tsx`/JSX, misturar as 3 abordagens do guia Next.js. Detalhe: `docs/design-patterns/architecture-improvement.md` (caixa no topo) e `docs/decisions/0009-data-access-layer.md`.
+- **Data Access Layer unica (congelada, ADR 0009).** Leituras e mutacoes passam por modulos `server-only` (`src/_pages/<slice>/api/queries.ts` e `commands.ts` + `src/shared/auth`). Sessao e `getCollectionDetail` usam `cache()` do React no request (Fase E **feita**). Server Actions e Route Handlers so adaptam. Proibido: `fetch` da propria `/api` no servidor, `new Request("http://localhost/...")` interno, query no `page.tsx`/JSX, misturar as 3 abordagens do guia Next.js. Detalhe: `docs/design-patterns/architecture-improvement.md` (caixa no topo) e `docs/decisions/0009-data-access-layer.md`.
 - DTOs minimos na fronteira com o cliente e comandos idempotentes para mutacoes criticas.
 
 Consulte `docs/architecture/fsd.md`, `docs/supabase.md`, `docs/nextjs-pwa.md` e `docs/security.md` antes de decidir detalhes.

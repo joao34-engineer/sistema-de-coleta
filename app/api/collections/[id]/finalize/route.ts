@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { criticalCommandSchema, finalizeCollection, toLifecycleApiError } from "@/_pages/collection-lifecycle/index.server";
-import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
-import { apiErrorResponse, idempotencyKeyRequiredResponse, idempotencyKeyState, jsonBody, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
+import { apiErrorResponse, criticalCommandSchema, finalizeCollection, idempotencyKeyRequiredResponse, idempotencyKeyState, jsonBody, noStoreJson, toLifecycleApiError, validationErrorResponse } from "@/_pages/collection-lifecycle/index.server";
+import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/index.server";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 export const dynamic = "force-dynamic";

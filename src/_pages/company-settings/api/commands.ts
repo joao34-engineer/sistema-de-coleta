@@ -9,8 +9,8 @@ import {
 } from "@/shared/auth/require-admin";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
 import { getCompanySettingsForAdministrator } from "@/shared/db/company-settings";
+import type { LogoMimeType } from "@/shared/lib/file/file-validation";
 import { logTransactionFailure } from "@/shared/lib/server-logger";
-import type { LogoMimeType } from "@/shared/lib/file-validation";
 import { toIssuerSettingsRpcInput } from "../model/issuer-settings";
 import type { CompanySettingsInput } from "../model/schema";
 import { createOrReuseLogoAsset } from "./brand-assets.server";

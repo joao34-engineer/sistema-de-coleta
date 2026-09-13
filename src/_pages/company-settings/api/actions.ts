@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { CompanySettingsActionState } from "@/shared/lib/action-result";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
-import { validateEvidenceFile, validateLogoFile, type LogoMimeType } from "@/shared/lib/file-validation";
+import { validateEvidenceFile, validateLogoFile, type LogoMimeType } from "@/shared/lib/file/file-validation";
 import { getRequestId } from "@/shared/lib/server-logger";
 import { companySettingsSchema } from "../model/schema";
 import { saveCompanySettings, uploadCompanyLogo } from "./commands";

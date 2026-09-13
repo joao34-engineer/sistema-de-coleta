@@ -1,14 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CaptureActor } from "@/_pages/collection-drafts/model/capture-actor";
-import type { OfflineDraftRecord } from "@/_pages/collection-drafts/model/offline-records";
-import { isBrowserOnline } from "@/_pages/collection-drafts/model/offline-capture";
-import { messageForQueueError, messageForRetryFailure, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
-import { discardLocalDraft } from "@/_pages/collection-drafts/model/discard-local-draft";
-import { ensureOfflineDraftStore } from "@/_pages/collection-drafts/model/offline-port";
-import { shouldEnqueueServerDiscard } from "@/_pages/collection-drafts/model/should-enqueue-server-discard";
-import { useOfflineQueueSync } from "@/_pages/collection-drafts/model/use-offline-queue-sync";
+import {
+  discardLocalDraft,
+  ensureOfflineDraftStore,
+  isBrowserOnline,
+  messageForQueueError,
+  messageForRetryFailure,
+  offlineCopy,
+  shouldEnqueueServerDiscard,
+  useOfflineQueueSync,
+  type CaptureActor,
+  type OfflineDraftRecord,
+} from "@/_pages/collection-drafts";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { OfflinePendingPanel } from "./offline-pending-panel";

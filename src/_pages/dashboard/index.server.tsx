@@ -1,9 +1,13 @@
 import "server-only";
 
-import { DashboardPage } from "./ui/dashboard-page";
 import { requireAuthenticatedAdministratorForPage } from "@/shared/auth/require-admin";
+import { getCollectionDashboardSummary } from "./api/queries";
 import type { DashboardActivityItem } from "./model/contracts";
 import { formatDashboardDateLabel } from "./model/contracts";
+import { DashboardPage } from "./ui/dashboard-page";
+
+export { getCollectionDashboardSummary } from "./api/queries";
+export type { DashboardActivityItem } from "./model/contracts";
 
 type Props = Readonly<{
   activities: ReadonlyArray<DashboardActivityItem>;

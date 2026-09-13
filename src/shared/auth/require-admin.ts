@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { routes } from "@/shared/config/routes";
 import { createServerSupabaseClient } from "./supabase-server";
@@ -27,7 +28,7 @@ export class AdministratorAccessDeniedError extends Error {
   }
 }
 
-export async function requireAuthenticatedAdministrator(): Promise<AuthenticatedAdministrator> {
+export const requireAuthenticatedAdministrator = cache(async (): Promise<AuthenticatedAdministrator> => {
   const supabase = await createServerSupabaseClient();
   let userId: string | undefined;
   let email: string | undefined;
@@ -61,7 +62,7 @@ export async function requireAuthenticatedAdministrator(): Promise<Authenticated
     fullName: profile.full_name,
     role: "administrator",
   };
-}
+});
 
 /** Page/layout adapter: missing session navigates, it does not hit `error.tsx`. Commands keep throwing. */
 export async function requireAuthenticatedAdministratorForPage(): Promise<AuthenticatedAdministrator> {

@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { workshopCheckInSchema, workshopCheckIn, toOperationsApiError, validatePngSignature } from "@/_pages/collection-operations/index.server";
-import { parseJsonFormField } from "@/_pages/collection-operations/model/workshop-rpc-items";
-import { apiErrorResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
+import { parseJsonFormField, toOperationsApiError, validatePngSignature, workshopCheckIn, workshopCheckInSchema } from "@/_pages/collection-operations/index.server";
+import { apiErrorResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/index.server";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 export const dynamic = "force-dynamic";

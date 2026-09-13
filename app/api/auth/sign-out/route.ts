@@ -1,4 +1,4 @@
-import { postSignOut } from "@/_app/api-routes/sign-out";
+import { postSignOut } from "@/_app/api-routes";
 
 export const dynamic = "force-dynamic";
 

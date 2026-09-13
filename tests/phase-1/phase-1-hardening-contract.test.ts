@@ -24,7 +24,7 @@ function sqlFunction(sql: string, name: string): string {
 describe("Fase 1A hardening contract", () => {
   it("keeps legal_name as the canonical customer database field", () => {
     const sql = migrationSql();
-    const customerApi = readRepositoryFile("src/_pages/customers/api/customers.server.ts").toLowerCase();
+    const customerApi = readRepositoryFile("src/_pages/customers/api/commands.ts").toLowerCase();
     const databaseTypes = readRepositoryFile("src/shared/api/database.types.ts").toLowerCase();
     const customerStart = sql.indexOf("create table public.customers");
     const contactsStart = sql.indexOf("create table public.customer_contacts");

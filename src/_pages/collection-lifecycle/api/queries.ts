@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { attachActorId } from "@/shared/lib/server-logger";
 import { createLifecycleSupabaseClient } from "./lifecycle-supabase";
@@ -73,7 +74,7 @@ export async function listCollections(query: CollectionListQuery) {
   }
 }
 
-export async function getCollectionDetail(collectionId: string): Promise<CollectionDetailDTO | null> {
+export const getCollectionDetail = cache(async (collectionId: string): Promise<CollectionDetailDTO | null> => {
   const administrator = await requireAuthenticatedAdministrator();
   try {
     const supabase = await createLifecycleSupabaseClient();
@@ -86,7 +87,7 @@ export async function getCollectionDetail(collectionId: string): Promise<Collect
   } catch (error: unknown) {
     throw attachActorId(error, administrator.userId);
   }
-}
+});
 
 export async function getCollectionEvents(collectionId: string, cursor: string | null, limit: number) {
   const administrator = await requireAuthenticatedAdministrator();

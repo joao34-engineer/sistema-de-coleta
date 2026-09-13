@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { verifyCollectionDocument } from "@/_pages/collection-documents/index.server";
-import { DocumentRateLimitExceededError, DocumentRateLimitUnavailableError, enforcePublicVerificationRateLimit } from "@/_pages/collection-documents/api/delivery/index.server";
-import { noStoreJson } from "@/_pages/collection-lifecycle/api/http-response";
+import { DocumentRateLimitExceededError, DocumentRateLimitUnavailableError, enforcePublicVerificationRateLimit, verifyCollectionDocument } from "@/_pages/collection-documents/index.server";
+import { noStoreJson } from "@/_pages/collection-lifecycle/index.server";
 
 export const dynamic = "force-dynamic";
 

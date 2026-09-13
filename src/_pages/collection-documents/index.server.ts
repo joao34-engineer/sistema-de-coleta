@@ -1,14 +1,20 @@
 import "server-only";
 
 import { createElement } from "react";
-import { verifyCollectionDocument } from "./api/public/verification";
-import { PublicVerificationPage } from "./ui/public-verification-page";
 import { listCollectionDocuments } from "./api/delivery/queries.server";
 import { getCollectionOfficialCode } from "./api/delivery/collection-code.server";
+import { verifyCollectionDocument } from "./api/public/verification";
 import { CollectionDocumentsPage } from "./ui/collection-documents-page";
 import { DocumentViewerPage } from "./ui/document-viewer-page";
+import { PublicVerificationPage } from "./ui/public-verification-page";
 
+export * from "./api/delivery/index.server";
+export { isValidVerificationToken } from "./api/public/dto";
 export { verifyCollectionDocument } from "./api/public/verification";
+export { cleanupExpiredDocumentRenderIntents } from "./api/rendering/cleanup.server";
+export { scheduleDocumentRenderKick } from "./api/schedule-document-render-kick";
+export { PublicVerificationPage } from "./ui/public-verification-page";
+export { PublicVerificationWaitPage } from "./ui/public-verification-wait-page";
 
 export async function PublicVerificationRoute({ token }: Readonly<{ token: string }>) {
   try {

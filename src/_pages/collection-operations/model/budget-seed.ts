@@ -1,5 +1,9 @@
 import type { BudgetItem, CollectionItemSummary } from "./view-models";
 
+export function budgetTotalOf(items: ReadonlyArray<Pick<BudgetItem, "laborCostBrl" | "partsCostBrl">>): number {
+  return items.reduce((total, item) => total + item.laborCostBrl + item.partsCostBrl, 0);
+}
+
 /** Linha do formulário de orçamento técnico (persistida ou seed a partir da coleta). */
 export type BudgetFormLine = BudgetItem & {
   itemDescription: string;

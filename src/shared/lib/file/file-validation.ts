@@ -1,3 +1,5 @@
+import { isPngHeader } from "./png-signature";
+
 export const logoMimeTypes = ["image/png", "image/jpeg", "image/webp"] as const;
 export type LogoMimeType = (typeof logoMimeTypes)[number];
 
@@ -21,10 +23,6 @@ function hasSignature(bytes: Uint8Array, signature: readonly number[]): boolean 
   return signature.every((value, index) => bytes[index] === value);
 }
 
-function isPng(bytes: Uint8Array): boolean {
-  return hasSignature(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-}
-
 function isJpeg(bytes: Uint8Array): boolean {
   return hasSignature(bytes, [0xff, 0xd8, 0xff]);
 }
@@ -40,7 +38,7 @@ export async function validateEvidenceFile(value: unknown): Promise<EvidenceFile
 
   const bytes = new Uint8Array(await value.arrayBuffer());
   const fileKind = value.type === "image/png" ? "png" : value.type === "image/jpeg" ? "jpg" : "webp";
-  const signatureMatches = fileKind === "png" ? isPng(bytes) : fileKind === "jpg" ? isJpeg(bytes) : isWebp(bytes);
+  const signatureMatches = fileKind === "png" ? isPngHeader(bytes) : fileKind === "jpg" ? isJpeg(bytes) : isWebp(bytes);
   if (!signatureMatches) return { valid: false, message: "O conteÃºdo do arquivo nÃ£o corresponde ao tipo informado." };
 
   const hash = await crypto.subtle.digest("SHA-256", bytes);

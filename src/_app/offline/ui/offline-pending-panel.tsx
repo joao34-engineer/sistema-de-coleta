@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
-import type { OfflineDraftRecord } from "@/_pages/collection-drafts/model/offline-records";
-import { pendingResumeHref } from "@/_pages/collection-drafts/model/capture-step-href";
-import { messageForQueueError, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
+import type { OfflineDraftRecord } from "@/_pages/collection-drafts";
+import { messageForQueueError, offlineCopy, pendingResumeHref } from "@/_pages/collection-drafts";
 import { Button } from "@/shared/ui/button";
 
 type Props = Readonly<{

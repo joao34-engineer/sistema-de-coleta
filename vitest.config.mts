@@ -1,6 +1,6 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
 
 const jsdomUnitFiles = [
   "tests/unit/button-class-name.test.tsx",
@@ -12,24 +12,37 @@ const jsdomUnitFiles = [
   "tests/unit/service-worker-registration.test.ts",
 ] as const;
 
+/** Evaluates `pdf-image.server.ts` → real `sharp`. Must not run on worker_threads. */
+const nativeAddonFiles = ["tests/unit/document-rendering.test.ts"] as const;
+
+const serverOnly = fileURLToPath(new URL("./tests/server-only.ts", import.meta.url));
+const sharpStub = fileURLToPath(new URL("./tests/stubs/sharp.ts", import.meta.url));
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
     tsconfigPaths: true,
-    alias: { "server-only": fileURLToPath(new URL("./tests/server-only.ts", import.meta.url)) },
+    alias: { "server-only": serverOnly },
+  },
+  optimizeDeps: {
+    exclude: ["sharp"],
+  },
+  ssr: {
+    external: ["sharp"],
   },
   test: {
-    // Native addons (sharp, reachable from some unit tests via barrels) hang a
-    // worker_thread on Windows; a child process loads them safely.
-    pool: "forks",
-    maxWorkers: 1,
+    fileParallelism: true,
     // `extends: true` makes each project reload this file so plugins/resolve inherit.
     projects: [
       {
         extends: true,
+        resolve: {
+          alias: { "server-only": serverOnly, sharp: sharpStub },
+        },
         test: {
           name: "node",
           environment: "node",
+          pool: "threads",
           setupFiles: ["./tests/setup.node.ts"],
           include: [
             "tests/unit/**/*.test.ts",
@@ -37,20 +50,34 @@ export default defineConfig({
             "tests/phase-1/**/*.test.ts",
             "tests/phase-1/**/*.test.tsx",
           ],
-          exclude: [...jsdomUnitFiles],
+          exclude: [...jsdomUnitFiles, ...nativeAddonFiles],
         },
       },
       {
         extends: true,
+        resolve: {
+          alias: { "server-only": serverOnly, sharp: sharpStub },
+        },
         test: {
           name: "dom",
           environment: "jsdom",
+          pool: "threads",
           setupFiles: ["./tests/setup.ts"],
           include: [
             "tests/component/**/*.test.ts",
             "tests/component/**/*.test.tsx",
             ...jsdomUnitFiles,
           ],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "native",
+          environment: "node",
+          pool: "forks",
+          setupFiles: ["./tests/setup.node.ts"],
+          include: [...nativeAddonFiles],
         },
       },
     ],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateLogoFile } from "@/shared/lib/file-validation";
+import { validateLogoFile } from "@/shared/lib/file/file-validation";
 
 describe("logo validation", () => {
   it("accepts png within the limit", () => expect(validateLogoFile(new File(["png"], "logo.png", { type: "image/png" })).valid).toBe(true));

@@ -1,5 +1,4 @@
-import { listCollections, collectionQuerySchema, toLifecycleApiError } from "@/_pages/collection-lifecycle/index.server";
-import { apiErrorResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
+import { apiErrorResponse, collectionQuerySchema, listCollections, noStoreJson, toLifecycleApiError, validationErrorResponse } from "@/_pages/collection-lifecycle/index.server";
 import { getRequestId } from "@/shared/lib/server-logger";
 
 export const dynamic = "force-dynamic";

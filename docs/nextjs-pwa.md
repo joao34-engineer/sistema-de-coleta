@@ -15,6 +15,8 @@
 
 Queries e comandos ficam em modulos `server-only` do slice (`src/_pages/<slice>/api/queries.ts`, `api/commands.ts`). Sessao e cliente Supabase em `src/shared/auth` / `src/shared/db`. Cada operacao aplica autorizacao proxima da fonte de dados e devolve um DTO minimo. Server Actions e Route Handlers so chamam o DAL; nao fazem `fetch` da propria `/api` e nao fabricam `Request` interno.
 
+`requireAuthenticatedAdministrator` e `getCollectionDetail` usam `cache()` do React no mesmo request (Fase E). Nao usar `"use cache"` / ISR em rotas autenticadas; Server Action reautentica porque e um POST novo.
+
 A interface pode fazer verificacao otimista para UX, mas ela nunca substitui RLS nem verificacao segura no comando.
 
 ## PWA decidida

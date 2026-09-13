@@ -1,4 +1,4 @@
-import { getHealth } from "@/_app/api-routes/health";
+import { getHealth } from "@/_app/api-routes";
 
 export const dynamic = "force-dynamic";
 

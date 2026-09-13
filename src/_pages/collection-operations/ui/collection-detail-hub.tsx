@@ -9,6 +9,7 @@ import { Card } from "@/shared/ui/card";
 import { CollectionStatusBadge } from "./collection-status-badge";
 import { CollectionTimeline } from "./collection-timeline";
 import { OperationalActions } from "./operational-actions";
+import { budgetTotalOf } from "../model/budget-seed";
 import { operationalItemFactsFrom } from "../model/operational-actions";
 import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 
@@ -36,7 +37,7 @@ export function CollectionDetailHub({
   budgetItems,
   alreadyDeliveredItemIds,
 }: CollectionDetailHubProps) {
-  const budgetTotal = budgetItems.reduce((total, item) => total + item.laborCostBrl + item.partsCostBrl, 0);
+  const budgetTotal = budgetTotalOf(budgetItems);
 
   const collectedAt = formatDate(collection.collectedAt);
   const hasBudget = budgetItems.length > 0;

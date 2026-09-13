@@ -35,7 +35,7 @@ O guia oficial de [Data Security](https://nextjs.org/docs/app/guides/data-securi
 ## Consequencias
 
 - Codigo novo segue o padrao de `collection-operations` (comando tipado → action/rota fina).
-- Fechar o gap da Fase 1 (customers/drafts HTTP-shaped) e migracao planejada; ver [`architecture-improvement.md`](../design-patterns/architecture-improvement.md). A migracao nao autoriza rewrite espontaneo.
+- Gap da Fase 1 (customers/drafts HTTP-shaped) **fechado** em 2026-09-12 (Fase A). Sessao e `getCollectionDetail` usam `cache()` do React no request (Fase E, 2026-09-13). Fases A–E **feitas**; F–H permanecem planejadas — ver [`architecture-improvement.md`](../design-patterns/architecture-improvement.md). A migracao nao autoriza rewrite espontaneo.
 - Auditores e agentes olham o DAL + RLS; a UI itera em cima de DTOs.
 
 ## Fontes

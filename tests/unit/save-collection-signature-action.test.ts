@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/_pages/collection-drafts/api/drafts.server", () => ({
+vi.mock("@/_pages/collection-drafts/api/commands", () => ({
   createDraft: vi.fn(),
   discardCollectionDraft: vi.fn(),
 }));

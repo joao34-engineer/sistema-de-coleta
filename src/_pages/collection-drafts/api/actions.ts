@@ -1,8 +1,17 @@
 "use server";
 
-import { collectionExists, getDraft, patchDraft, addItem, patchItem, removeItem } from "./drafts.server";
-import type { DraftDTO, DraftItemDTO } from "../model/draft";
 import { toActionFailureCode } from "@/shared/lib/action-failure-code";
+import { zodIssueTouchesKey } from "@/shared/lib/cpf";
+import {
+  collectionIdSchema,
+  draftPatchSchema,
+  itemCreateCommandSchema,
+  itemPatchCommandSchema,
+  type DraftDTO,
+  type DraftItemDTO,
+} from "../model/draft";
+import { addItem, patchDraft, patchItem, removeItem } from "./commands";
+import { collectionExists, getDraft } from "./queries";
 
 export async function collectionExistsAction(collectionId: string): Promise<boolean> {
   try {
@@ -37,23 +46,8 @@ export async function fetchDraftWithItemsAction(draftId: string): Promise<
   | { ok: false; error: string }
 > {
   try {
-    const res = await getDraft(draftId);
-    const body = (await res.json()) as {
-      ok: boolean;
-      data?: { draft: DraftDTO; items: DraftItemDTO[]; hasSignature?: boolean };
-      code?: string;
-    };
-
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "draft_not_found" };
-    }
-
-    return {
-      ok: true,
-      draft: body.data.draft,
-      items: body.data.items,
-      hasSignature: body.data.hasSignature === true,
-    };
+    const data = await getDraft(draftId);
+    return { ok: true, draft: data.draft, items: data.items, hasSignature: data.hasSignature };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -68,37 +62,24 @@ export async function addItemToDraftAction(payload: {
   notes?: string | null;
   clientItemId?: string;
 }): Promise<AddItemActionResult> {
+  const parsed = itemCreateCommandSchema.safeParse({
+    expectedVersion: payload.expectedVersion,
+    description: payload.description,
+    quantity: payload.quantity,
+    condition: payload.condition ?? null,
+    notes: payload.notes ?? null,
+    ...(payload.clientItemId === undefined ? {} : { clientItemId: payload.clientItemId }),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: "validation_error" };
+  }
+  const collectionId = collectionIdSchema.safeParse(payload.collectionId);
+  if (!collectionId.success) {
+    return { ok: false, error: "validation_error" };
+  }
   try {
-    const req = new Request(`http://localhost/api/collections/${payload.collectionId}/items`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        expectedVersion: payload.expectedVersion,
-        description: payload.description,
-        quantity: payload.quantity,
-        condition: payload.condition ?? null,
-        notes: payload.notes ?? null,
-        ...(payload.clientItemId === undefined ? {} : { clientItemId: payload.clientItemId }),
-      }),
-    });
-
-    const res = await addItem(req, payload.collectionId);
-    const body = (await res.json()) as {
-      ok: boolean;
-      data?: { item: DraftItemDTO; draft: DraftDTO; rowVersion: number };
-      code?: string;
-    };
-
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "add_item_failed" };
-    }
-
-    return {
-      ok: true,
-      item: body.data.item,
-      draft: body.data.draft,
-      rowVersion: body.data.rowVersion,
-    };
+    const data = await addItem(collectionId.data, parsed.data);
+    return { ok: true, item: data.item, draft: data.draft, rowVersion: data.rowVersion };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -113,39 +94,19 @@ export async function updateItemInDraftAction(payload: {
   condition?: string | null;
   notes?: string | null;
 }): Promise<UpdateItemActionResult> {
+  const parsed = itemPatchCommandSchema.safeParse({
+    expectedVersion: payload.expectedVersion,
+    description: payload.description,
+    quantity: payload.quantity,
+    condition: payload.condition ?? null,
+    notes: payload.notes ?? null,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: "validation_error" };
+  }
   try {
-    const req = new Request(
-      `http://localhost/api/collections/${payload.collectionId}/items/${payload.itemId}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expectedVersion: payload.expectedVersion,
-          description: payload.description,
-          quantity: payload.quantity,
-          condition: payload.condition ?? null,
-          notes: payload.notes ?? null,
-        }),
-      },
-    );
-
-    const res = await patchItem(req, payload.collectionId, payload.itemId);
-    const body = (await res.json()) as {
-      ok: boolean;
-      data?: { item: DraftItemDTO; draft: DraftDTO; rowVersion: number };
-      code?: string;
-    };
-
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "update_item_failed" };
-    }
-
-    return {
-      ok: true,
-      item: body.data.item,
-      draft: body.data.draft,
-      rowVersion: body.data.rowVersion,
-    };
+    const data = await patchItem(payload.collectionId, payload.itemId, parsed.data);
+    return { ok: true, item: data.item, draft: data.draft, rowVersion: data.rowVersion };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -157,31 +118,8 @@ export async function removeItemFromDraftAction(payload: {
   expectedVersion: number;
 }): Promise<RemoveItemActionResult> {
   try {
-    const req = new Request(
-      `http://localhost/api/collections/${payload.collectionId}/items/${payload.itemId}`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expectedVersion: payload.expectedVersion }),
-      },
-    );
-
-    const res = await removeItem(req, payload.collectionId, payload.itemId);
-    const body = (await res.json()) as {
-      ok: boolean;
-      data?: { draft: DraftDTO; rowVersion: number };
-      code?: string;
-    };
-
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "remove_item_failed" };
-    }
-
-    return {
-      ok: true,
-      draft: body.data.draft,
-      rowVersion: body.data.rowVersion,
-    };
+    const data = await removeItem(payload.collectionId, payload.itemId, payload.expectedVersion);
+    return { ok: true, draft: data.draft, rowVersion: data.rowVersion };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -200,29 +138,26 @@ export async function patchDraftFieldsAction(payload: {
   responsibleTaxId?: string | null;
   collectedAt?: string | null;
 }): Promise<PatchDraftFieldsActionResult> {
-  try {
-    const bodyPayload: Record<string, unknown> = { expectedVersion: payload.expectedVersion };
-    if (payload.customerId !== undefined) bodyPayload["customerId"] = payload.customerId;
-    if (payload.collectionLocation !== undefined) bodyPayload["collectionLocation"] = payload.collectionLocation;
-    if (payload.responsibleName !== undefined) bodyPayload["responsibleName"] = payload.responsibleName;
-    if (payload.responsibleTaxId !== undefined) bodyPayload["responsibleTaxId"] = payload.responsibleTaxId;
-    if (payload.collectedAt !== undefined) bodyPayload["collectedAt"] = payload.collectedAt;
-
-    const req = new Request(`http://localhost/api/collections/${payload.collectionId}/draft`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bodyPayload),
-    });
-    const res = await patchDraft(req, payload.collectionId);
-    const body = (await res.json()) as {
-      ok: boolean;
-      data?: { draft: DraftDTO };
-      code?: string;
-    };
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "patch_draft_failed" };
+  const bodyPayload: Record<string, unknown> = { expectedVersion: payload.expectedVersion };
+  if (payload.customerId !== undefined) bodyPayload["customerId"] = payload.customerId;
+  if (payload.collectionLocation !== undefined) bodyPayload["collectionLocation"] = payload.collectionLocation;
+  if (payload.responsibleName !== undefined) bodyPayload["responsibleName"] = payload.responsibleName;
+  if (payload.responsibleTaxId !== undefined) bodyPayload["responsibleTaxId"] = payload.responsibleTaxId;
+  if (payload.collectedAt !== undefined) bodyPayload["collectedAt"] = payload.collectedAt;
+  const parsed = draftPatchSchema.safeParse(bodyPayload);
+  if (!parsed.success) {
+    if (zodIssueTouchesKey(parsed.error, "responsibleTaxId")) {
+      return { ok: false, error: "invalid_signer_tax_id" };
     }
-    return { ok: true, draft: body.data.draft };
+    return { ok: false, error: "validation_error" };
+  }
+  const collectionId = collectionIdSchema.safeParse(payload.collectionId);
+  if (!collectionId.success) {
+    return { ok: false, error: "validation_error" };
+  }
+  try {
+    const draft = await patchDraft(collectionId.data, parsed.data);
+    return { ok: true, draft };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }

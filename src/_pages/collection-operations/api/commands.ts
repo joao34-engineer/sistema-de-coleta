@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
+import { assertPngSignatureHeader, validatePngSignature } from "@/shared/lib/file/png-signature";
+import { digestLifecycleRequest, digestSha256 } from "@/shared/lib/file/sha256-hex";
 import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
 import {
   WorkshopCheckInDTO,
@@ -19,14 +21,10 @@ import {
   customerDeliveryResultSchema,
   cancelReopenResultSchema,
 } from "../model/contracts";
-import { digestLifecycleRequest } from "../model/lifecycle-request-hash";
 import { toServiceProgressRpcItems, toTechnicalBudgetRpcItems, toWorkshopCheckInRpcItems } from "../model/workshop-rpc-items";
 import { createOperationsSupabaseClient, type OperationsFunctions } from "./operations-supabase";
 
-async function digestSha256(file: File): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
+export { validatePngSignature };
 
 type Phase3CommandName = {
   [K in keyof OperationsFunctions]: OperationsFunctions[K]["Args"] extends {
@@ -43,11 +41,6 @@ type Phase3CommandOptions = Readonly<{
   reason?: string;
   deliveredItemIds?: ReadonlyArray<string>;
 }>;
-
-export function validatePngSignature(file: unknown): file is File {
-  if (!(file instanceof File) || file.type !== "image/png" || file.size === 0 || file.size > 2 * 1024 * 1024) return false;
-  return true;
-}
 
 function withLifecycleHash<T extends { p_idempotency_key: string; p_request_hash: string }>(
   rpcArgs: Omit<T, "p_idempotency_key" | "p_request_hash">,
@@ -94,9 +87,7 @@ export async function workshopCheckIn(
   requestId?: string
 ) {
   const administrator = await requireAuthenticatedAdministrator();
-  const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  const pngHeader = [137, 80, 78, 71, 13, 10, 26, 10];
-  if (header.length !== pngHeader.length || header.some((value, index) => value !== pngHeader[index])) throw new Error("invalid_signature_file");
+  await assertPngSignatureHeader(file);
   const supabase = await createOperationsSupabaseClient();
   const fileSha256 = await digestSha256(file);
   let intentId: string | null = null;
@@ -244,9 +235,7 @@ export async function deliverToCustomer(
   requestId?: string
 ) {
   const administrator = await requireAuthenticatedAdministrator();
-  const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  const pngHeader = [137, 80, 78, 71, 13, 10, 26, 10];
-  if (header.length !== pngHeader.length || header.some((value, index) => value !== pngHeader[index])) throw new Error("invalid_signature_file");
+  await assertPngSignatureHeader(file);
   const supabase = await createOperationsSupabaseClient();
   const fileSha256 = await digestSha256(file);
   let intentId: string | null = null;

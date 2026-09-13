@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { AppPwaShell } from "@/_app/pwa";
-import { buildDevServiceWorkerCleanupScript } from "@/_app/pwa/model/dev-sw-cleanup-script";
+import { AppPwaShell, buildDevServiceWorkerCleanupScript } from "@/_app/pwa";
 import "@/_app/styles/globals.css";
 
 export const metadata: Metadata = {

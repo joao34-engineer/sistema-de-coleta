@@ -2,10 +2,10 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `planned` — Fases 2–7; **Fase 1 entregue** (shells + pending Link + CTAs + chips da lista) |
+| **Status** | `planned` — Fases 3–7; **Fase 1 entregue** (shells + pending Link + CTAs + chips da lista); **Fase 2 entregue** (`cache()` auth + detalhe) |
 | **Authority** | `informative` |
 | **Owner** | product / sistema-coleta |
-| **Last verified** | 2026-09-07 |
+| **Last verified** | 2026-09-13 |
 | **Escopo** | Somente `sistema-coleta/` |
 | **Pedido** | Análise explícita do humano (atraso ao tocar botões + varredura de desempenho) |
 | **Método** | Revisão estática do código. Sem profiler de produção, sem tempos medidos em campo. |
@@ -22,9 +22,9 @@ Fontes normativas que este plano **não** enfraquece: [`AGENTS.md`](../../AGENTS
 
 ## 1. Veredito
 
-O atraso que o operador sente ao tocar **qualquer botão de navegação** é real e tem causa única:
+O atraso que o operador sente ao tocar **qualquer botão de navegação** é real. A causa nº 1 era a falta de `loading.tsx` (**Fase 1 feita**). Auth repetida no mesmo RSC está **fechada na Fase 2** (`cache()`). O que ainda resta atrás do skeleton:
 
-> O App Router **mantém a tela atual** até o servidor terminar o destino. Quase não há `loading.tsx`. Cada navegação protegida paga proxy + auth repetida + queries, com `Cache-Control: no-store` e `force-dynamic`.
+> O App Router **mantém a tela atual** até o servidor terminar o destino. Cada navegação protegida ainda paga `proxy.ts` (`getClaims`) + queries, com `Cache-Control: no-store` e `force-dynamic`.
 
 Há um segundo atraso, nos botões de **mutação**: a UI espera a Server Action (e às vezes a fila offline inteira) **antes** de `router.push`.
 
@@ -42,6 +42,7 @@ O service worker **não** é o culpado. A busca da lista debounceia no cliente; 
 | Hub `/coletas/[id]` | Os quatro reads já vão em `Promise.all`. |
 | Filtro da lista | Chips são URL + `listCollections` no servidor (paginação). Um único pill preto no tap (`pendingFilter`); prefetch dos outros filtros. Sem blur da lista. Sem filtrar os 25 cards locais. Busca continua draft local + debounce para a URL. |
 | Shells de `loading.tsx` | `(protected)`, dashboard, coletas, hub, documentos e oficina. Copiar o chrome (header + pulse). |
+| `cache()` de sessão e detalhe | Fase 2 / architecture E (2026-09-13). Um admin load e um `getCollectionDetail(id)` por tick RSC. Sem `use cache` / ISR. |
 | Páginas autenticadas dinâmicas | `cookies()` + RLS exigem render no request. O ganho **não** é “tornar o dashboard estático”. |
 
 ---
@@ -54,25 +55,24 @@ Superfícies: bottom nav, cards da lista, **Nova coleta**, CTAs da oficina, chev
 
 ```text
 toque no Link
-  → proxy.ts          getClaims()
-  → layout protegido  requireAuthenticatedAdministrator()   [4 round-trips Supabase]
-  → page.tsx          auth de novo + queries
+  → proxy.ts          getClaims()          [ainda extra, P0-3]
+  → layout protegido  requireAuthenticatedAdministrator()  [cache() — 1× no RSC]
+  → page.tsx / DAL    mesmo cache + queries
+  → loading.tsx       shell (Fase 1)
   → RSC pronto
-  → só então a tela muda
+  → a tela muda
 ```
 
-Sem `loading.tsx` no grupo `(protected)`, o React **não** troca o chrome. O operador vê a tela velha congelada.
+`requireAuthenticatedAdministrator` e `getCollectionDetail(id)` usam `cache()` do React (**Fase 2 / architecture E**). Chamadas repetidas no mesmo tick não reexecutam I/O. Server Action continua request novo e reautentica.
 
-`requireAuthenticatedAdministrator()` em cada chamada: cliente Supabase + `getClaims` + `profiles` + `organization_memberships` + `organizations`.
-
-| Destino | Chamadas de auth no mesmo request | Depois disso |
+| Destino | Auth I/O no mesmo RSC | Depois disso |
 | :--- | ---: | :--- |
-| `/dashboard` | 3 (layout + `listCollections` + `DashboardRoute`) | settings + lista |
-| `/coletas` | 2 (layout + `listCollections`) | lista (limit 50) |
-| `/coletas/nova` | 2 (layout + page) | wizard client hidrata sozinho |
-| `/coletas/[id]` | 3 (layout + detalhe + eventos) | + service order + budget (paralelo) |
+| `/dashboard` | **1** (layout / queries / `DashboardRoute` compartilham o cache) | settings + lista |
+| `/coletas` | **1** | lista (limit 50) |
+| `/coletas/nova` | **1** | wizard client hidrata sozinho |
+| `/coletas/[id]` | **1** auth + **1** detalhe por id | eventos + service order + budget (paralelo) |
 
-`getClaims` no proxy é **extra**, antes do RSC começar. Não remover o gate — só não repetir o restante.
+`getClaims` no proxy é **extra**, antes do RSC começar. Não remover o gate.
 
 ### 3.2 Mutação (botão que envia e depois navega)
 
@@ -104,14 +104,15 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P0-2 — Auth repetida 2–3 vezes por request
+### P0-2 — Auth repetida 2–3 vezes por request — **feito (Fase 2 / architecture Fase E)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | Cada navegação paga o mesmo admin load várias vezes. |
-| **Onde** | `src/shared/auth/require-admin.ts`. Chamado no layout, em `listCollections` / `getCollectionDetail` / `getCollectionEvents`, e de novo em `DashboardRoute`. Páginas `nova` / `itens` / `revisao` / `assinatura` chamam outra vez além do layout. |
-| **Por que dói** | Cada pass = 1 cliente + claims + 3 queries. Dashboard = 3 passes. Hub = 3 passes. |
-| **Relação** | Mesmo eixo que [`architecture-improvement.md`](./architecture-improvement.md) §4.7 e Fase E. |
+| **Sintoma** | Cada navegação pagava o mesmo admin load várias vezes. |
+| **Onde** | `src/shared/auth/require-admin.ts` e `getCollectionDetail` em `collection-lifecycle/api/queries.ts`. |
+| **Por que doía** | Cada pass = 1 cliente + claims + 3 queries. Dashboard = 3–5 passes. Hub = 3 passes. |
+| **Entregue** | `cache()` no DAL de sessão e em `getCollectionDetail(id)` (2026-09-13). `ForPage` e as queries do mesmo RSC compartilham o resultado. |
+| **Relação** | [`architecture-improvement.md`](./architecture-improvement.md) §4.7 e Fase E — **fechado**. |
 
 ---
 
@@ -205,7 +206,7 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 | :--- | :--- |
 | **Sintoma** | Abrir documentos da coleta espera auth + `documents` + **depois** `document_artifacts`. |
 | **Onde** | `collection-documents/api/delivery/queries.server.ts` (`listCollectionDocuments`). Há fetch separado de `official_code` que o detalhe da coleta já tem. |
-| **Por que dói** | Duas idas ao banco onde um join/`in` paralelo + `cache()` de auth bastam. |
+| **Por que dói** | Duas idas ao banco onde um join/`in` paralelo basta. Auth já é `cache()` (Fase 2). |
 
 ---
 
@@ -346,27 +347,27 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 ---
 
-### Fase 2 — Um auth por request
+### Fase 2 — Um auth por request — **feita** (2026-09-13)
 
 **Objetivo:** uma resolução de administrador por tick de servidor.
 
 **Não faz:** cache entre requests (`use cache` / ISR) em dado de coleta. Proxy continua a recusar anônimo.
 
-#### Passo 2.1 — `cache()` em `requireAuthenticatedAdministrator`
+#### Passo 2.1 — `cache()` em `requireAuthenticatedAdministrator` — **feito**
 
 **Faz:** `export const requireAuthenticatedAdministrator = cache(async () => { ... })` (API do React). Layout, queries e `DashboardRoute` passam a compartilhar o resultado.
 
 **Aceite:** no mesmo request, a função pesada roda **uma** vez. Testes de auth existentes verdes.
 
-**Relação:** [`architecture-improvement.md`](./architecture-improvement.md) Fase E. Se já estiver feito lá, só marcar este passo.
+**Relação:** [`architecture-improvement.md`](./architecture-improvement.md) Fase E.
 
-#### Passo 2.2 — Não reautenticar a página só para pegar `userId`
+#### Passo 2.2 — Não reautenticar a página só para pegar `userId` — **feito** (via 2.1)
 
 **Faz:** páginas `nova` / `itens` / `revisao` / `assinatura` usam o valor já cacheado (o `cache()` do 2.1 já resolve). Opcional: não chamar de novo se o layout puder passar ator por padrão do projeto — **sem** context client.
 
-**Aceite:** zero regressão de redirect para `/login` ou Access Denied.
+**Aceite:** zero regressão de redirect para `/login` ou Access Denied. Chamadas de página permanecem; o I/O colapsa no `cache()`.
 
-#### Passo 2.3 — `cache()` opcional em `getCollectionDetail(id)`
+#### Passo 2.3 — `cache()` opcional em `getCollectionDetail(id)` — **feito**
 
 **Faz:** memoizar por `collectionId` no mesmo request (hub + loaders de oficina se ainda duplicarem).
 
@@ -464,7 +465,7 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 #### Passo 6.3 — Documentos em paralelo / um round-trip
 
-**Faz:** artifacts no mesmo fluxo que a lista (join ou `Promise.all` após ids). Auth via `cache()` da Fase 2. Não refetch de `official_code` se o detalhe já veio.
+**Faz:** artifacts no mesmo fluxo que a lista (join ou `Promise.all` após ids). Auth já via `cache()` da Fase 2. Não refetch de `official_code` se o detalhe já veio.
 
 **Aceite:** uma ida a menos ao banco no caminho feliz da lista de documentos.
 
@@ -499,8 +500,8 @@ Não abrir PR só para isto, salvo o humano pedir.
 ## 6. Ordem e dependências
 
 ```text
-Fase 1  loading + pending Link     → independe do resto; maior ganho percebido
-Fase 2  cache() auth               → reduz o tempo atrás do skeleton
+Fase 1  loading + pending Link     → feita
+Fase 2  cache() auth + detalhe     → feita (2026-09-13; = architecture Fase E)
 Fase 3  drain + debounce           → o skeleton da Fase 1 deixa de “brigar” com a fila
 Fase 4  mutações                   → melhor com Fase 1 (hub já tem shell)
 Fase 5  wizard + actions diretas   → pode ir em paralelo à 4; Fase A de architecture-improvement
@@ -516,7 +517,7 @@ Não juntar Fase 1 com Fase 5 no mesmo PR. Não juntar performance com Chat 5 de
 
 | Documento | Papel |
 | :--- | :--- |
-| [`architecture-improvement.md`](./architecture-improvement.md) | Manutenção. Fases A e E **são** os passos 5.2 e 2.1 daqui. |
+| [`architecture-improvement.md`](./architecture-improvement.md) | Manutenção. Fases A e E **são** os passos 5.2 e 2.1 daqui — ambas **feitas**. |
 | [`nextjs-pwa.md`](../nextjs-pwa.md) | SW e fila. Este plano não muda a política “SW só de shell”. |
 | [`decisions/0006-offline-draft-queue.md`](../decisions/0006-offline-draft-queue.md) | Fila oficial. Fase 3 só muda **quando** drena, não o contrato. |
 | [`execution/phase-4-hardening-launch.md`](../execution/phase-4-hardening-launch.md) | PWA/offline já verdes. Performance não é um chat da Fase 4. |

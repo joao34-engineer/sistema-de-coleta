@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PwaShell } from "./pwa-shell";
-import { canReloadFromSnapshot, getOfflineSnapshot, subscribeOfflineSnapshot } from "@/_pages/collection-drafts/model/offline-snapshot";
+import { canReloadFromSnapshot, getOfflineSnapshot, subscribeOfflineSnapshot } from "@/_pages/collection-drafts";
 
 export function AppPwaShell() {
   const [snapshot, setSnapshot] = useState(getOfflineSnapshot);

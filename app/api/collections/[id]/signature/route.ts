@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { saveCollectionSignature, signatureInputSchema, toLifecycleApiError, validatePngSignature } from "@/_pages/collection-lifecycle/index.server";
-import { apiErrorResponse, invalidSignerTaxIdResponse, noStoreJson, validationErrorResponse } from "@/_pages/collection-lifecycle/api/http-response";
+import { apiErrorResponse, invalidSignerTaxIdResponse, noStoreJson, saveCollectionSignature, signatureInputSchema, toLifecycleApiError, validatePngSignature, validationErrorResponse } from "@/_pages/collection-lifecycle/index.server";
 import { getRequestId } from "@/shared/lib/server-logger";
 import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 

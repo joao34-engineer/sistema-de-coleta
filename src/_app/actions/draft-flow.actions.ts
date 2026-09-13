@@ -1,10 +1,9 @@
 "use server";
 
-import { createDraft, discardCollectionDraft } from "@/_pages/collection-drafts/api/drafts.server";
-import { patchDraftFieldsAction } from "@/_pages/collection-drafts/api/actions";
+import { createDraft, discardCollectionDraft, draftCreateSchema, patchDraft } from "@/_pages/collection-drafts/index.server";
 import { saveCollectionSignature, finalizeCollection, signatureInputSchema } from "@/_pages/collection-lifecycle/index.server";
-import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/api/schedule-document-render-kick";
-import { listCustomers, createCustomer, loadCustomerDto } from "@/_pages/customers/index.server";
+import { scheduleDocumentRenderKick } from "@/_pages/collection-documents/index.server";
+import { createCustomer, customerInputSchema, customerSearchSchema, loadCustomerDto, listCustomers } from "@/_pages/customers/index.server";
 import { toActionFailureCode, toFinalizeActionFailureCode } from "@/shared/lib/action-failure-code";
 import { zodIssueTouchesKey } from "@/shared/lib/cpf";
 import { getRequestId } from "@/shared/lib/server-logger";
@@ -49,20 +48,13 @@ export type GetCustomerActionResult =
 export type DiscardDraftActionResult = { ok: true } | { ok: false; error: string };
 
 export async function searchCustomersAction(query: string): Promise<SearchCustomersActionResult> {
+  const parsed = customerSearchSchema.safeParse({ q: query, limit: 10 });
+  if (!parsed.success) {
+    return { ok: false, error: "validation_error" };
+  }
   try {
-    const url = new URL("http://localhost/api/customers");
-    url.searchParams.set("q", query);
-    url.searchParams.set("limit", "10");
-
-    const req = new Request(url.toString());
-    const res = await listCustomers(req);
-    const body = (await res.json()) as { ok: boolean; data?: { customers: CustomerView[] }; code?: string };
-
-    if (!res.ok || !body.ok || !body.data) {
-      return { ok: false, error: body.code ?? "search_failed" };
-    }
-
-    return { ok: true, customers: body.data.customers };
+    const page = await listCustomers(parsed.data);
+    return { ok: true, customers: page.customers };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -82,27 +74,13 @@ export async function createCustomerAction(payload: {
     postalCode?: string | null;
   };
 }): Promise<CreateCustomerActionResult> {
+  const parsed = customerInputSchema.safeParse(payload);
+  if (!parsed.success) {
+    return { ok: false, error: "validation_error", issues: parsed.error.flatten() };
+  }
   try {
-    const customerReq = new Request("http://localhost/api/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const customerRes = await createCustomer(customerReq);
-    const customerBody = (await customerRes.json()) as {
-      ok: boolean;
-      data?: { customer: CustomerView };
-      code?: string;
-      issues?: unknown;
-    };
-    if (!customerRes.ok || !customerBody.ok || !customerBody.data) {
-      return {
-        ok: false,
-        error: customerBody.code ?? "customer_creation_failed",
-        issues: customerBody.issues,
-      };
-    }
-    return { ok: true, customerId: customerBody.data.customer.id };
+    const customer = await createCustomer(parsed.data);
+    return { ok: true, customerId: customer.id };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -112,27 +90,13 @@ export async function createDraftAction(payload: {
   draftId: string;
   customerId: string;
 }): Promise<CreateDraftActionResult> {
+  const parsed = draftCreateSchema.safeParse({ id: payload.draftId, customerId: payload.customerId });
+  if (!parsed.success) {
+    return { ok: false, error: "validation_error", issues: parsed.error.flatten() };
+  }
   try {
-    const draftReq = new Request("http://localhost/api/collections", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: payload.draftId, customerId: payload.customerId }),
-    });
-    const draftRes = await createDraft(draftReq);
-    const draftBody = (await draftRes.json()) as {
-      ok: boolean;
-      data?: { draft: { id: string; rowVersion: number } };
-      code?: string;
-      issues?: unknown;
-    };
-    if (!draftRes.ok || !draftBody.ok || !draftBody.data) {
-      return {
-        ok: false,
-        error: draftBody.code ?? "draft_creation_failed",
-        issues: draftBody.issues,
-      };
-    }
-    return { ok: true, draftId: draftBody.data.draft.id, rowVersion: draftBody.data.draft.rowVersion };
+    const created = await createDraft(parsed.data);
+    return { ok: true, draftId: created.draft.id, rowVersion: created.draft.rowVersion };
   } catch (error: unknown) {
     return { ok: false, error: toActionFailureCode(error) };
   }
@@ -179,13 +143,13 @@ export async function createDraftWithCustomerAction(payload: {
 
     const location = payload.collectionLocation?.trim();
     if (location) {
-      const patched = await patchDraftFieldsAction({
-        collectionId: created.draftId,
-        expectedVersion: created.rowVersion,
-        collectionLocation: location,
-      });
-      if (!patched.ok) {
-        return { ok: false, error: patched.error };
+      try {
+        await patchDraft(created.draftId, {
+          expectedVersion: created.rowVersion,
+          collectionLocation: location,
+        });
+      } catch (error: unknown) {
+        return { ok: false, error: toActionFailureCode(error) };
       }
     }
 

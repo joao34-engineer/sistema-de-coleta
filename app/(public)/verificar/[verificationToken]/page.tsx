@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { createElement } from "react";
-import { isValidVerificationToken } from "@/_pages/collection-documents/api/public/dto";
-import { PublicVerificationRoute } from "@/_pages/collection-documents/index.server";
-import { PublicVerificationPage as PublicVerificationView } from "@/_pages/collection-documents/ui/public-verification-page";
-import { PublicVerificationWaitPage } from "@/_pages/collection-documents/ui/public-verification-wait-page";
+import { isValidVerificationToken, PublicVerificationPage as PublicVerificationView, PublicVerificationRoute, PublicVerificationWaitPage } from "@/_pages/collection-documents/index.server";
 import {
   DocumentRateLimitExceededError,
   DocumentRateLimitUnavailableError,

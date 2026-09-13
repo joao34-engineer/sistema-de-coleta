@@ -1,6 +1,12 @@
+export type { CaptureActor, CaptureStep } from "./model/capture-actor";
+export { pendingResumeHref } from "./model/capture-step-href";
+export { discardLocalDraft } from "./model/discard-local-draft";
+export { isBrowserOnline } from "./model/offline-capture";
+export { messageForQueueError, messageForRetryFailure, offlineCopy } from "./model/offline-copy";
+export type { OfflineDraftRecord } from "./model/offline-records";
+export { ensureOfflineDraftStore } from "./model/offline-port";
 export { canReloadFromSnapshot, getOfflineSnapshot, subscribeOfflineSnapshot } from "./model/offline-snapshot";
 export type { OfflineSnapshot } from "./model/offline-snapshot";
-export type { CaptureActor, CaptureStep } from "./model/capture-actor";
-export type { OfflineDraftRecord } from "./model/offline-records";
-export { offlineCopy } from "./model/offline-copy";
+export { shouldEnqueueServerDiscard } from "./model/should-enqueue-server-discard";
+export { useOfflineQueueSync } from "./model/use-offline-queue-sync";
 export { CollectionCapturePage } from "./ui/collection-capture-page";
