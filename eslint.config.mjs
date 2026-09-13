@@ -13,6 +13,28 @@ const eslintConfig = defineConfig([
       "no-unused-vars": "off",
     },
   },
+  {
+    files: ["app/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/_pages/*/api/**",
+                "@/_pages/*/ui/**",
+                "@/_pages/*/model/**",
+                "@/_app/*/model/**",
+                "@/_app/api-routes/*",
+              ],
+              message: "Import the slice public API (index.ts / index.server.ts), not internals.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | DAL **congelada** (`active` / `normative`). Fases A–E **feitas**. Fases F–H de migração permanecem `planned` — **não autorizam implementação** sem pedido explícito |
+| **Status** | DAL **congelada** (`active` / `normative`). Fases A–G **feitas**. Fase H permanece `planned` — **não autoriza implementação** sem pedido explícito |
 | **Authority** | `normative` na decisão DAL (secção abaixo + [ADR 0009](../decisions/0009-data-access-layer.md)). Resto do plano = `informative` |
 | **Owner** | product / sistema-coleta |
 | **Last verified** | 2026-09-13 |
@@ -27,7 +27,7 @@ O [Data Security guide](https://nextjs.org/docs/app/guides/data-security) do Nex
 
 Registro formal: [ADR 0009](../decisions/0009-data-access-layer.md). Lei de preflight: [`AGENTS.md`](../../AGENTS.md).
 
-O resto deste documento (Fases A–E **feitas**; fases F–H) explica o *gap* do código atual em relação a essa lei. Fechar o gap restante só com pedido explícito e um eixo por PR.
+O resto deste documento (Fases A–G **feitas**; fase H) explica o *gap* do código atual em relação a essa lei. Fechar o gap restante só com pedido explícito e um eixo por PR.
 
 ---
 
@@ -108,7 +108,7 @@ flowchart LR
 
 A Action **simula HTTP** para chamar uma função que já roda no mesmo processo. Isso duplica serialização, esconde o contrato tipado e torna o stack trace ilegível.
 
-**Atualização:** Fase A (2026-09-12) fechou o `new Request` interno. Fase E (2026-09-13) fechou auth/detalhe repetidos com `cache()` no mesmo RSC. O diagrama acima é o cheiro histórico da Fase 1.
+**Atualização:** Fase A (2026-09-12) fechou o `new Request` interno. Fase E (2026-09-13) fechou auth/detalhe repetidos com `cache()` no mesmo RSC. Fase F (2026-09-13) fechou a API pública das slices (`index.ts` / `index.server.ts` + Steiger sidestep + ESLint em `app/**`). O diagrama acima é o cheiro histórico da Fase 1.
 
 A Fase 3 já evita isso:
 
@@ -175,18 +175,11 @@ Não criar um “utils.ts” genérico. Extrair **só** esses primitivos nomeado
 
 Hoje `src/shared/model/collection-status.ts` tem status canônicos, filtro da lista e labels. É o sintoma clássico de “ainda não extraímos `entities/collection`”. Aceitável como **ponte**. Não crescer mais domínio em `shared/`.
 
-`src/shared/lib/action-result.ts` mistura tipos de login e de configurações da empresa — vazamento de slices para infra.
+Vazamento `action-result.ts` (tipos de login e company-settings em `shared/lib/`) **fechado na Fase G** (2026-09-13): cada slice guarda o estado em `model/action-state.ts`. `action-error.ts` / `action-failure-code.ts` permanecem infra compartilhada.
 
-### 4.6 API pública das slices não é a porta real
+### 4.6 API pública das slices não é a porta real — **fechado na Fase F** (2026-09-13)
 
-Steiger está com `fsd/public-api` e `fsd/no-public-api-sidestep` **desligados** em `_app` / `_pages`. Por isso `app/` importa internos:
-
-```ts
-import { getCollectionDetail } from "@/_pages/collection-lifecycle/api/queries";
-import { WorkshopCheckInPage } from "@/_pages/collection-operations/ui/workshop-checkin-page";
-```
-
-O `index.ts` / `index.server.ts` existe em vários slices, mas não é o contrato que o resto do app usa. Isso torna refactors assustadores: qualquer arquivo interno é API de fato.
+`app/` e `_app/` importam `index.ts` / `index.server.ts`. Steiger `fsd/no-public-api-sidestep` está ligado em `_app` / `_pages` (`fsd/public-api` já estava). `shared/` permanece off. Steiger só varre `src/`; [`eslint.config.mjs`](../../eslint.config.mjs) restringe imports profundos em `app/**`. Hub/oficina → lifecycle DAL continua a exceção `fsd/forbidden-imports` até Fase H.
 
 ### 4.7 Reads sem memoização de request — **fechado na Fase E** (2026-09-13)
 
@@ -486,18 +479,20 @@ Entregue: `loadCollectionForOperation` em `collection-operations/api/load-operat
 
 Entregue: `cache()` em `src/shared/auth/require-admin.ts` (`requireAuthenticatedAdministrator`; `ForPage` permanece wrapper fino). `cache()` em `getCollectionDetail(collectionId)` em `collection-lifecycle/api/queries.ts`. Vitest mocka `react.cache` como identidade nos testes de auth e detalhe (sem contexto RSC o wrap vazaria entre casos). Mesmo eixo que [`performance.md`](./performance.md) Passos 2.1–2.3.
 
-### Fase F — Public API das slices
+### Fase F — Public API das slices — **feita** (2026-09-13)
 
 **Faz:** `app/` e `_app/` importam só `index.ts` / `index.server.ts`. Religar Steiger `public-api` / `no-public-api-sidestep` nos slices (pode permanecer off em `shared/` como hoje).
 
 **Não faz:** religar Steiger no mesmo PR que move 40 imports — ou o PR explode. Primeiro exportar, depois o linter.
 
-### Fase G — Higiene pontual (quando tocar o arquivo)
+Entregue: barrels completos (`index.ts` client-safe; `index.server.ts` queries/comandos/HTTP `handle*` — sem actions). `_app/actions/draft-flow.actions.ts` chama `patchDraft` no DAL. Steiger: `fsd/no-public-api-sidestep` religado em `_app` / `_pages`; `shared/` off; exceção `forbidden-imports` nos dois arquivos ops→lifecycle até Fase H. ESLint `no-restricted-imports` em `app/**` (Steiger é `steiger src` e não vê `app/`). CSS `@/_app/styles/**` permanece permitido.
 
-- Apagar `public-verification.ts` duplicado; ficar com `api/public/verification.ts`.
-- Tipos de `action-result.ts` voltam para `login` e `company-settings`.
-- Remover `supabase.rpc as any` em operations (o client tipado de `operations-supabase.ts` já existe).
-- Um factory de cookie-client Supabase se o quarto clone aparecer; até lá, três clientes tipados por conjunto de RPC são aceitáveis.
+### Fase G — Higiene pontual — **feita** (2026-09-13)
+
+- Apagar `public-verification.ts` duplicado; ficar com `api/public/verification.ts` — **feita** em `30d8621` (scan 5.16). Canonical: `collection-documents/api/public/verification.ts`.
+- Tipos de `action-result.ts` voltam para `login` e `company-settings` — **feita** (2026-09-13). `LoginActionState` em `login/model/action-state.ts`; `CompanySettingsActionState` em `company-settings/model/action-state.ts`. `shared/lib/action-result.ts` apagado.
+- Remover `supabase.rpc as any` em operations — **feita** L8 (2026-09-12). Client `OperationsFunctions` em `operations-supabase.ts`; `executePhase3Command` genérico. Zero `rpc as any` restante.
+- Factory de cookie-client Supabase — **não dispara**. Três clones autenticados aceitáveis: `supabase-server.ts`, `lifecycle-supabase.ts`, `operations-supabase.ts`. Verificação pública é `createServerClient` inline com `setAll` no-op (padrão anon, não 4º RPC-set). `proxy.ts` é middleware.
 
 ### Fase H — `entities/collection` (opcional, ADR)
 
@@ -548,7 +543,7 @@ O app ficou mais fácil de manter quando:
 3. Actions e `route.ts` não conhecem Supabase.
 4. Não há `new Request` interno para falar consigo mesmo. — **A**
 5. Primitivos de assinatura/hash existem numa vez. — **C**
-6. Steiger volta a proteger a API pública das slices. — **F (aberta)**
+6. Steiger volta a proteger a API pública das slices. — **F**
 7. Nenhuma RPC, RLS, número oficial ou contrato HTTP da Fase 1A foi “simplificado”.
 8. Auth e detalhe da coleta memoizados no mesmo request (`cache()`). — **E**
 

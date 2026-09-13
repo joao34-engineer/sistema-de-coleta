@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { CompanySettingsActionState } from "@/shared/lib/action-result";
+import type { CompanySettingsActionState } from "../model/action-state";
 import { AdministratorAccessDeniedError, AuthenticationRequiredError } from "@/shared/auth/require-admin";
 import { validateEvidenceFile, validateLogoFile, type LogoMimeType } from "@/shared/lib/file/file-validation";
 import { getRequestId } from "@/shared/lib/server-logger";

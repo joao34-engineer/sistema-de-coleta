@@ -105,7 +105,7 @@ vi.mock("@/shared/auth/supabase-server", () => ({
 }));
 
 import { signInAction } from "../../src/_pages/login/api/actions";
-import { initialLoginActionState } from "../../src/shared/lib/action-result";
+import { initialLoginActionState } from "../../src/_pages/login/model/action-state";
 
 function loginForm(email = "admin@example.com", password = "a-valid-password"): FormData {
   const formData = new FormData();

@@ -12,7 +12,6 @@ const steigerConfig = defineConfig([
     rules: {
       "fsd/typo-in-layer-name": "off",
       "fsd/no-segmentless-slices": "off",
-      "fsd/no-public-api-sidestep": "off",
     },
   },
   {

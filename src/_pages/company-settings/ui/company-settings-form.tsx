@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useReducer, type Dispatch } from "react";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
-import type { CompanySettingsActionState } from "@/shared/lib/action-result";
-import { initialCompanySettingsActionState } from "@/shared/lib/action-result";
+import { initialCompanySettingsActionState, type CompanySettingsActionState } from "../model/action-state";
 import { updateCompanySettingsAction, uploadCompanyLogoAction } from "../api/actions";
 import {
   applyPersistedSettings,

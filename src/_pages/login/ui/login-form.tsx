@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { signInAction } from "../api/actions";
-import { initialLoginActionState } from "@/shared/lib/action-result";
+import { initialLoginActionState } from "../model/action-state";
 import { Button } from "@/shared/ui/button";
 
 export function LoginForm() {

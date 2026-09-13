@@ -1,158 +1,127 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
-import { fetchDraftWithItemsAction } from "../api/actions";
+import { Input } from "@/shared/ui/input";
 import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
-import type { DraftDTO, DraftItemDTO } from "../model/draft";
+import { captureStepHref } from "../model/capture-step-href";
+import type { SyncUxState } from "../model/capture-actor";
+import { SyncStatusChip } from "./sync-status-chip";
 
 const MISSING_COLLECTION_LOCATION_MSG = "Informe o local da coleta antes de continuar.";
 
-type Props = Readonly<{
-  draftId: string;
-  initialDraft?: DraftDTO | undefined;
-  initialItems?: readonly DraftItemDTO[] | undefined;
+export type DraftReviewItem = Readonly<{
+  id: string;
+  description: string;
 }>;
 
-export function DraftReviewPage({ draftId, initialDraft, initialItems }: Props) {
-  const router = useRouter();
-  const [draft, setDraft] = useState<DraftDTO | null>(initialDraft ?? null);
-  const [items, setItems] = useState<readonly DraftItemDTO[]>(initialItems ?? []);
-  const [isLoading, setIsLoading] = useState<boolean>(!initialDraft);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+type Props = Readonly<{
+  draftId: string;
+  customerName: string;
+  customerTaxId: string;
+  items: readonly DraftReviewItem[];
+  collectionLocation: string | null;
+  syncState: SyncUxState;
+  lastError: string | null;
+  onPersistLocation: (location: string) => Promise<void>;
+  onBackToItems: () => void;
+  onContinue: () => void | Promise<void>;
+}>;
 
-  useEffect(() => {
-    if (!initialDraft) {
-      fetchDraftWithItemsAction(draftId).then((res) => {
-        setIsLoading(false);
-        if (res.ok && res.draft) {
-          setDraft(res.draft);
-          setItems(res.items ?? []);
-        } else {
-          setErrorMsg("Rascunho de coleta não encontrado.");
-        }
-      });
+export function DraftReviewPage({
+  draftId,
+  customerName,
+  customerTaxId,
+  items,
+  collectionLocation,
+  syncState,
+  lastError,
+  onPersistLocation,
+  onBackToItems,
+  onContinue,
+}: Props) {
+  const [locationDraft, setLocationDraft] = useState<string | null>(null);
+  const locationValue = locationDraft ?? collectionLocation ?? "";
+  const locationReady = hasRequiredCollectionLocation(locationValue);
+
+  async function persistIfChanged(): Promise<void> {
+    const trimmed = locationValue.trim();
+    if (trimmed !== (collectionLocation?.trim() ?? "")) {
+      await onPersistLocation(trimmed);
     }
-  }, [draftId, initialDraft]);
-
-  if (isLoading) {
-    return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] px-6 py-12 text-center">
-        <p className="text-[14px] text-[var(--color-text-muted)]">Carregando revisão...</p>
-      </main>
-    );
-  }
-
-  if (errorMsg || !draft) {
-    return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] px-6 py-12 text-center">
-        <div className="rounded-[12px] bg-[#fdf2f1] p-4 text-[12px] font-semibold text-[#ba5b52]">
-          {errorMsg ?? "Rascunho de coleta não encontrado."}
-        </div>
-      </main>
-    );
   }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-      <MobilePageHeader
-        title="Revisar coleta"
-        subtitle="Etapa 3 de 3"
-        backHref={`/coletas/${draftId}/itens` as Route}
-      />
-
-      {/* Progress Bar (M04 Node 13:68: 3 de 3 ativas) */}
+      <MobilePageHeader title="Revisar coleta" subtitle="Etapa 3 de 3" backHref={captureStepHref(draftId, "itens") as Route} />
       <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-2.5">
         <div className="flex items-center gap-1.5">
           <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
           <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
           <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
         </div>
-        <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">
-          3 de 3
-        </span>
+        <SyncStatusChip state={syncState} lastError={lastError} />
       </div>
-
       <div className="flex flex-col gap-6 px-6 pt-6">
-        <div>
-          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-            Confira antes de emitir.
-          </h2>
-        </div>
-
-        {/* Card CLIENTE (Node 13:68) */}
+        <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">Confira antes de emitir.</h2>
         <div className="flex flex-col gap-1 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            CLIENTE
-          </span>
-          <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-            {draft.responsibleName || "Responsável não informado"}
-          </h3>
-          <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-            CNPJ / CPF · {draft.responsibleTaxId || "não informado"}
-          </p>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">CLIENTE</span>
+          <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">{customerName}</h3>
+          <p className="text-[12px] font-normal text-[var(--color-text-muted)]">CNPJ / CPF · {customerTaxId}</p>
         </div>
-
-
-        {/* Card ITENS (Node 13:68) */}
         <div className="flex flex-col gap-2 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            ITENS · {items.length}
-          </span>
-          <div className="flex flex-col gap-1.5">
-            {items.map((item) => (
-              <p key={item.id} className="text-[14px] font-normal text-[var(--color-text-primary)]">
-                {item.description}
-              </p>
-            ))}
-          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">ITENS · {items.length}</span>
+          {items.map((item) => (
+            <p key={item.id} className="text-[14px] font-normal text-[var(--color-text-primary)]">
+              {item.description}
+            </p>
+          ))}
         </div>
-
-        {/* Card LOCAL DA COLETA (Node 13:68) */}
         <div
-          className={`flex flex-col gap-1 rounded-[16px] border p-4 shadow-xs ${
-            hasRequiredCollectionLocation(draft.collectionLocation)
+          className={`rounded-[16px] border p-4 shadow-xs ${
+            locationReady
               ? "border-[var(--color-border)] bg-[var(--color-card-bg)]"
               : "border-[#fca5a5] bg-[#fdf2f1]"
           }`}
         >
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            LOCAL DA COLETA
-          </span>
-          {hasRequiredCollectionLocation(draft.collectionLocation) ? (
-            <p className="text-[13px] font-normal text-[var(--color-text-primary)]">
-              {draft.collectionLocation}
-            </p>
-          ) : (
-            <p className="text-[13px] font-semibold text-[#ba5b52]">
-              {MISSING_COLLECTION_LOCATION_MSG}
-            </p>
-          )}
+          <Input
+            label="Local da coleta *"
+            value={locationValue}
+            onChange={(event) => {
+              setLocationDraft(event.target.value);
+            }}
+            onBlur={() => {
+              void persistIfChanged();
+            }}
+            required
+            {...(locationReady ? {} : { error: MISSING_COLLECTION_LOCATION_MSG })}
+          />
         </div>
-
-        {/* Botão Primário Emitir guia e coletar assinatura (Node 13:68) */}
+        <Button type="button" variant="secondary" onClick={onBackToItems} className="h-[52px] rounded-[12px] text-[14px] font-semibold">
+          Voltar aos itens
+        </Button>
         <Button
           type="button"
           variant="primary"
+          disabled={items.length === 0 || !locationReady}
           onClick={() => {
-            if (!hasRequiredCollectionLocation(draft.collectionLocation)) {
+            if (!hasRequiredCollectionLocation(locationValue)) {
               return;
             }
-            router.push(`/coletas/${draftId}/assinatura` as Route);
+            void (async () => {
+              await persistIfChanged();
+              await onContinue();
+            })();
           }}
-          className="mt-4 h-[52px] rounded-[12px] text-[14px] font-semibold"
-          disabled={items.length === 0 || !hasRequiredCollectionLocation(draft.collectionLocation)}
+          className="h-[52px] rounded-[12px] text-[14px] font-semibold"
         >
           Emitir guia e coletar assinatura
         </Button>
       </div>
-
       <MobileBottomNav />
     </main>
   );
 }
-

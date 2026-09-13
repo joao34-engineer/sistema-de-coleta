@@ -30,6 +30,7 @@ import { getCustomerAction } from "@/app/actions/draft-flow.actions";
 import { canFinalizeCollection } from "../model/can-finalize-collection";
 import { invalidCpfOrCnpjMessage, isValidCpfOrCnpj } from "@/shared/lib/cpf";
 import { NewCollectionPage } from "./new-collection-page";
+import { DraftReviewPage } from "./draft-review-page";
 import { SyncStatusChip } from "./sync-status-chip";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -305,7 +306,6 @@ function CaptureSteps({
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [locationDraft, setLocationDraft] = useState<string | null>(null);
   const displayError = errorMsg ?? localError;
   const signerName = signerNameDraft ?? draft?.responsibleName ?? "";
   const signerTaxId = signerTaxIdDraft ?? draft?.responsibleTaxId ?? "";
@@ -341,7 +341,6 @@ function CaptureSteps({
       collectionId: draftId,
       collectionLocation: nextLocation,
     });
-    setLocationDraft(null);
     onReload();
     if (isBrowserOnline()) {
       void runAuthenticatedDrain(actor).then(onReload);
@@ -476,85 +475,19 @@ function CaptureSteps({
   }
 
   if (step === "revisao" && draft) {
-    const locationValue = locationDraft ?? draft.collectionLocation ?? "";
-    const locationReady = hasRequiredCollectionLocation(locationValue);
     return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-        <MobilePageHeader title="Revisar coleta" subtitle="Etapa 3 de 3" backHref={captureStepHref(draftId, "itens") as Route} />
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-2.5">
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
-            <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
-            <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
-          </div>
-          <SyncStatusChip state={status} lastError={draft.lastError} />
-        </div>
-        <div className="flex flex-col gap-6 px-6 pt-6">
-          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">Confira antes de emitir.</h2>
-          <div className="flex flex-col gap-1 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">CLIENTE</span>
-            <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">{draft.customer.displayName}</h3>
-            <p className="text-[12px] font-normal text-[var(--color-text-muted)]">CNPJ / CPF · {draft.customer.taxId}</p>
-          </div>
-          <div className="flex flex-col gap-2 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">ITENS · {items.length}</span>
-            {items.map((item) => (
-              <p key={item.id} className="text-[14px] font-normal text-[var(--color-text-primary)]">
-                {item.description}
-              </p>
-            ))}
-          </div>
-          <div
-            className={`rounded-[16px] border p-4 shadow-xs ${
-              locationReady
-                ? "border-[var(--color-border)] bg-[var(--color-card-bg)]"
-                : "border-[#fca5a5] bg-[#fdf2f1]"
-            }`}
-          >
-            <Input
-              label="Local da coleta *"
-              value={locationValue}
-              onChange={(event) => {
-                setLocationDraft(event.target.value);
-                setLocalError(null);
-              }}
-              onBlur={() => {
-                const trimmed = locationValue.trim();
-                if (trimmed !== (draft.collectionLocation?.trim() ?? "")) {
-                  void persistLocation(trimmed);
-                }
-              }}
-              required
-              {...(locationReady ? {} : { error: MISSING_COLLECTION_LOCATION_MSG })}
-            />
-          </div>
-          <Button type="button" variant="secondary" onClick={() => void onStep("itens")} className="h-[52px] rounded-[12px] text-[14px] font-semibold">
-            Voltar aos itens
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            disabled={items.length === 0 || !locationReady}
-            onClick={() => {
-              if (!hasRequiredCollectionLocation(locationValue)) {
-                setLocalError(MISSING_COLLECTION_LOCATION_MSG);
-                return;
-              }
-              void (async () => {
-                const trimmed = locationValue.trim();
-                if (trimmed !== (draft.collectionLocation?.trim() ?? "")) {
-                  await persistLocation(trimmed);
-                }
-                await onStep("assinatura");
-              })();
-            }}
-            className="h-[52px] rounded-[12px] text-[14px] font-semibold"
-          >
-            Emitir guia e coletar assinatura
-          </Button>
-        </div>
-        <MobileBottomNav />
-      </main>
+      <DraftReviewPage
+        draftId={draftId}
+        customerName={draft.customer.displayName}
+        customerTaxId={draft.customer.taxId}
+        items={items}
+        collectionLocation={draft.collectionLocation}
+        syncState={status}
+        lastError={draft.lastError}
+        onPersistLocation={persistLocation}
+        onBackToItems={() => void onStep("itens")}
+        onContinue={() => onStep("assinatura")}
+      />
     );
   }
 

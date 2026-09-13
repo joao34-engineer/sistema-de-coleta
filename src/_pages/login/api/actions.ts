@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
 import { ServiceEnvironmentInvalidError, ServiceEnvironmentMismatchError } from "@/shared/config/environment";
 import { routes } from "@/shared/config";
-import type { LoginActionState } from "@/shared/lib/action-result";
+import type { LoginActionState } from "../model/action-state";
 import {
   DocumentRateLimitExceededError,
   DocumentRateLimitSecretMissingError,
