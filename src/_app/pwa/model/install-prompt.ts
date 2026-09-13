@@ -46,6 +46,20 @@ export function isIosSafari(userAgent: string): boolean {
   return /Safari/i.test(userAgent);
 }
 
+export type IosInstallHintKind = "safari" | "open-safari";
+
+export function iosInstallHintKind(userAgent: string): IosInstallHintKind | null {
+  if (!isIosDevice(userAgent)) {
+    return null;
+  }
+
+  if (isIosSafari(userAgent)) {
+    return "safari";
+  }
+
+  return "open-safari";
+}
+
 export function wasInstallPromptDismissed(): boolean {
   try {
     return sessionStorage.getItem(INSTALL_DISMISS_STORAGE_KEY) !== null;

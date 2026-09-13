@@ -1,7 +1,6 @@
 import "server-only";
 
 import { requireAuthenticatedAdministratorForPage } from "@/shared/auth/require-admin";
-import { getCollectionDashboardSummary } from "./api/queries";
 import type { DashboardActivityItem } from "./model/contracts";
 import { formatDashboardDateLabel } from "./model/contracts";
 import { DashboardPage } from "./ui/dashboard-page";

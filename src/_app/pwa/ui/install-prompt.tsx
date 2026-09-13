@@ -4,15 +4,14 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Button } from "@/shared/ui/button";
 import { pwaCopy } from "../model/pwa-copy";
 import {
+  iosInstallHintKind,
   isBeforeInstallPromptEvent,
-  isIosNonSafariBrowser,
-  isIosSafari,
   isStandaloneDisplay,
   persistInstallPromptDismissed,
   wasInstallPromptDismissed,
   type BeforeInstallPromptEvent,
 } from "../model/install-prompt";
-import { PwaBanner } from "./pwa-banner";
+import { PwaBanner, PwaBannerHost } from "./pwa-banner";
 
 function subscribeNever(): () => void {
   return () => {};
@@ -23,11 +22,12 @@ function useIsClient(): boolean {
 }
 
 function iosInstallCopy(userAgent: string): string | null {
-  if (isIosSafari(userAgent)) {
+  const hint = iosInstallHintKind(userAgent);
+  if (hint === "safari") {
     return pwaCopy.iosInstallDescription;
   }
 
-  if (isIosNonSafariBrowser(userAgent)) {
+  if (hint === "open-safari") {
     return pwaCopy.iosOpenInSafariDescription;
   }
 
@@ -79,19 +79,26 @@ export function InstallPrompt() {
   const iosInstallDescription = iosInstallCopy(window.navigator.userAgent);
   if (iosInstallDescription !== null && deferredPrompt === null) {
     return (
-      <PwaBanner role="status" labelledBy="pwa-install-title" describedBy="pwa-install-description">
-        <h2 id="pwa-install-title" className="text-[16px] font-semibold text-[var(--color-text)]">
-          {pwaCopy.installTitle}
-        </h2>
-        <p id="pwa-install-description" className="mt-1 text-[14px] text-[var(--color-muted)]">
-          {iosInstallDescription}
-        </p>
-        <div className="mt-4">
-          <Button type="button" variant="secondary" onClick={dismiss}>
-            {pwaCopy.iosInstallDismiss}
-          </Button>
-        </div>
-      </PwaBanner>
+      <PwaBannerHost placement="top">
+        <PwaBanner
+          role="status"
+          labelledBy="pwa-install-title"
+          describedBy="pwa-install-description"
+          emphasized
+        >
+          <h2 id="pwa-install-title" className="text-[16px] font-semibold text-[var(--color-text)]">
+            {pwaCopy.installTitle}
+          </h2>
+          <p id="pwa-install-description" className="mt-1 text-[14px] text-[var(--color-muted)]">
+            {iosInstallDescription}
+          </p>
+          <div className="mt-4">
+            <Button type="button" variant="secondary" onClick={dismiss}>
+              {pwaCopy.iosInstallDismiss}
+            </Button>
+          </div>
+        </PwaBanner>
+      </PwaBannerHost>
     );
   }
 

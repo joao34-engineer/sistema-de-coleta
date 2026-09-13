@@ -25,6 +25,10 @@ export function LoginPage() {
           <p className="mt-1.5 text-[14px] font-normal text-[var(--color-text-muted)]">
             Acesse o sistema de coleta e operação.
           </p>
+          <p className="mt-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-[13px] leading-5 text-[var(--color-text)]">
+            No iPhone o app não aparece na App Store. Abra este site no Safari, toque em Compartilhar e
+            depois em Adicionar à Tela de Início.
+          </p>
         </section>
 
         <LoginForm />

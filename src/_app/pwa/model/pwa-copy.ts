@@ -10,7 +10,7 @@ export const pwaCopy = {
   iosInstallDescription:
     "No Safari, toque em Compartilhar (ícone quadrado com seta) e depois em Adicionar à Tela de Início. O app não está na App Store.",
   iosOpenInSafariDescription:
-    "Este app instala pelo Safari, não pela App Store. Toque em Compartilhar neste navegador, escolha Abrir no Safari e depois Compartilhar → Adicionar à Tela de Início.",
+    "O iPhone não baixa este app da App Store. Toque em Compartilhar, escolha Abrir no Safari e depois Compartilhar → Adicionar à Tela de Início.",
   iosInstallDismiss: "Entendi",
   updatePendingDescription:
     "Há coletas pendentes de sincronizar neste aparelho. Atualize depois de sincronizar, ou continue se quiser mesmo assim.",

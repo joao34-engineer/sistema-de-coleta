@@ -49,7 +49,7 @@ Aplicar CSP adequada aos hosts usados, `X-Content-Type-Options: nosniff`, `X-Fra
 
 ## Instalacao no iPhone
 
-O atalho standalone no iPhone nasce so no Safari: Compartilhar (icone quadrado com seta) → Adicionar à Tela de Início. O app nao esta na App Store. Chrome, Firefox e Edge no iOS nao disparam `beforeinstallprompt`; a UI pede para abrir o mesmo endereco no Safari. O layout usa `viewport-fit=cover` e `apple-touch-icon` 180×180; a barra de status permanece `default` porque o cabecalho e claro.
+O atalho standalone no iPhone nasce so no Safari: Compartilhar (icone quadrado com seta) → Adicionar à Tela de Início. O app nao esta na App Store e o iPhone **nao** mostra um botao nativo de download. Chrome, Firefox, Edge e navegadores internos (WhatsApp, Instagram) nao disparam `beforeinstallprompt`; qualquer iPhone fora do Safari recebe o aviso para abrir no Safari. O banner de instalacao iOS fica no **topo** (a barra do Safari cobre o rodape). A tela de login tambem explica o caminho. O layout usa `viewport-fit=cover` e `apple-touch-icon` 180×180; a barra de status permanece `default` porque o cabecalho e claro.
 
 ## Testes PWA
 

@@ -10,6 +10,8 @@ const IOS_CHROME_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1";
 const ANDROID_CHROME_UA =
   "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+const IOS_WHATSAPP_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
 
 function stubMatchMedia(standalone: boolean): void {
   window.matchMedia = (query: string): MediaQueryList => {
@@ -76,6 +78,13 @@ describe("InstallPrompt", () => {
     expect(screen.getByRole("status", { name: pwaCopy.installTitle })).toBeInTheDocument();
     expect(screen.getByText(pwaCopy.iosOpenInSafariDescription)).toBeInTheDocument();
     expect(screen.queryByText(pwaCopy.iosInstallDescription)).not.toBeInTheDocument();
+  });
+
+  it("tells WhatsApp in-app on iPhone to open Safari", () => {
+    stubUserAgent(IOS_WHATSAPP_UA);
+    render(<InstallPrompt />);
+    expect(screen.getByRole("status", { name: pwaCopy.installTitle })).toBeInTheDocument();
+    expect(screen.getByText(pwaCopy.iosOpenInSafariDescription)).toBeInTheDocument();
   });
 
   it("shows the native install button after beforeinstallprompt on Android", async () => {
