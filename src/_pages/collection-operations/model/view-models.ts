@@ -2,7 +2,7 @@
  * View models serializáveis consumidos por Client Components do hub de detalhe.
  * Espelham os schemas de leitura em api/queries.ts (server-only) na fronteira cliente.
  */
-import type { CollectionStatus } from "@/shared/model/collection-status";
+import type { CollectionStatus } from "@/entities/collection";
 
 export type { CollectionStatus };
 

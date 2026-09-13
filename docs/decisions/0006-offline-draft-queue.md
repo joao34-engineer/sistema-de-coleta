@@ -18,7 +18,7 @@ A casca PWA (ADR 0005) cacheia só shell. HTML/RSC é network-only. Sem persist�
 
 4. **Pendente só no cliente.** Não há status `pendente_sincronizacao` no Postgres. Escopo IndexedDB por `userId` (+ `organizationId`); leitura entra como `unknown` e passa em schema Zod.
 
-5. **Drain serial com lock de aba.** `navigator.locks` (`mjt-offline-drain`). Sem `navigator.locks` (Safari), o fallback é mutex em fila: callers posteriores esperam e executam, nunca descartam. No boot do drain, mutações `in_flight` voltam a `pending` (crash no meio do sync). 409 `stale_version`: um GET, atualiza versão, uma repetição. 401 não apaga o local. Assinatura já presente no servidor é pulada. Dispara em online, boot autenticado e retry. Nunca no SW.
+5. **Drain serial com lock de aba.** `navigator.locks` (`mjt-offline-drain`). Sem `navigator.locks` (Safari), o fallback é mutex em fila: callers posteriores esperam e executam, nunca descartam. No boot do drain, mutações `in_flight` voltam a `pending` (crash no meio do sync). 409 `stale_version`: um GET, atualiza versão, uma repetição. 401 não apaga o local. Assinatura já presente no servidor é pulada. Dispara em `online`, Retry e o fluxo de captura. **Não** em cada paint do layout protegido (performance Fase 3). Finalize online espera só **esta** coleta (emenda Fase 4.2). Nunca no SW.
 
 6. **`canReload` síncrono.** Snapshot em memória, atualizado na escrita/drain. O callback do `PwaShell` não abre IndexedDB. Reload não apaga IDB; o banner avisa trabalho pendente antes de confirmar o update.
 
@@ -36,7 +36,7 @@ A casca PWA (ADR 0005) cacheia só shell. HTML/RSC é network-only. Sem persist�
 - revisão → `/coletas/{id}/revisao`
 - assinatura → `/coletas/{id}/assinatura`
 
-A URL sincroniza com `router.replace` na troca de etapa. Em `reload()`, `initialStep` da rota vence `currentStep` do IndexedDB e o IDB é realinhado. Alias legado `?rascunho=` em `/coletas/nova` redireciona para `/coletas/{id}/itens`.
+A URL sincroniza com `router.replace` na troca de etapa. Em `reload()`, `initialStep` da rota vence `currentStep` do IndexedDB e o IDB é realinhado. Alias legado `?rascunho=` em `/coletas/nova` redireciona para `/coletas/{id}/itens`. Performance Fase 4.3: o `replace` ocorre **antes** de `setDraftStep`; se o write local falhar, passo e URL voltam atrás.
 
 ### Emenda (Fase 2 / B16–B22) — recover, discard e hydrate
 
@@ -47,6 +47,14 @@ A URL sincroniza com `router.replace` na troca de etapa. Em `reload()`, `initial
 - Purge de `discard_draft` com `collection_not_draft` / `not_found` limpa o IDB e explica que a guia oficial não foi apagada.
 - Endereço cadastral só vai ao servidor com rua + cidade + UF. Street sozinha permanece no aparelho.
 - Finalize da guia exige PNG confirmado no pad (`drawn` → `confirmed`).
+
+### Emenda (performance Fase 4.2) — finalize online não espera a fila inteira
+
+“Finalizar coleta” com rede aguarda só o drain **desta** coleta (`drainPendingForCollection` / `runAuthenticatedDrainCollection` sob o lock `mjt-offline-drain`). As demais guias da fila drenam em seguida sem bloquear a saída (`void drainAllPending`). Número oficial, PDF e `collected` continuam só no servidor. `finalizeIdempotencyKey` e `p_client_item_id` não mudam. Leftover desta coleta depois do drain ainda é falha de sync (`presentFinalizeSync`), não “Salvo neste aparelho”.
+
+### Emenda (performance Fase 4.3) — passo do wizard otimista
+
+Troca de etapa pinta e atualiza a URL no tap (`setStep` + `router.replace`). `setDraftStep` grava o IndexedDB em seguida. Draft ausente lança `draft_not_found` (não é no-op). Falha de persistência reverte passo e URL e mostra a mensagem de quota/copy existente. A revisão ainda espera o persist do local antes de “Emitir guia”.
 
 ## Fora do escopo
 

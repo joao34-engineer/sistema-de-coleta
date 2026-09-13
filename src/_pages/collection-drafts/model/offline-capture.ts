@@ -273,7 +273,7 @@ export async function setDraftStep(
 ): Promise<void> {
   const draft = await store.getDraft(collectionId, actor.userId);
   if (draft === null) {
-    return;
+    throw new Error("draft_not_found");
   }
   await store.putDraft({ ...draft, currentStep, updatedAt: store.nowIso() });
 }

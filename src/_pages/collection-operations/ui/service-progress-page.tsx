@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -9,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { updateServiceProgressAction } from "../api/actions";
+import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
 
 export type ProgressItem = Readonly<{
   itemId: string;
@@ -37,13 +37,10 @@ const statusOptions = [
 ] as const;
 
 export function ServiceProgressPage({ collectionId, officialCode, progressItems, rowVersion }: Props) {
-  const router = useRouter();
   const [items, setItems] = useState<EditableProgressItem[]>(
     progressItems.map((item) => ({ itemId: item.itemId, itemDescription: item.itemDescription, status: item.status, notes: item.notes ?? "" })),
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { error: errorMsg, isPending, setError, submit } = useWorkshopHubSubmit(collectionId);
 
   const readyCount = items.filter((item) => item.status === "pronto").length;
 
@@ -51,17 +48,14 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
     setItems((current) => current.map((item) => (item.itemId === itemId ? { ...item, ...patch } : item)));
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (items.some((item) => item.notes.length > 1000)) {
-      setErrorMsg("As observações devem ter no máximo 1000 caracteres.");
+      setError("As observações devem ter no máximo 1000 caracteres.");
       return;
     }
 
-    setIsSubmitting(true);
-    setErrorMsg(null);
-
-    try {
-      const result = await updateServiceProgressAction(
+    submit(async () =>
+      updateServiceProgressAction(
         collectionId,
         {
           collectionId,
@@ -74,21 +68,8 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
           })),
         },
         crypto.randomUUID(),
-      );
-
-      if (!result.ok) {
-        setErrorMsg(result.error);
-        setIsSubmitting(false);
-        return;
-      }
-
-      startTransition(() => {
-        router.push(`/coletas/${collectionId}` as Route);
-      });
-    } catch {
-      setErrorMsg("Não foi possível salvar o progresso. Verifique a conexão e tente novamente.");
-      setIsSubmitting(false);
-    }
+      ),
+    );
   }
 
   return (
@@ -152,7 +133,7 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting || isPending}
+          isLoading={isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

@@ -619,3 +619,26 @@ export async function drainAllPending(input: {
   });
   return { officialKept };
 }
+
+export async function drainPendingForCollection(input: {
+  store: OfflineDraftStore;
+  commands: OfflineSyncCommands;
+  actor: CaptureActor;
+  collectionId: string;
+  lock?: DrainLock;
+}): Promise<DrainCollectionResult> {
+  const lock = input.lock ?? fallbackDrainLock;
+  let result: DrainCollectionResult = { status: "completed", officialKept: false };
+  await lock.request("mjt-offline-drain", async () => {
+    await recoverInFlightMutations(input.store, input.actor.userId);
+    await input.store.refreshSnapshot(input.actor.userId, true);
+    result = await drainCollectionQueue({
+      store: input.store,
+      commands: input.commands,
+      actor: input.actor,
+      collectionId: input.collectionId,
+    });
+    await input.store.refreshSnapshot(input.actor.userId, false);
+  });
+  return result;
+}

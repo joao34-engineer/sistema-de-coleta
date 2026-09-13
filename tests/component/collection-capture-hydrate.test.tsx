@@ -32,6 +32,7 @@ vi.mock("@/app/actions/draft-flow.actions", () => ({
 
 vi.mock("@/_pages/collection-drafts/model/run-authenticated-drain", () => ({
   runAuthenticatedDrain: vi.fn(async () => ({ officialKept: false })),
+  runAuthenticatedDrainCollection: vi.fn(async () => ({ status: "completed", officialKept: false })),
 }));
 
 vi.mock("@/_pages/collection-drafts/model/offline-capture", async (importOriginal) => {

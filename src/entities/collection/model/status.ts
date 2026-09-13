@@ -22,15 +22,18 @@ export const collectionStatuses = [
 
 export type CollectionStatus = (typeof collectionStatuses)[number];
 
-export type CollectionsListFilter =
-  | "all"
-  | "draft"
-  | "collected"
-  | "in_repair"
-  | "ready"
-  | "invoiced"
-  | "partial_delivery"
-  | "canceled";
+export const collectionsListFilters = [
+  "all",
+  "draft",
+  "collected",
+  "in_repair",
+  "ready",
+  "invoiced",
+  "partial_delivery",
+  "canceled",
+] as const;
+
+export type CollectionsListFilter = (typeof collectionsListFilters)[number];
 
 /** Status que representam serviço ativo na oficina (filtro "Em reparo"). */
 export const inRepairStatuses: ReadonlyArray<CollectionStatus> = [

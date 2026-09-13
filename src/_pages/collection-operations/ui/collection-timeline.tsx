@@ -1,5 +1,5 @@
 import type { CollectionEventSummary } from "../model/view-models";
-import { collectionStatusLabel } from "@/shared/model/collection-status";
+import { collectionStatusLabel } from "@/entities/collection";
 import { formatDateTimePtBr } from "@/shared/lib/format-date-time-pt-br";
 
 type Props = Readonly<{ events: ReadonlyArray<CollectionEventSummary> }>;

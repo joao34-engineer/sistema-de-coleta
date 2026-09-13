@@ -3,7 +3,7 @@ import "server-only";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
 import { attachActorId } from "@/shared/lib/server-logger";
-import { inProgressStatuses, readyForDeliveryStatuses } from "@/shared/model/collection-status";
+import { inProgressStatuses, readyForDeliveryStatuses } from "@/entities/collection";
 import { dashboardSummarySchema, type DashboardSummaryDTO } from "../model/contracts";
 
 const summaryKeyAliases: Readonly<Record<string, string>> = {

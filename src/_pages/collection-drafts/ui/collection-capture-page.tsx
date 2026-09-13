@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { isOfflineQuotaExceeded } from "@/shared/lib/offline";
@@ -22,7 +22,7 @@ import {
 import { isSignerTaxIdQueueError, messageForQueueError, offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { presentFinalizeSync } from "../model/present-finalize-sync";
-import { runAuthenticatedDrain } from "../model/run-authenticated-drain";
+import { runAuthenticatedDrain, runAuthenticatedDrainCollection } from "../model/run-authenticated-drain";
 import type { OfflineDraftRecord, OfflineItemRecord } from "../model/offline-records";
 import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
 import { collectionExistsAction, fetchDraftWithItemsAction } from "../api/actions";
@@ -72,6 +72,7 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
   const online = useOnlineStatus();
   const [queuedDone, setQueuedDone] = useState(false);
   const [onlineFinalizeError, setOnlineFinalizeError] = useState<string | null>(null);
+  const stepChangeInFlight = useRef(false);
 
   const abortHydrate = useCallback((message: string) => {
     setErrorMsg(message);
@@ -248,10 +249,23 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
       onlineFinalizeError={onlineFinalizeError}
       onReload={() => void reload(draftId)}
       onStep={async (next) => {
-        const store = await ensureOfflineDraftStore();
-        await setDraftStep(store, actor, draftId, next);
+        if (stepChangeInFlight.current || next === step) {
+          return;
+        }
+        const previous = step;
+        stepChangeInFlight.current = true;
         setStep(next);
         router.replace(captureStepHref(draftId, next) as Route);
+        try {
+          const store = await ensureOfflineDraftStore();
+          await setDraftStep(store, actor, draftId, next);
+        } catch (error: unknown) {
+          setStep(previous);
+          router.replace(captureStepHref(draftId, previous) as Route);
+          setErrorMsg(isOfflineQuotaExceeded(error) ? offlineCopy.quotaExceeded : offlineCopy.stepPersistFailed);
+        } finally {
+          stepChangeInFlight.current = false;
+        }
       }}
       onQueuedDone={() => setQueuedDone(true)}
       onOnlineFinalizeFailed={(error) => setOnlineFinalizeError(error)}
@@ -562,7 +576,8 @@ function CaptureSteps({
                 });
                 const wasOnline = isBrowserOnline();
                 if (wasOnline) {
-                  await runAuthenticatedDrain(actor);
+                  await runAuthenticatedDrainCollection(actor, draftId);
+                  void runAuthenticatedDrain(actor);
                 }
                 const leftover = await store.getDraft(draftId, actor.userId);
                 const outcome = presentFinalizeSync({

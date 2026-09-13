@@ -2,7 +2,7 @@
 
 ## Decisao
 
-Usar Feature-Sliced Design (FSD) v2.1 de forma progressiva. A versao inicial tera apenas `src/_app`, `src/_pages` e `src/shared`. Camadas adicionais existem para resolver reuso real, nao como pastas vazias de planejamento.
+Usar Feature-Sliced Design (FSD) v2.1 de forma progressiva. A base e `src/_app`, `src/_pages` e `src/shared`. A unica camada extraida alem disso e `src/entities/collection` ([ADR 0011](../decisions/0011-entities-collection.md)). Nao criar `features/` ou `widgets/` vazios.
 
 O App Router ocupa `app/`; por isso as camadas FSD equivalentes sao nomeadas `_app` e `_pages`, como recomenda a integracao oficial do FSD para Next.js.
 
@@ -24,6 +24,10 @@ src/
       ui/
       model/
       api/
+      index.ts
+  entities/
+    collection/                 # ADR 0011: status + CollectionDetailDTO; sem repository
+      model/
       index.ts
   shared/
     api/
@@ -55,7 +59,7 @@ _app -> _pages -> widgets -> features -> entities -> shared
 | Formulario Nova Coleta usado somente nessa rota | `_pages/collections/new/` |
 | Barra de navegacao usada em duas ou mais paginas | `widgets/navigation/` |
 | Acao de finalizar coleta usada em dois fluxos | `features/finalize-collection/` |
-| Modelo de coleta consumido por paginas e features distintas | `entities/collection/` |
+| Modelo de coleta consumido por paginas distintas (status + detalhe) | `entities/collection/` (ja extraida, ADR 0011) |
 | Cliente Supabase, guard de erro, formatador de data | `shared/` |
 
 Antes de extrair, verificar se as duas ocorrencias mudam sempre juntas. Se sim, manter local ou mesclar. Nao usar `@x` sem ADR: primeiro mesclar fronteiras, mover logica para entidade ou compor por uma camada superior.
@@ -72,6 +76,6 @@ Antes de extrair, verificar se as duas ocorrencias mudam sempre juntas. Se sim, 
 
 Configurar aliases para todas as camadas em `tsconfig.json` e usar o linter oficial Steiger quando o codigo existir. Violacao de direcao de importacao deve falhar no lint/CI.
 
-Steiger (`npm run architecture`) varre `src/`. `fsd/no-public-api-sidestep` esta ligado em `_app` / `_pages` (Fase F). `shared/` permanece off. Como `app/` fica fora do Steiger, ESLint `no-restricted-imports` em `app/**` recusa imports profundos (`@/_pages/*/api|ui|model/**`). Consumidores externos usam so `index.ts` / `index.server.ts`.
+Steiger (`npm run architecture`) varre `src/`. `fsd/no-public-api-sidestep` esta ligado em `_app` / `_pages` / `entities` (Fase F). `shared/` permanece off. Como `app/` fica fora do Steiger, ESLint `no-restricted-imports` em `app/**` recusa imports profundos (`@/_pages/*/api|ui|model/**`, `@/entities/*/model/**`). Consumidores externos usam so `index.ts` / `index.server.ts`. Hub/oficina → DAL de lifecycle: excecao `fsd/forbidden-imports` nos dois arquivos de composicao ([ADR 0011](../decisions/0011-entities-collection.md)).
 
 Fontes: [FSD overview](https://fsd.how/docs/get-started/overview/) e [uso com Next.js](https://fsd.how/uz/docs/guides/tech/with-nextjs/).

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `planned` — Fases 3–7; **Fase 1 entregue** (shells + pending Link + CTAs + chips da lista); **Fase 2 entregue** (`cache()` auth + detalhe) |
+| **Status** | `planned` — Fases 5–7; **Fase 1–4 entregues** (4 = mutações oficina + finalize por coleta + passo otimista, 2026-09-13) |
 | **Authority** | `informative` |
 | **Owner** | product / sistema-coleta |
 | **Last verified** | 2026-09-13 |
@@ -22,13 +22,13 @@ Fontes normativas que este plano **não** enfraquece: [`AGENTS.md`](../../AGENTS
 
 ## 1. Veredito
 
-O atraso que o operador sente ao tocar **qualquer botão de navegação** é real. A causa nº 1 era a falta de `loading.tsx` (**Fase 1 feita**). Auth repetida no mesmo RSC está **fechada na Fase 2** (`cache()`). O que ainda resta atrás do skeleton:
+O atraso que o operador sente ao tocar **qualquer botão de navegação** é real. A causa nº 1 era a falta de `loading.tsx` (**Fase 1 feita**). Auth repetida no mesmo RSC está **fechada na Fase 2** (`cache()`). Mutações de oficina e finalize **não** prendem a form até o hub “frio” (**Fase 4 feita**). O que ainda resta atrás do skeleton:
 
 > O App Router **mantém a tela atual** até o servidor terminar o destino. Cada navegação protegida ainda paga `proxy.ts` (`getClaims`) + queries, com `Cache-Control: no-store` e `force-dynamic`.
 
-Há um segundo atraso, nos botões de **mutação**: a UI espera a Server Action (e às vezes a fila offline inteira) **antes** de `router.push`.
+Trocar de aba **não** dispara replay da fila (Fase 3); reconectar, Retry e o wizard ainda drenam. Finalize online espera só **esta** coleta; o resto da fila vai em background (Fase 4.2).
 
-O service worker **não** é o culpado. A busca da lista debounceia no cliente; os chips Todos / Coletadas / Em reparo / Prontas pintam o selecionado no tap (`pendingFilter`) e fazem prefetch da query (Fase 1.5). Oficina já tinha skeleton — o padrão a copiar.
+O service worker **não** é o culpado. A busca da lista debounceia no cliente; a busca de cliente no wizard também (Fase 3.2). Os chips Todos / Coletadas / Em reparo / Prontas pintam o selecionado no tap (`pendingFilter`) e fazem prefetch da query (Fase 1.5). Oficina já tinha skeleton — o padrão a copiar.
 
 ---
 
@@ -43,6 +43,11 @@ O service worker **não** é o culpado. A busca da lista debounceia no cliente; 
 | Filtro da lista | Chips são URL + `listCollections` no servidor (paginação). Um único pill preto no tap (`pendingFilter`); prefetch dos outros filtros. Sem blur da lista. Sem filtrar os 25 cards locais. Busca continua draft local + debounce para a URL. |
 | Shells de `loading.tsx` | `(protected)`, dashboard, coletas, hub, documentos e oficina. Copiar o chrome (header + pulse). |
 | `cache()` de sessão e detalhe | Fase 2 / architecture E (2026-09-13). Um admin load e um `getCollectionDetail(id)` por tick RSC. Sem `use cache` / ISR. |
+| Banner de pendentes | Fase 3.1 (2026-09-13). Mount só lista IndexedDB. Drain em `online`, Retry e captura. |
+| Busca de cliente no wizard | Fase 3.2. Debounce 300 ms + geração; mínimo de 2 caracteres. |
+| Submit da oficina | Fase 4.1. `useWorkshopHubSubmit` — action + `router.push` do hub na mesma `startTransition`. Sem `redirect()` nas actions. |
+| Finalize online | Fase 4.2. `runAuthenticatedDrainCollection` desta guia; `void drainAllPending` para o resto. |
+| Passo do wizard | Fase 4.3. `setStep` + `replace` no tap; `setDraftStep` depois; rollback se o IDB falhar. |
 | Páginas autenticadas dinâmicas | `cookies()` + RLS exigem render no request. O ganho **não** é “tornar o dashboard estático”. |
 
 ---
@@ -78,12 +83,25 @@ toque no Link
 
 ```text
 toque
-  → await serverAction()     RPC + upload + revalidatePath
-  → startTransition(push)    só agora começa a navegação
-  → de novo o waterfall 3.1 no hub
+  → startTransition
+       mutate (RPC + upload + revalidatePath)
+       se ok → router.push(/coletas/[id])
+  → loading.tsx do hub (Fase 1)
+  → waterfall 3.1 no hub
 ```
 
-`startTransition` envolve o **push**, não a espera.
+Oficina: `useWorkshopHubSubmit` (`src/_pages/collection-operations/model/use-workshop-hub-submit.ts`). Pending no tap; erro fica na form; não navega antes de `ok`. Finalize: `saveLocalSignature` → drain **desta** coleta → `presentFinalizeSync` → hub / “Salvo neste aparelho” / falha; outras guias drenam sem `await`.
+
+### 3.3 Passo do wizard (sem Server Action)
+
+```text
+toque “Revisar coleta” / etapa seguinte
+  → setStep + router.replace   (mesmo tick)
+  → setDraftStep (IndexedDB)
+  → se falhar: rollback do passo + URL + mensagem
+```
+
+O paint não espera o write. Draft ausente é falha (`draft_not_found`). Remount da rota irmã ainda pode flashar hydrate — residual, não Fase 5.
 
 ---
 
@@ -137,44 +155,44 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P1-2 — Fila offline drena em **todo** mount protegido
+### P1-2 — Fila offline drena em **todo** mount protegido — **feito (Fase 3.1)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | Ao entrar em qualquer tela autenticada, o cliente abre IndexedDB e pode replay serial da fila. |
-| **Onde** | `OfflinePendingBanner` em `(protected)/layout.tsx` → `drainAllPending` no `useEffect`. |
-| **Por que dói** | Compete com hidratação e com a navegação que o operador acabou de disparar. Replay é serial por desenho (`offline-runner.ts`) — latência, não bug de idempotência. |
+| **Sintoma** | Ao entrar em qualquer tela autenticada, o cliente abria IndexedDB e podia replay serial da fila. |
+| **Onde** | `OfflinePendingBanner` em `(protected)/layout.tsx`. Mount agora só lista; `drainAllPending` em `online`, Retry e captura. |
+| **Por que doía** | Compete com hidratação e com a navegação que o operador acabou de disparar. Replay é serial por desenho (`offline-runner.ts`) — latência, não bug de idempotência. |
 | **Não fazer** | Segundo write path. A fila continua reusando as actions (ADR 0006). |
 
 ---
 
-### P1-3 — Mutação: `await` action, **depois** `router.push`
+### P1-3 — Mutação: `await` action, **depois** `router.push` — **feito (Fase 4.1)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Botão de oficina fica na mesma tela até RPC + upload + `revalidatePath` terminarem. |
-| **Onde** | `workshop-checkin-page.tsx` e o mesmo padrão em orçamento, aprovação, progresso, NF-e, entrega, cancelar/reabrir. `phase3-flow.actions.ts` chama `revalidatePath(/coletas/[id])`. |
-| **Por que dói** | Spinner (quando existe) é honesto; a navegação só começa no fim. Em seguida o hub sofre P0-1 + P0-2. |
+| **Onde** | Sete páginas de oficina. Actions em `collection-operations/api/actions.ts`. |
+| **Entregue** | `useWorkshopHubSubmit`: `startTransition` envolve action + `router.push` do hub. Pending no tap; erro permanece na form. |
 
 ---
 
-### P1-4 — Finalizar coleta espera a fila inteira
+### P1-4 — Finalizar coleta espera a fila inteira — **feito (Fase 4.2)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | “Finalizar coleta” (online) não sai do wizard até `drainAllPending` acabar. |
-| **Onde** | `collection-capture-page.tsx` — `saveLocalSignature` → `await drainAllPending` → só então `onOpenCollection` / `router.push`. |
-| **Por que dói** | Pode incluir criar cliente, rascunho, itens, assinatura e finalize. O tap parece morto além do `isLoading`. |
+| **Onde** | `collection-capture-page.tsx` |
+| **Entregue** | `await runAuthenticatedDrainCollection` (só esta guia) + `void drainAllPending` para o resto. `presentFinalizeSync` inalterado. |
 
 ---
 
-### P1-5 — Busca de cliente a cada tecla
+### P1-5 — Busca de cliente a cada tecla — **feito (Fase 3.2)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | Digitar “Maria” dispara ~5 Server Actions. |
-| **Onde** | `new-collection-page.tsx` — `onChange` → `handleSearch` → `searchCustomersAction` sem debounce. |
-| **Por que dói** | Cada action reautentica e consulta o banco. Amplifica P0-2. Sem cancelamento do request anterior. |
+| **Sintoma** | Digitar “Maria” disparava ~5 Server Actions. |
+| **Onde** | `new-collection-page.tsx` + `useCustomerSearch` — debounce 300 ms, geração, mínimo de 2 caracteres. |
+| **Por que doía** | Cada action reautentica e consulta o banco. Amplifica P0-2. Sem cancelamento do request anterior. |
 
 ---
 
@@ -240,13 +258,13 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P1-12 — Passo do wizard espera IndexedDB antes de pintar
+### P1-12 — Passo do wizard espera IndexedDB antes de pintar — **feito (Fase 4.3)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | “Revisar coleta” / “Emitir guia” só muda o passo depois de `setDraftStep`. |
-| **Onde** | `CollectionCapturePage` `onStep`: `await setDraftStep` → `setStep`. |
-| **Por que dói** | IDB é rápido, mas o tap não é otimista. Um `setStep` imediato + write em background (com rollback se falhar) basta. |
+| **Onde** | `CollectionCapturePage` `onStep` |
+| **Entregue** | `setStep` + `replace` imediatos; `setDraftStep` depois; rollback + mensagem se o write falhar. Residual: remount da rota irmã pode flashar hydrate. |
 
 ---
 
@@ -375,45 +393,45 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 ---
 
-### Fase 3 — Não competir com a navegação
+### Fase 3 — Não competir com a navegação — **feita** (2026-09-13)
 
 **Objetivo:** o mount de uma tela nova não dispara sync em massa nem action por tecla.
 
-#### Passo 3.1 — Parar o drain automático no layout
+#### Passo 3.1 — Parar o drain automático no layout — **feito**
 
 **Faz:** `OfflinePendingBanner` só lista pendentes no mount. `drainAllPending` em: evento `online`, botão Retry, e o fluxo de captura (já existe).
 
 **Aceite:** trocar de aba do bottom nav **não** inicia replay. Reconectar e Retry ainda sincronizam. ADR 0006 intacto.
 
-#### Passo 3.2 — Debounce da busca de cliente
+#### Passo 3.2 — Debounce da busca de cliente — **feito**
 
-**Faz:** 300–400 ms; ignorar/cancelar resposta fora de ordem; não disparar com menos de 2 caracteres (já existe o mínimo).
+**Faz:** 300 ms; ignorar resposta fora de ordem (geração); não disparar com menos de 2 caracteres (já existia o mínimo).
 
 **Aceite:** um nome de 5 letras = **uma** action após pausa, não cinco.
 
 ---
 
-### Fase 4 — Mutações sem prender a tela
+### Fase 4 — Mutações sem prender a tela — **feita** (2026-09-13)
 
 **Objetivo:** o botão responde na hora; o trabalho pesado não bloqueia a troca de rota quando for seguro.
 
 **Não faz:** `useOptimistic` em todo o app. Não pular RPC. Não segundo write path.
 
-#### Passo 4.1 — Oficina: pending imediato; navegar sem esperar o hub “frio”
+#### Passo 4.1 — Oficina: pending imediato; navegar sem esperar o hub “frio” — **feito**
 
-**Faz:** `isSubmitting` no primeiro tap (já existe em parte). Após `ok`, o `router.push` pode ficar no `startTransition` **junto** com a action, ou ir a um hub que já tem `loading.tsx` (Fase 1). Preferir `<form action={...}>` + `useFormStatus` onde couber, no estilo login/settings.
+**Faz:** `useWorkshopHubSubmit` — `startTransition` envolve **action + push**. Pending no primeiro tap (antes de `dataUrlToFile` no check-in/entrega). Double-tap bloqueado nas sete páginas.
 
 **Aceite:** após sucesso, o operador vê o skeleton do hub (Fase 1) em vez da form morta.
 
-#### Passo 4.2 — Finalizar: não bloquear no drain completo
+#### Passo 4.2 — Finalizar: não bloquear no drain completo — **feito**
 
-**Faz:** persistir assinatura no IndexedDB; se online, disparar drain **sem** obrigar `await` de toda a fila antes de sair — **ou** ir para o estado “Salvo neste aparelho” / hub assim que o rascunho local estiver consistente. Erro de sync continua no painel de pendentes.
+**Faz:** persistir assinatura no IndexedDB; se online, `await runAuthenticatedDrainCollection` (esta guia) e `void runAuthenticatedDrain` (resto). Erro desta coleta continua em `presentFinalizeSync` / painel de falha.
 
 **Aceite:** “Finalizar coleta” não espera o replay de **outras** coletas da fila. Idempotência e `p_client_item_id` intactos.
 
-#### Passo 4.3 — Passo do wizard otimista
+#### Passo 4.3 — Passo do wizard otimista — **feito**
 
-**Faz:** `setStep(next)` imediato; `setDraftStep` em seguida; rollback + mensagem se o write local falhar.
+**Faz:** `setStep(next)` imediato; `router.replace` no mesmo tick; `setDraftStep` em seguida; rollback + mensagem se o write local falhar. Draft ausente é falha.
 
 **Aceite:** “Revisar coleta” muda de etapa no mesmo tap.
 
@@ -502,9 +520,9 @@ Não abrir PR só para isto, salvo o humano pedir.
 ```text
 Fase 1  loading + pending Link     → feita
 Fase 2  cache() auth + detalhe     → feita (2026-09-13; = architecture Fase E)
-Fase 3  drain + debounce           → o skeleton da Fase 1 deixa de “brigar” com a fila
-Fase 4  mutações                   → melhor com Fase 1 (hub já tem shell)
-Fase 5  wizard + actions diretas   → pode ir em paralelo à 4; Fase A de architecture-improvement
+Fase 3  drain + debounce           → feita (2026-09-13; mount lista só; reconectar/Retry/captura drenam)
+Fase 4  mutações                   → feita (2026-09-13; oficina transition; finalize só desta coleta; passo otimista)
+Fase 5  wizard + actions diretas   → próxima (5.2 = architecture Fase A, já feita)
 Fase 6  headers / select / font    → depois do tap já parecer instantâneo
 Fase 7  higiene                    → opportunista
 ```
@@ -519,11 +537,11 @@ Não juntar Fase 1 com Fase 5 no mesmo PR. Não juntar performance com Chat 5 de
 | :--- | :--- |
 | [`architecture-improvement.md`](./architecture-improvement.md) | Manutenção. Fases A e E **são** os passos 5.2 e 2.1 daqui — ambas **feitas**. |
 | [`nextjs-pwa.md`](../nextjs-pwa.md) | SW e fila. Este plano não muda a política “SW só de shell”. |
-| [`decisions/0006-offline-draft-queue.md`](../decisions/0006-offline-draft-queue.md) | Fila oficial. Fase 3 só muda **quando** drena, não o contrato. |
+| [`decisions/0006-offline-draft-queue.md`](../decisions/0006-offline-draft-queue.md) | Fila oficial. Fase 3: **quando** drena (não cada paint do layout). Fase 4.2: finalize online espera só **esta** coleta. Fase 4.3: URL do wizard no tap, IDB depois, com rollback. |
 | [`execution/phase-4-hardening-launch.md`](../execution/phase-4-hardening-launch.md) | PWA/offline já verdes. Performance não é um chat da Fase 4. |
 | [`http-api.md`](../http-api.md) | Contrato HTTP intacto. |
 
-Sem ADR novo: não há mudança de plataforma. Se a Fase 4.2 alterar a regra “só navega após sync completo”, registrar no ADR 0006 ou num ADR curto.
+Sem ADR novo de plataforma. A Fase 4.2 emendou [ADR 0006](../decisions/0006-offline-draft-queue.md) (finalize online aguarda só a fila desta coleta). A Fase 4.3 emendou o timing B12: `replace` antes do write local, com rollback.
 
 ---
 
@@ -548,5 +566,5 @@ Se um PR não move esses ponteiros, não é trabalho de performance — é ruíd
 - Next.js — [Authentication (DAL + `cache()`)](https://nextjs.org/docs/app/guides/authentication)
 - Next.js — [`useLinkStatus`](https://nextjs.org/docs/app/api-reference/functions/use-link-status)
 - Next.js — [Data Security / Data Access Layer](https://nextjs.org/docs/app/guides/data-security)
-- Local: revisão de `proxy.ts`, `(protected)/layout.tsx`, `require-admin.ts`, `next.config.ts`, `collection-capture-page.tsx`, `workshop-checkin-page.tsx`, `offline-pending-banner.tsx`, `queries.ts` (lifecycle e operations), `collections-list-page.tsx`
-- Data da revisão: 2026-08-29; chips da lista atualizados em 2026-09-07
+- Local: revisão de `proxy.ts`, `(protected)/layout.tsx`, `require-admin.ts`, `next.config.ts`, `collection-capture-page.tsx`, `workshop-checkin-page.tsx`, `use-workshop-hub-submit.ts`, `offline-pending-banner.tsx`, `queries.ts` (lifecycle e operations), `collections-list-page.tsx`
+- Data da revisão: 2026-08-29; chips da lista em 2026-09-07; Fase 4 em 2026-09-13

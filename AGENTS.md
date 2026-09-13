@@ -24,14 +24,14 @@ Antes de editar codigo, configuracao, migration ou infraestrutura:
 - Server Components sao o padrao. Adicionar `'use client'` somente na menor fronteira que realmente exige eventos, estado, efeitos ou APIs do navegador.
 - O aplicativo e App Router. Os arquivos em `app/` sao rotas finas; composicao e regra de negocio vivem em `src/` segundo FSD.
 - Acesso a dados e **somente DAL** (ADR 0009). Nao reabrir o catalogo de 3 abordagens do Next.js. Nao `fetch` da propria `/api` no servidor; nao query no JSX.
-- Nao criar `entities`, `features` ou `widgets` por antecipacao. Comecar em `src/_pages` e extrair somente apos reuso real e fronteira estavel.
+- Nao criar `entities`, `features` ou `widgets` por antecipacao. Comecar em `src/_pages` e extrair somente apos reuso real e fronteira estavel. A unica slice extraida e `entities/collection` ([ADR 0011](docs/decisions/0011-entities-collection.md)).
 
 ## Arquitetura aprovada
 
 - Next.js App Router + TypeScript em modo estrito + PWA.
 - Supabase: Auth, PostgreSQL, Storage privado e RLS.
-- FSD adaptado a Next: `app/` na raiz e `src/_app`, `src/_pages`, `src/shared`; demais camadas so quando justificadas.
-- **Data Access Layer unica (congelada, ADR 0009).** Leituras e mutacoes passam por modulos `server-only` (`src/_pages/<slice>/api/queries.ts` e `commands.ts` + `src/shared/auth`). Sessao e `getCollectionDetail` usam `cache()` do React no request (Fase E **feita**). `app/` e `_app/` importam so `index.ts` / `index.server.ts` das slices (Fase F **feita**; Steiger sidestep em `_pages`/`_app` + ESLint em `app/**`). Server Actions e Route Handlers so adaptam. Proibido: `fetch` da propria `/api` no servidor, `new Request("http://localhost/...")` interno, query no `page.tsx`/JSX, misturar as 3 abordagens do guia Next.js. Detalhe: `docs/design-patterns/architecture-improvement.md` (caixa no topo) e `docs/decisions/0009-data-access-layer.md`.
+- FSD adaptado a Next: `app/` na raiz e `src/_app`, `src/_pages`, `src/shared`, e `src/entities/collection` (ADR 0011). Demais camadas so quando justificadas.
+- **Data Access Layer unica (congelada, ADR 0009).** Leituras e mutacoes passam por modulos `server-only` (`src/_pages/<slice>/api/queries.ts` e `commands.ts` + `src/shared/auth`). Sessao e `getCollectionDetail` usam `cache()` do React no request (Fase E **feita**). `app/` e `_app/` importam so `index.ts` / `index.server.ts` das slices (Fase F **feita**; Steiger sidestep em `_pages`/`_app` + ESLint em `app/**`). `entities/collection` e a unica slice de entidade (Fase H **feita**, [ADR 0011](docs/decisions/0011-entities-collection.md)). O plano [`docs/design-patterns/architecture-improvement.md`](docs/design-patterns/architecture-improvement.md) esta **closed** — nao abrir Fase I. Server Actions e Route Handlers so adaptam. Proibido: `fetch` da propria `/api` no servidor, `new Request("http://localhost/...")` interno, query no `page.tsx`/JSX, misturar as 3 abordagens do guia Next.js. Detalhe da DAL: caixa no topo desse doc e `docs/decisions/0009-data-access-layer.md`.
 - DTOs minimos na fronteira com o cliente e comandos idempotentes para mutacoes criticas.
 
 Consulte `docs/architecture/fsd.md`, `docs/supabase.md`, `docs/nextjs-pwa.md` e `docs/security.md` antes de decidir detalhes.
@@ -41,6 +41,7 @@ Consulte `docs/architecture/fsd.md`, `docs/supabase.md`, `docs/nextjs-pwa.md` e 
 | Tarefa | Leitura adicional obrigatoria | Skill |
 | --- | --- | --- |
 | Tela, rota, Server/Client Component ou PWA | `docs/nextjs-pwa.md`, `docs/typescript.md`, `docs/architecture/fsd.md` | `$mjt-nextjs-pwa` |
+| Latencia de tap, mutacao de oficina ou fila offline | `docs/design-patterns/performance.md` (as-is) + ADR 0006 | `$mjt-nextjs-pwa` |
 | Tabela, migration, Auth, RLS, Storage ou geracao de tipos | `docs/supabase.md`, `docs/security.md`, `docs/architecture/data-and-rules.md` | `$mjt-supabase` |
 | Nova regra de negocio ou organizacao de codigo | `docs/coding-standards.md`, `docs/architecture/fsd.md`, `docs/decisions/0009-data-access-layer.md` | — |
 | Query, comando, Server Action ou Route Handler | ADR 0009 + caixa DAL em `docs/design-patterns/architecture-improvement.md` | `$mjt-nextjs-pwa` |

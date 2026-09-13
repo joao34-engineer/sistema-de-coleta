@@ -20,7 +20,7 @@ const steigerConfig = defineConfig([
       "./src/_pages/collection-operations/ui/collection-detail-hub-route.tsx",
     ],
     rules: {
-      // Hub/oficina compose lifecycle detail + ops queries. Fase H / entities/collection would remove this.
+      // Hub/oficina compose lifecycle DAL. Accepted page→page exception (ADR 0011); not a repository.
       "fsd/forbidden-imports": "off",
     },
   },

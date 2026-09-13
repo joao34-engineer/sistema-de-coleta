@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import type { CollectionsListFilter } from "@/shared/model/collection-status";
+import type { CollectionsListFilter } from "@/entities/collection";
 
 export function flattenSearchParams(
   raw: Readonly<Record<string, string | string[] | undefined>>,

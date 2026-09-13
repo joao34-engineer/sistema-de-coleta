@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { collectionStatusLabel, type CollectionStatus, isReadyForDelivery } from "@/shared/model/collection-status";
+import { collectionStatusLabel, type CollectionStatus, isReadyForDelivery } from "@/entities/collection";
 
 export const dashboardSummarySchema = z.object({
   inProgress: z.number().int().nonnegative(),

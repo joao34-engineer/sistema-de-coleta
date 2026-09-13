@@ -1,4 +1,4 @@
-import type { CollectionStatus } from "@/shared/model/collection-status";
+import type { CollectionStatus } from "@/entities/collection";
 
 export type OperationalSegment =
   | "checkin"

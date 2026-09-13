@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -10,6 +9,7 @@ import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { saveTechnicalBudgetAction } from "../api/actions";
+import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
 
 type BudgetItemInput = Readonly<{
   id: string;
@@ -48,7 +48,6 @@ function formatBrl(value: number): string {
 }
 
 export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, rowVersion }: Props) {
-  const router = useRouter();
   const [items, setItems] = useState<EditableBudgetItem[]>(() =>
     budgetItems.map((item) => ({
       itemId: item.collectionItemId,
@@ -60,9 +59,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
     })),
   );
   const [generalNotes, setGeneralNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { error: errorMsg, isPending, setError, submit } = useWorkshopHubSubmit(collectionId);
 
   const liveTotal = items.reduce((total, item) => total + parseBrl(item.laborCostBrl) + parseBrl(item.partsCostBrl), 0);
 
@@ -70,21 +67,18 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
     setItems((current) => current.map((item) => (item.itemId === itemId ? { ...item, ...patch } : item)));
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (items.some((item) => !(Number.parseInt(item.estimatedDays, 10) >= 1))) {
-      setErrorMsg("Informe um prazo de pelo menos 1 dia para todos os itens.");
+      setError("Informe um prazo de pelo menos 1 dia para todos os itens.");
       return;
     }
     if (items.some((item) => parseBrl(item.laborCostBrl) < 0 || parseBrl(item.partsCostBrl) < 0)) {
-      setErrorMsg("Os valores não podem ser negativos.");
+      setError("Os valores não podem ser negativos.");
       return;
     }
 
-    setIsSubmitting(true);
-    setErrorMsg(null);
-
-    try {
-      const result = await saveTechnicalBudgetAction(
+    submit(async () =>
+      saveTechnicalBudgetAction(
         collectionId,
         {
           collectionId,
@@ -100,21 +94,8 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
           generalNotes: generalNotes.trim() === "" ? null : generalNotes.trim(),
         },
         crypto.randomUUID(),
-      );
-
-      if (!result.ok) {
-        setErrorMsg(result.error);
-        setIsSubmitting(false);
-        return;
-      }
-
-      startTransition(() => {
-        router.push(`/coletas/${collectionId}` as Route);
-      });
-    } catch {
-      setErrorMsg("Não foi possível registrar o orçamento. Verifique a conexão e tente novamente.");
-      setIsSubmitting(false);
-    }
+      ),
+    );
   }
 
   if (items.length === 0) {
@@ -164,7 +145,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
                 placeholder="0,00"
                 value={item.laborCostBrl}
                 onChange={(event) => updateItem(item.itemId, { laborCostBrl: event.target.value })}
-                disabled={isSubmitting}
+                disabled={isPending}
               />
               <Input
                 label="Peças (R$)"
@@ -172,7 +153,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
                 placeholder="0,00"
                 value={item.partsCostBrl}
                 onChange={(event) => updateItem(item.itemId, { partsCostBrl: event.target.value })}
-                disabled={isSubmitting}
+                disabled={isPending}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -181,7 +162,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
                 inputMode="numeric"
                 value={item.estimatedDays}
                 onChange={(event) => updateItem(item.itemId, { estimatedDays: event.target.value })}
-                disabled={isSubmitting}
+                disabled={isPending}
               />
             </div>
             <Input
@@ -189,7 +170,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
               value={item.notes}
               maxLength={1000}
               onChange={(event) => updateItem(item.itemId, { notes: event.target.value })}
-              disabled={isSubmitting}
+              disabled={isPending}
             />
           </Card>
         ))}
@@ -205,13 +186,13 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
           value={generalNotes}
           maxLength={2000}
           onChange={(event) => setGeneralNotes(event.target.value)}
-          disabled={isSubmitting}
+          disabled={isPending}
         />
 
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting || isPending}
+          isLoading={isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

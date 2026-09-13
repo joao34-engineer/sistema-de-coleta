@@ -41,6 +41,9 @@
       "@/app/*": [
         "src/_app/*"
       ],
+      "@/entities/*": [
+        "src/entities/*"
+      ],
       "@/shared/*": [
         "src/shared/*"
       ]

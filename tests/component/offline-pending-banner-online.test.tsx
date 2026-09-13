@@ -4,6 +4,7 @@ import { OfflinePendingBanner } from "@/_app/offline/ui/offline-pending-banner";
 import { messageForRetryFailure, offlineCopy } from "@/_pages/collection-drafts/model/offline-copy";
 import type { OfflineDraftRecord, OfflineMutationRecord } from "@/_pages/collection-drafts/model/offline-records";
 
+const navigation = vi.hoisted(() => ({ pathname: "/dashboard" }));
 const drain = vi.hoisted(() => vi.fn(async () => ({ officialKept: false })));
 const refreshDrafts = vi.hoisted(() => vi.fn(async (): Promise<readonly OfflineDraftRecord[]> => []));
 const discardLocalDraft = vi.hoisted(() =>
@@ -40,6 +41,10 @@ const draft: OfflineDraftRecord = {
   updatedAt: "2026-08-27T12:00:00.000Z",
 };
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => navigation.pathname,
+}));
+
 vi.mock("@/_pages/collection-drafts/model/use-offline-queue-sync", () => ({
   useOfflineQueueSync: () => ({
     online: true,
@@ -69,6 +74,7 @@ vi.mock("@/_pages/collection-drafts/model/offline-capture", async (importOrigina
 
 describe("OfflinePendingBanner online drain", () => {
   beforeEach(() => {
+    navigation.pathname = "/dashboard";
     drain.mockClear();
     drain.mockResolvedValue({ officialKept: false });
     refreshDrafts.mockClear();
@@ -86,14 +92,14 @@ describe("OfflinePendingBanner online drain", () => {
     vi.restoreAllMocks();
   });
 
-  it("drains when the browser fires online", async () => {
+  it("lists on mount and drains when the browser fires online", async () => {
     render(
       <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
     );
     await waitFor(() => {
-      expect(drain).toHaveBeenCalled();
+      expect(refreshDrafts).toHaveBeenCalled();
     });
-    drain.mockClear();
+    expect(drain).not.toHaveBeenCalled();
     window.dispatchEvent(new Event("online"));
     await waitFor(() => {
       expect(drain).toHaveBeenCalled();
@@ -303,6 +309,18 @@ describe("OfflinePendingBanner online drain", () => {
     });
     expect(screen.getByText(offlineCopy.pendingTitle)).toBeInTheDocument();
     expect(drain).not.toHaveBeenCalled();
+  });
+
+  it("hides Continuar when the App Router pathname is already the resume step", async () => {
+    navigation.pathname = `/coletas/${draft.id}/itens`;
+    refreshDrafts.mockResolvedValue([draft]);
+    render(
+      <OfflinePendingBanner actor={{ userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/Oficina Norte/)).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("link", { name: offlineCopy.resume })).not.toBeInTheDocument();
   });
 
   it("shows sync complete when the queue clears after retry", async () => {

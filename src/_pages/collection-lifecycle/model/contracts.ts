@@ -1,26 +1,16 @@
 import { z } from "zod";
+import {
+  collectionsListFilters,
+  collectionStatuses,
+  type CollectionDetailDTO,
+} from "@/entities/collection";
 import { isValidCnpj, normalizeDigits } from "@/shared/lib/cnpj";
 import { collectionCursorSchema } from "./pagination";
 
 const cursorSchema = collectionCursorSchema;
 
 const uuidSchema = z.uuid();
-export const collectionStatusSchema = z.enum([
-  "draft",
-  "collected",
-  "canceled",
-  "in_workshop",
-  "in_budget",
-  "awaiting_approval",
-  "approved",
-  "in_service",
-  "ready",
-  "invoiced",
-  "partial_delivery",
-  "delivered",
-  "rejected",
-  "reopened",
-]);
+export const collectionStatusSchema = z.enum(collectionStatuses);
 const evidenceMimeTypeSchema = z.enum(["image/png", "image/jpeg", "image/webp"]);
 
 function normalizeCollectionEvidence(value: unknown): unknown {
@@ -45,16 +35,7 @@ function isValidCpf(value: string): boolean {
 
 const taxIdSchema = z.string().trim().transform(normalizeDigits).refine((value) => isValidCpf(value) || isValidCnpj(value), "Informe um CPF ou CNPJ válido.");
 
-export const collectionsListFilterSchema = z.enum([
-  "all",
-  "draft",
-  "collected",
-  "in_repair",
-  "ready",
-  "invoiced",
-  "partial_delivery",
-  "canceled",
-]);
+export const collectionsListFilterSchema = z.enum(collectionsListFilters);
 
 const statusesFromQuery = z.preprocess((value: unknown) => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -141,6 +122,11 @@ export const lifecycleCommandResultSchema = z.object({ collectionId: uuidSchema,
 export type CollectionListQuery = z.output<typeof collectionQuerySchema>;
 export type CollectionListResultDTO = z.output<typeof collectionListResultSchema>;
 export type CollectionListItemDTO = z.output<typeof collectionListItemSchema>;
-export type CollectionDetailDTO = z.output<typeof collectionDetailSchema>;
+export type { CollectionDetailDTO };
 export type CollectionEventDTO = z.output<typeof collectionEventSchema>;
 export type SignatureInput = z.output<typeof signatureInputSchema>;
+
+type ParsedCollectionDetail = z.output<typeof collectionDetailSchema>;
+type CollectionDetailParity = ParsedCollectionDetail extends CollectionDetailDTO ? true : false;
+const _collectionDetailParity: CollectionDetailParity = true;
+void _collectionDetailParity;

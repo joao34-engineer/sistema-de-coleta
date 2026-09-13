@@ -4,7 +4,7 @@ import { cache } from "react";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { attachActorId } from "@/shared/lib/server-logger";
 import { createLifecycleSupabaseClient } from "./lifecycle-supabase";
-import { statusesForListFilter } from "@/shared/model/collection-status";
+import { statusesForListFilter } from "@/entities/collection";
 import { collectionDetailSchema, collectionEventsResultSchema, collectionListResultSchema, type CollectionDetailDTO, type CollectionListQuery } from "../model/contracts";
 
 const lifecycleKeyAliases: Readonly<Record<string, string>> = {

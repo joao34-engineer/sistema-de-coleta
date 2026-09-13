@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 
+vi.mock("next/image", async () => {
+  const React = await import("react");
+  return {
+    default: ({ src, alt }: { src: string; alt: string }) =>
+      React.createElement("img", { src, alt }),
+  };
+});
+
 const verificationToken = "a".repeat(64);
 
 const testState = vi.hoisted(() => {
@@ -50,7 +58,12 @@ vi.mock("@/shared/lib/rate-limit.server", () => ({
 vi.mock("@/_pages/collection-documents/index.server", async () => {
   const React = await import("react");
   const { PublicVerificationPage } = await import("@/_pages/collection-documents/ui/public-verification-page");
+  const { PublicVerificationWaitPage } = await import("@/_pages/collection-documents/ui/public-verification-wait-page");
+  const { isValidVerificationToken } = await import("@/_pages/collection-documents/api/public/dto");
   return {
+    isValidVerificationToken,
+    PublicVerificationPage,
+    PublicVerificationWaitPage,
     PublicVerificationRoute: async () => React.createElement(PublicVerificationPage, { verification: testState.verification }),
   };
 });
@@ -85,7 +98,7 @@ describe("public verification HTML page", () => {
     const element = await PublicVerificationHtmlPage({ params: Promise.resolve({ verificationToken: "not-a-token" }) });
     const html = renderToString(element);
 
-    expect(html).toContain("Registro não encontrado");
+    expect(html).toContain("Guia não encontrada");
     expect(html).not.toContain("Aguarde antes de consultar novamente.");
     expect(html).not.toContain("Consulta temporariamente indisponível.");
     testState.rateMode = "ok";
@@ -96,7 +109,8 @@ describe("public verification HTML page", () => {
     const element = await PublicVerificationHtmlPage({ params: Promise.resolve({ verificationToken }) });
     const html = renderToString(element);
 
-    expect(html).toContain("Guia autêntica");
+    expect(html).toContain("Guia verificada");
+    expect(html).not.toContain("MJT Oficina");
     expect(html).not.toContain("Algo deu errado");
     expect(html).not.toContain(verificationToken);
   });

@@ -1,6 +1,6 @@
 import { CollectionsListPage, type CollectionListItemDTO } from "@/_pages/collection-lifecycle";
 import { collectionQuerySchema, flattenSearchParams, listCollections, statusesForListFilter } from "@/_pages/collection-lifecycle/index.server";
-import type { CollectionsListFilter } from "@/shared/model/collection-status";
+import type { CollectionsListFilter } from "@/entities/collection";
 
 export const dynamic = "force-dynamic";
 

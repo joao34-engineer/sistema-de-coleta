@@ -9,6 +9,7 @@ Deixar cada mudanca pequena, localizavel, testavel e segura para um sistema que 
 - Dar nome pelo dominio e intencao: `finalizeCollection`, `CollectionStatus`, `createPrivateDocumentUrl`; evitar `handleData`, `utils` ou `manager` genericos.
 - Uma funcao faz uma tarefa coerente; extrair apenas quando a separacao aumenta compreensao ou reuso real.
 - Componentes apresentam interface; regra de negocio e acesso a dados ficam em modulos apropriados, nao em JSX ou rota do Next.
+- Submit de oficina que navega ao hub vive no slice `collection-operations` (`useWorkshopHubSubmit`): pending no tap, action + `router.push` na mesma `startTransition`, sem `redirect()` na action.
 - Nao duplicar validacao de seguranca em lugares que possam divergir. Compartilhar schema/guard no dominio ou manter a fonte primaria no servidor conforme a fronteira.
 - Preferir retorno explicito ou uniao de resultado para erros esperados; excecoes sao para falhas inesperadas e devem preservar causa sem vazar detalhes ao usuario.
 - Manter efeitos externos em adaptadores claros: banco, Storage, e-mail, PDF e APIs. Funcoes puras de regra de negocio devem ser simples de testar.

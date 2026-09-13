@@ -14,14 +14,14 @@ O coletor deve concluir uma guia com uma mao, em poucos minutos e com pouca digi
 6. Anexar fotos, se houver avaria, identificacao ou exigencia do cliente.
 7. Revisar o resumo com o responsavel no local da coleta.
 8. Registrar o nome, o aceite e a assinatura do signatario; por padrao, usar o responsavel no local, permitindo informar outra pessoa quando necessario.
-9. Finalizar; o sistema sincroniza, atribui numero e abre Documentos. Enquanto o PDF nao existir, a tela mostra “Gerando o PDF da guia…”.
+9. Finalizar; com rede o aparelho sincroniza **esta** coleta, atribui numero e abre o hub/Documentos. Outras guias pendentes drenam em segundo plano. Enquanto o PDF nao existir, a tela mostra “Gerando o PDF da guia…”. Sem rede, o estado e “Salvo neste aparelho”.
 10. Depois do artefato: baixar, criar link seguro e compartilhar pelo WhatsApp (`/d/{token}`) ou encerrar.
 
 ## Entrada na oficina propria
 
 Depois da retirada, a mesma administradora leva os itens para o endereco fixo da oficina propria da MJT e registra a entrada no sistema. O nome e o endereco da oficina vem das configuracoes institucionais; nao precisam ser digitados em cada coleta. Se outra pessoa estiver presente para receber os itens, o sistema registra o nome e a assinatura dela; se a administradora apenas der entrada nos itens, registra a chegada como evento interno. Esta etapa nao e uma entrega para oficina terceirizada.
 
-A entrada exige a conferencia item a item (Conferido, Divergência ou **Não chegou**). A administradora confirma quantidade e condicao observadas nos itens que chegaram, registra o motivo quando um item não chegou, e assina o evento com nome e CNPJ. Item não recebido permanece na guia e não entra em orçamento, progresso nem entrega.
+A entrada exige a conferencia item a item (Conferido, Divergência ou **Não chegou**). A administradora confirma quantidade e condicao observadas nos itens que chegaram, registra o motivo quando um item não chegou, e assina o evento com nome e CNPJ. Item não recebido permanece na guia e não entra em orçamento, progresso nem entrega. Confirmar entrada, orçamento, progresso ou entrega sai da form assim que a action conclui; o hub pode ainda estar carregando (skeleton).
 
 ## Entrega ao cliente
 

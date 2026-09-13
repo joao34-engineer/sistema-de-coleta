@@ -35,7 +35,7 @@ O guia oficial de [Data Security](https://nextjs.org/docs/app/guides/data-securi
 ## Consequencias
 
 - Codigo novo segue o padrao de `collection-operations` (comando tipado → action/rota fina).
-- Gap da Fase 1 (customers/drafts HTTP-shaped) **fechado** em 2026-09-12 (Fase A). Sessao e `getCollectionDetail` usam `cache()` do React no request (Fase E, 2026-09-13). API publica das slices (`index.ts` / `index.server.ts`, Steiger sidestep, ESLint em `app/**`) **fechada** na Fase F (2026-09-13). Higiene pontual (tipos de action nas slices; verification/RPC já no codigo) **fechada** na Fase G (2026-09-13). Fases A–G **feitas**; H permanece planejada — ver [`architecture-improvement.md`](../design-patterns/architecture-improvement.md). A migracao nao autoriza rewrite espontaneo.
+- Gap da Fase 1 (customers/drafts HTTP-shaped) **fechado** em 2026-09-12 (Fase A). Sessao e `getCollectionDetail` usam `cache()` do React no request (Fase E, 2026-09-13). API publica das slices (`index.ts` / `index.server.ts`, Steiger sidestep, ESLint em `app/**`) **fechada** na Fase F (2026-09-13). Higiene pontual (tipos de action nas slices; verification/RPC já no codigo) **fechada** na Fase G (2026-09-13). `entities/collection` (status + `CollectionDetailDTO`; sem repository) **fechada** na Fase H (2026-09-13) — [ADR 0011](./0011-entities-collection.md). Fases A–H **feitas**. O plano [`architecture-improvement.md`](../design-patterns/architecture-improvement.md) esta **closed** (2026-09-13). A migracao nao autoriza rewrite espontaneo nem Fase I.
 - Auditores e agentes olham o DAL + RLS; a UI itera em cima de DTOs.
 
 ## Fontes

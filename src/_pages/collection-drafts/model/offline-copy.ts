@@ -22,6 +22,7 @@ export const offlineCopy = {
   discardAction: "Descartar",
   discardConfirm: "Descartar este rascunho salvo neste aparelho? A guia oficial não é apagada.",
   quotaExceeded: "Não há espaço neste aparelho para guardar o rascunho.",
+  stepPersistFailed: "Não foi possível guardar a etapa neste aparelho.",
   searchOffline: "A busca de cliente precisa de internet. Cadastre um novo cliente para continuar.",
   authExpired: "Entre de novo para sincronizar as coletas deste aparelho.",
   queuedFinalize: "Coleta salva neste aparelho. O número oficial será gerado ao sincronizar.",

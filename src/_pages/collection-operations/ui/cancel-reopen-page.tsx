@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -9,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { cancelOrReopenCollectionAction } from "../api/actions";
+import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
 
 type Props = Readonly<{
   collectionId: string;
@@ -35,24 +35,18 @@ const actionCopy = {
 } as const;
 
 export function CancelReopenPage({ collectionId, officialCode, allowedAction, rowVersion }: Props) {
-  const router = useRouter();
   const [reason, setReason] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { error: errorMsg, isPending, setError, submit } = useWorkshopHubSubmit(collectionId);
   const copy = actionCopy[allowedAction];
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (reason.trim().length < 5) {
-      setErrorMsg("Informe uma justificativa de no mínimo 5 caracteres.");
+      setError("Informe uma justificativa de no mínimo 5 caracteres.");
       return;
     }
 
-    setIsSubmitting(true);
-    setErrorMsg(null);
-
-    try {
-      const result = await cancelOrReopenCollectionAction(
+    submit(async () =>
+      cancelOrReopenCollectionAction(
         collectionId,
         {
           collectionId,
@@ -61,21 +55,8 @@ export function CancelReopenPage({ collectionId, officialCode, allowedAction, ro
           reason: reason.trim(),
         },
         crypto.randomUUID(),
-      );
-
-      if (!result.ok) {
-        setErrorMsg(result.error);
-        setIsSubmitting(false);
-        return;
-      }
-
-      startTransition(() => {
-        router.push(`/coletas/${collectionId}` as Route);
-      });
-    } catch {
-      setErrorMsg("Não foi possível concluir a operação. Verifique a conexão e tente novamente.");
-      setIsSubmitting(false);
-    }
+      ),
+    );
   }
 
   return (
@@ -112,7 +93,7 @@ export function CancelReopenPage({ collectionId, officialCode, allowedAction, ro
         <Button
           variant={copy.buttonVariant}
           size="md"
-          isLoading={isSubmitting || isPending}
+          isLoading={isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

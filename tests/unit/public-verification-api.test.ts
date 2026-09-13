@@ -34,6 +34,12 @@ const testState = vi.hoisted(() => {
 
 vi.mock("@/_pages/collection-documents/index.server", () => ({
   verifyCollectionDocument: async () => testState.verification,
+  DocumentRateLimitExceededError: testState.TestRateLimitExceededError,
+  DocumentRateLimitUnavailableError: testState.TestRateLimitUnavailableError,
+  enforcePublicVerificationRateLimit: async () => {
+    if (testState.rateUnavailable) throw new testState.TestRateLimitUnavailableError();
+    if (testState.rateFailure) throw new testState.TestRateLimitExceededError(42);
+  },
 }));
 
 vi.mock("@/_pages/collection-documents/api/delivery/index.server", () => ({

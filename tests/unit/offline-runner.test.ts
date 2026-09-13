@@ -5,6 +5,7 @@ import {
   createFallbackDrainLock,
   drainAllPending,
   drainCollectionQueue,
+  drainPendingForCollection,
   fallbackDrainLock,
 } from "@/_pages/collection-drafts/model/offline-runner";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
@@ -731,5 +732,53 @@ describe("offline drain runner", () => {
     const draft = await store.getDraft(collectionId, actor.userId);
     expect(draft?.lastError).toBe("collection_incomplete");
     expect(draft?.syncStatus).toBe("failed");
+  });
+
+  it("drainPendingForCollection does not replay another collection's queue", async () => {
+    const otherId = "77777777-7777-4777-8777-777777777777";
+    const otherKey = "88888888-8888-4888-8888-888888888888";
+    const store = createOfflineDraftStore(createMemoryOfflinePort(offlineDatabaseSchema));
+    await store.putDraft(
+      draftRecord({
+        serverCustomerId: customerId,
+        serverRowVersion: 6,
+        collectionLocation: "Oficina Norte",
+      }),
+    );
+    await store.putDraft(
+      draftRecord({
+        id: otherId,
+        serverCustomerId: customerId,
+        serverRowVersion: 6,
+        collectionLocation: "Outra oficina",
+        finalizeIdempotencyKey: otherKey,
+      }),
+    );
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "finalize",
+      payload: { idempotencyKey: finalizeKey },
+    });
+    await store.enqueue({
+      collectionId: otherId,
+      userId: actor.userId,
+      kind: "finalize",
+      payload: { idempotencyKey: otherKey },
+    });
+    const finalize = vi.fn(async (input: { collectionId: string }) => {
+      expect(input.collectionId).toBe(collectionId);
+      return { ok: true as const };
+    });
+    await drainPendingForCollection({
+      store,
+      commands: commands({ finalize }),
+      actor,
+      collectionId,
+      lock: createFallbackDrainLock(),
+    });
+    expect(finalize).toHaveBeenCalledOnce();
+    expect(await store.getDraft(collectionId, actor.userId)).toBeNull();
+    expect(await store.getDraft(otherId, actor.userId)).not.toBeNull();
   });
 });

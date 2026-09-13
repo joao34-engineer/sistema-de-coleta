@@ -25,7 +25,7 @@ describe("DraftReviewPage", () => {
         customerTaxId="52998224725"
         items={[item]}
         collectionLocation={null}
-        syncState="queued"
+        syncState="online"
         lastError={null}
         onPersistLocation={vi.fn(async () => undefined)}
         onBackToItems={vi.fn()}
@@ -50,7 +50,7 @@ describe("DraftReviewPage", () => {
         customerTaxId="52998224725"
         items={[item]}
         collectionLocation={null}
-        syncState="queued"
+        syncState="online"
         lastError={null}
         onPersistLocation={onPersistLocation}
         onBackToItems={vi.fn()}

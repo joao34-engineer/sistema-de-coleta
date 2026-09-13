@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { collectionQuerySchema } from "@/_pages/collection-lifecycle/model/contracts";
 import { buildCollectionsListHref, flattenSearchParams } from "@/_pages/collection-lifecycle/model/list-search";
-import { statusesForListFilter } from "@/shared/model/collection-status";
+import { statusesForListFilter } from "@/entities/collection";
 
 describe("collection list query", () => {
   it("accepts q, filter and comma-separated statuses", () => {

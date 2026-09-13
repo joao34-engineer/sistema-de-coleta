@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionStatuses, type CollectionStatus } from "@/shared/model/collection-status";
+import { collectionStatuses, type CollectionStatus } from "@/entities/collection";
 import { serviceProgressResultSchema, customerDeliveryResultSchema } from "@/_pages/collection-operations/model/contracts";
 import {
   alreadyDeliveredCollectionItemIds,

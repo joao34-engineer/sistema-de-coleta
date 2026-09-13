@@ -1,7 +1,7 @@
 "use client";
 
 import type { Route } from "next";
-import type { CollectionStatus } from "@/shared/model/collection-status";
+import type { CollectionStatus } from "@/entities/collection";
 import { buttonClassName } from "@/shared/ui/button";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import {

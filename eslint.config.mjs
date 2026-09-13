@@ -27,6 +27,7 @@ const eslintConfig = defineConfig([
                 "@/_pages/*/model/**",
                 "@/_app/*/model/**",
                 "@/_app/api-routes/*",
+                "@/entities/*/model/**",
               ],
               message: "Import the slice public API (index.ts / index.server.ts), not internals.",
             },

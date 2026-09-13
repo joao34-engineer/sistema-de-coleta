@@ -2,6 +2,7 @@ import "server-only";
 
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+import type { CollectionDetailDTO } from "@/entities/collection";
 import { getCollectionDetail } from "@/_pages/collection-lifecycle/index.server";
 import { getBudgetItems, getMissingCheckInItemIds, loadAlreadyDeliveredItemIds } from "./queries";
 import {
@@ -12,7 +13,7 @@ import {
 } from "../model/operational-actions";
 
 export type CollectionOperationLoad = Readonly<{
-  collection: NonNullable<Awaited<ReturnType<typeof getCollectionDetail>>>;
+  collection: CollectionDetailDTO;
   budgetItems: Awaited<ReturnType<typeof getBudgetItems>>;
   alreadyDeliveredItemIds: readonly string[];
   missingCheckInItemIds: readonly string[];

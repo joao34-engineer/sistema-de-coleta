@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -11,6 +10,7 @@ import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { workshopCheckInAction } from "../api/actions";
 import { workshopCheckInSchema } from "../model/contracts";
+import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
 import {
   arrivalCounterLabel,
   arrivalStatusFromSegment,
@@ -42,7 +42,6 @@ function dataUrlToFile(dataUrl: string): File {
 }
 
 export function WorkshopCheckInPage({ collectionId, officialCode, collectionItems, rowVersion }: Props) {
-  const router = useRouter();
   const [items, setItems] = useState<ItemRow[]>(() =>
     collectionItems.map((item) => ({
       itemId: item.id,
@@ -55,9 +54,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
   const [administratorName, setAdministratorName] = useState("");
   const [administratorTaxId, setAdministratorTaxId] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { error: errorMsg, isPending, setError, submit } = useWorkshopHubSubmit(collectionId);
 
   const itemSourceById = new Map<string, { description: string; quantity: number }>(
     collectionItems.map((item) => [item.id, { description: item.description, quantity: item.quantity }]),
@@ -77,12 +74,12 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
     updateItem(itemId, { segment, quantityObserved: String(source?.quantity ?? 1) });
   }
 
-  async function handleSubmit(): Promise<void> {
-    if (isSubmitting) return;
-    setErrorMsg(null);
+  function handleSubmit(): void {
+    if (isPending) return;
+    setError(null);
 
     if (!signatureDataUrl) {
-      setErrorMsg("Desenhe a assinatura antes de confirmar.");
+      setError("Desenhe a assinatura antes de confirmar.");
       return;
     }
 
@@ -118,29 +115,20 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
     });
 
     if (!parsed.success) {
-      setErrorMsg(parsed.error.issues[0]?.message ?? "Revise os dados informados e tente novamente.");
+      setError(parsed.error.issues[0]?.message ?? "Revise os dados informados e tente novamente.");
       return;
     }
 
-    setIsSubmitting(true);
-
-    const formData = new FormData();
-    formData.set("expectedVersion", String(rowVersion));
-    formData.set("administratorName", administratorName.trim());
-    formData.set("administratorTaxId", administratorTaxId.trim());
-    formData.set("items", JSON.stringify(parsed.data.items));
-    formData.set("signatureIntentId", signatureIntentId);
-    formData.set("signature", dataUrlToFile(signatureDataUrl));
-
-    const result = await workshopCheckInAction(collectionId, formData);
-    if (!result.ok) {
-      setErrorMsg(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    startTransition(() => {
-      router.push(`/coletas/${collectionId}` as Route);
+    const signaturePng = signatureDataUrl;
+    submit(async () => {
+      const formData = new FormData();
+      formData.set("expectedVersion", String(rowVersion));
+      formData.set("administratorName", administratorName.trim());
+      formData.set("administratorTaxId", administratorTaxId.trim());
+      formData.set("items", JSON.stringify(parsed.data.items));
+      formData.set("signatureIntentId", signatureIntentId);
+      formData.set("signature", dataUrlToFile(signaturePng));
+      return workshopCheckInAction(collectionId, formData);
     });
   }
 
@@ -187,7 +175,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
                 </div>
                 <ArrivalSegment
                   value={row.segment}
-                  disabled={isSubmitting}
+                  disabled={isPending}
                   onChange={(segment) => changeSegment(row.itemId, segment)}
                 />
                 {isMissing ? (
@@ -205,7 +193,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
                       value={row.divergenceNotes}
                       onChange={(event) => updateItem(row.itemId, { divergenceNotes: event.target.value })}
                       maxLength={1000}
-                      disabled={isSubmitting}
+                      disabled={isPending}
                       required
                       className="border-[var(--color-danger)] focus:border-[var(--color-danger)]"
                     />
@@ -220,7 +208,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
                       step={1}
                       value={row.quantityObserved}
                       onChange={(event) => updateItem(row.itemId, { quantityObserved: event.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isPending}
                       required
                     />
                     <Input
@@ -228,7 +216,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
                       placeholder="Ex.: sem avarias"
                       value={row.conditionObserved}
                       onChange={(event) => updateItem(row.itemId, { conditionObserved: event.target.value })}
-                      disabled={isSubmitting}
+                      disabled={isPending}
                       required
                     />
                     <Input
@@ -237,7 +225,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
                       value={row.divergenceNotes}
                       onChange={(event) => updateItem(row.itemId, { divergenceNotes: event.target.value })}
                       maxLength={1000}
-                      disabled={isSubmitting}
+                      disabled={isPending}
                     />
                   </>
                 )}
@@ -263,7 +251,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
             value={administratorName}
             onChange={(event) => setAdministratorName(event.target.value)}
             maxLength={160}
-            disabled={isSubmitting}
+            disabled={isPending}
             required
           />
           <Input
@@ -272,7 +260,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
             inputMode="numeric"
             value={administratorTaxId}
             onChange={(event) => setAdministratorTaxId(event.target.value)}
-            disabled={isSubmitting}
+            disabled={isPending}
             required
           />
         </section>
@@ -282,14 +270,14 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
           <SignaturePad
             onSave={(dataUrl) => setSignatureDataUrl(dataUrl)}
             onClear={() => setSignatureDataUrl(null)}
-            disabled={isSubmitting}
+            disabled={isPending}
           />
         </Card>
 
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting || isPending}
+          isLoading={isPending}
           className="h-[52px]"
           onClick={() => void handleSubmit()}
         >

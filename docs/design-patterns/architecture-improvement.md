@@ -2,12 +2,16 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | DAL **congelada** (`active` / `normative`). Fases A–G **feitas**. Fase H permanece `planned` — **não autoriza implementação** sem pedido explícito |
-| **Authority** | `normative` na decisão DAL (secção abaixo + [ADR 0009](../decisions/0009-data-access-layer.md)). Resto do plano = `informative` |
+| **Status** | **`closed`** 2026-09-13 — plano A–H **concluído**. **Não implementar** novas fases neste arquivo. Decisão DAL permanece normativa ([ADR 0009](../decisions/0009-data-access-layer.md)) |
+| **Authority** | `normative` só na caixa DAL abaixo + [ADR 0009](../decisions/0009-data-access-layer.md). Resto = `informative` / histórico |
 | **Owner** | product / sistema-coleta |
 | **Last verified** | 2026-09-13 |
 | **Escopo** | Somente `sistema-coleta/` |
-| **Pedido** | Análise explícita do humano; DAL congelada em 2026-08-29 para não reabrir as 3 abordagens do Next.js |
+| **Pedido** | Análise explícita do humano; DAL congelada em 2026-08-29. Fase H fechou o plano em 2026-09-13 ([ADR 0011](../decisions/0011-entities-collection.md)) |
+
+---
+
+> **Plano fechado.** Fases A–H estão entregues. Este arquivo **não autoriza** Fase I, rewrite, `features/`, `widgets/`, repository ou “melhoria arquitetural” espontânea. Código novo segue a DAL (ADR 0009), o FSD vigente e [ADR 0011](../decisions/0011-entities-collection.md). Relitigar só com pedido explícito do humano.
 
 ---
 
@@ -27,11 +31,11 @@ O [Data Security guide](https://nextjs.org/docs/app/guides/data-security) do Nex
 
 Registro formal: [ADR 0009](../decisions/0009-data-access-layer.md). Lei de preflight: [`AGENTS.md`](../../AGENTS.md).
 
-O resto deste documento (Fases A–G **feitas**; fase H) explica o *gap* do código atual em relação a essa lei. Fechar o gap restante só com pedido explícito e um eixo por PR.
+O resto deste documento é o **histórico** das Fases A–H (todas **feitas**). O plano incremental **termina na Fase H**. Reabrir arquitetura só com pedido explícito e um eixo por PR.
 
 ---
 
-Este documento descreve **como** tornar o app mais fácil de ler e manter. Não é um rewrite. Não cria camadas vazias. Não extrai microserviços.
+Este documento **foi** o plano de consistência (A–H). Não é um rewrite. Não cria camadas vazias. Não extrai microserviços. **Não** é fila de trabalho.
 
 Fontes normativas que o plano de migração **não** enfraquece: [`AGENTS.md`](../../AGENTS.md), [`coding-standards.md`](../coding-standards.md), [`architecture/fsd.md`](../architecture/fsd.md), [`architecture/data-and-rules.md`](../architecture/data-and-rules.md). A DAL congelada **reforça** essas fontes.
 
@@ -62,7 +66,7 @@ Estes pilares devem permanecer. “Melhorar arquitetura” **não** significa su
 
 1. **Monólito Next.js + Supabase.** Um framework, um deploy, um domínio. A [orientação da Vercel](https://vercel.com/kb/guide/structure-your-application) é começar pelo single-framework e só separar quando outra linguagem ou ciclo de release independente for necessário. Aqui não é.
 2. **Regras críticas no PostgreSQL (RPCs + RLS).** Número oficial, idempotência, `row_version`, transições de estado e auditoria já vivem no banco. O TypeScript **não** deve virar um segundo motor de regras.
-3. **FSD progressivo.** `_app` + `_pages` + `shared`. Sem `entities` / `features` / `widgets` vazios. Extração só com reuso real — já está em [`fsd.md`](../architecture/fsd.md) e na skill FSD v2.1 (“start simple, extract when needed”).
+3. **FSD progressivo.** `_app` + `_pages` + `shared` + `entities/collection` (ADR 0011). Sem `features` / `widgets` vazios. Extração só com reuso real — já está em [`fsd.md`](../architecture/fsd.md) e na skill FSD v2.1 (“start simple, extract when needed”).
 4. **Rotas finas na maior parte de `app/`.** Ex.: `app/api/health/route.ts` e `app/api/customers/route.ts` só delegam.
 5. **Fronteira server/client.** `server-only`, DTOs, `'use client'` nas folhas. TypeScript estrito.
 6. **Portas onde a complexidade pediu.** Offline (`OfflineKvPort`) e geração de PDF (`DocumentJobQueue`, `DocumentArtifactStorage`) já são DIP sem cerimônia.
@@ -89,7 +93,8 @@ sistema-coleta/
       collection-operations/    comandos, loaders, hub/oficina *Route (boa)
       collection-documents/     rendering + delivery + public (melhor isolamento)
       company-settings/
-    shared/                     auth, db, ui, config, lib (às vezes vaza domínio)
+    entities/collection/        status + CollectionDetailDTO (ADR 0011)
+    shared/                     auth, db, ui, config, lib (sem regra de coleta)
   supabase/                     source of truth das regras
 ```
 
@@ -169,17 +174,17 @@ Cópias quase literais entre slices:
 
 Não criar um “utils.ts” genérico. Extrair **só** esses primitivos nomeados, para `shared/lib/` (infra) ou um único módulo de erro de comando.
 
-### 4.5 `shared/` já carrega um pouco de domínio
+### 4.5 Domínio em `shared/` — **fechado na Fase H** (2026-09-13)
 
 [`fsd.md`](../architecture/fsd.md): *“`shared` não recebe regra de negócio de coleta”*.
 
-Hoje `src/shared/model/collection-status.ts` tem status canônicos, filtro da lista e labels. É o sintoma clássico de “ainda não extraímos `entities/collection`”. Aceitável como **ponte**. Não crescer mais domínio em `shared/`.
+Status, filtros e labels vivem em `entities/collection` ([ADR 0011](../decisions/0011-entities-collection.md)). Não recolocar domínio de coleta em `shared/`.
 
 Vazamento `action-result.ts` (tipos de login e company-settings em `shared/lib/`) **fechado na Fase G** (2026-09-13): cada slice guarda o estado em `model/action-state.ts`. `action-error.ts` / `action-failure-code.ts` permanecem infra compartilhada.
 
 ### 4.6 API pública das slices não é a porta real — **fechado na Fase F** (2026-09-13)
 
-`app/` e `_app/` importam `index.ts` / `index.server.ts`. Steiger `fsd/no-public-api-sidestep` está ligado em `_app` / `_pages` (`fsd/public-api` já estava). `shared/` permanece off. Steiger só varre `src/`; [`eslint.config.mjs`](../../eslint.config.mjs) restringe imports profundos em `app/**`. Hub/oficina → lifecycle DAL continua a exceção `fsd/forbidden-imports` até Fase H.
+`app/` e `_app/` importam `index.ts` / `index.server.ts`. Steiger `fsd/no-public-api-sidestep` está ligado em `_app` / `_pages` (`fsd/public-api` já estava). `shared/` permanece off. Steiger só varre `src/`; [`eslint.config.mjs`](../../eslint.config.mjs) restringe imports profundos em `app/**` (`@/_pages/*/api|ui|model/**` e `@/entities/*/model/**`). Hub/oficina → lifecycle DAL: exceção `fsd/forbidden-imports` aceita nos dois arquivos de composição ([ADR 0011](../decisions/0011-entities-collection.md)).
 
 ### 4.7 Reads sem memoização de request — **fechado na Fase E** (2026-09-13)
 
@@ -277,8 +282,8 @@ src/
     ui/                           # kit visual
     config/
 
+  entities/collection/            # ADR 0011: status + CollectionDetailDTO; sem repository
   # Só depois de reuso real e ADR:
-  # entities/collection/
   # features/document-generation/   (hoje já vive bem em collection-documents)
 ```
 
@@ -431,15 +436,15 @@ Antes de criar arquivo, usar esta árvore — a mesma do FSD, com o vocabulário
 5. **Dois slices usam o mesmo modelo e mudam em ritmos diferentes?** → só então `entities/` + ADR.
 6. **A mesma interação (ex.: finalizar) é disparada de dois fluxos de UI?** → só então `features/`.
 
-Hoje, o único candidato **real** a `entities/collection` é o conteúdo de `shared/model/collection-status.ts` + o DTO de detalhe compartilhado entre listagem, hub e oficina. Fazer isso **depois** de desacoplar HTTP da Fase 1. Não no mesmo PR.
+O modelo compartilhado de coleta (status + `CollectionDetailDTO`) vive em `entities/collection` ([ADR 0011](../decisions/0011-entities-collection.md)). Não extrair `features/` nem novas `entities/` sem reuso real e ADR.
 
 `collection-documents` já é um slice grande e bem fatiado (`rendering/`, `delivery/`, `public/`). Não promover a `features/` só para “parecer FSD”. Promover se outro slice precisar gerar PDF sem importar a página.
 
 ---
 
-## 10. Plano incremental (um eixo por PR)
+## 10. Plano incremental (A–H) — **concluído**
 
-Nenhuma fase abaixo é rewrite. Cada uma deve deixar `npm run check` verde e o contrato HTTP da Fase 1A intacto.
+Nenhuma fase abaixo é rewrite. Cada uma deixou o contrato HTTP da Fase 1A intacto. **Não há Fase I neste documento.**
 
 ### Fase A — Desacoplar HTTP da Fase 1 (maior ROI) — **feita** (2026-09-12)
 
@@ -469,7 +474,7 @@ Módulos: `src/shared/lib/file/sha256-hex.ts` (`digestSha256`, `digestLifecycleR
 
 **Não faz:** colocation nova dentro de `app/(protected)/...`.
 
-Entregue: `loadCollectionForOperation` em `collection-operations/api/load-operation.ts`; `budgetTotalOf` em `model/budget-seed.ts` (um `reduce` no hub UI); mappers em `model/hub-view.ts` e `model/workshop-views.ts`; `CollectionDetailHubRoute` + oito `*Route` de oficina exportados por `index.server.ts`. Páginas em `app/(protected)/coletas/[id]` e `oficina/*` só reexportam. `load-hub.ts` estava morto e foi apagado. Composição hub/oficina → lifecycle DAL: exceção pontual de `fsd/forbidden-imports` nos dois arquivos que chamam `getCollectionDetail` (até Fase H / `entities/collection`).
+Entregue: `loadCollectionForOperation` em `collection-operations/api/load-operation.ts`; `budgetTotalOf` em `model/budget-seed.ts` (um `reduce` no hub UI); mappers em `model/hub-view.ts` e `model/workshop-views.ts`; `CollectionDetailHubRoute` + oito `*Route` de oficina exportados por `index.server.ts`. Páginas em `app/(protected)/coletas/[id]` e `oficina/*` só reexportam. `load-hub.ts` estava morto e foi apagado. Composição hub/oficina → lifecycle DAL: exceção pontual de `fsd/forbidden-imports` nos dois arquivos que chamam `getCollectionDetail` (aceita no [ADR 0011](../decisions/0011-entities-collection.md); queries não vão para a entidade).
 
 ### Fase E — DAL de sessão com `cache()` — **feita** (2026-09-13)
 
@@ -485,7 +490,7 @@ Entregue: `cache()` em `src/shared/auth/require-admin.ts` (`requireAuthenticated
 
 **Não faz:** religar Steiger no mesmo PR que move 40 imports — ou o PR explode. Primeiro exportar, depois o linter.
 
-Entregue: barrels completos (`index.ts` client-safe; `index.server.ts` queries/comandos/HTTP `handle*` — sem actions). `_app/actions/draft-flow.actions.ts` chama `patchDraft` no DAL. Steiger: `fsd/no-public-api-sidestep` religado em `_app` / `_pages`; `shared/` off; exceção `forbidden-imports` nos dois arquivos ops→lifecycle até Fase H. ESLint `no-restricted-imports` em `app/**` (Steiger é `steiger src` e não vê `app/`). CSS `@/_app/styles/**` permanece permitido.
+Entregue: barrels completos (`index.ts` client-safe; `index.server.ts` queries/comandos/HTTP `handle*` — sem actions). `_app/actions/draft-flow.actions.ts` chama `patchDraft` no DAL. Steiger: `fsd/no-public-api-sidestep` religado em `_app` / `_pages`; `shared/` off; exceção `forbidden-imports` nos dois arquivos ops→lifecycle aceita no [ADR 0011](../decisions/0011-entities-collection.md). ESLint `no-restricted-imports` em `app/**` (Steiger é `steiger src` e não vê `app/`). CSS `@/_app/styles/**` permanece permitido.
 
 ### Fase G — Higiene pontual — **feita** (2026-09-13)
 
@@ -494,9 +499,15 @@ Entregue: barrels completos (`index.ts` client-safe; `index.server.ts` queries/c
 - Remover `supabase.rpc as any` em operations — **feita** L8 (2026-09-12). Client `OperationsFunctions` em `operations-supabase.ts`; `executePhase3Command` genérico. Zero `rpc as any` restante.
 - Factory de cookie-client Supabase — **não dispara**. Três clones autenticados aceitáveis: `supabase-server.ts`, `lifecycle-supabase.ts`, `operations-supabase.ts`. Verificação pública é `createServerClient` inline com `setAll` no-op (padrão anon, não 4º RPC-set). `proxy.ts` é middleware.
 
-### Fase H — `entities/collection` (opcional, ADR)
+### Fase H — `entities/collection` — **feita** (2026-09-13) — **fecha este plano**
 
-Só se o status + detalhe continuarem copiados ou se `shared/model/collection-status.ts` crescer. Uma slice `entities/collection` com `model` + `index.ts`. Sem repository.
+**Faz:** slice `src/entities/collection` (`model/status.ts`, `model/collection.ts`, `index.ts`). Status, filtros e labels saem de `shared/model`. `CollectionDetailDTO` é o tipo canônico. Zod de lifecycle deriva dos tuples (`z.enum(collectionStatuses)`). Sem repository.
+
+**Não faz:** mover `getCollectionDetail` / `getCollectionEvents`. Relocar composição hub/oficina. Unificar copy Pronto/Pronta.
+
+Entregue: [ADR 0011](../decisions/0011-entities-collection.md). Alias `@/entities/*`. ESLint recusa `@/entities/*/model/**` em `app/**`. Exceção Steiger dos dois loaders **permanece** (composição page→DAL, não modelo).
+
+**Fecha o documento:** A–H cobrem o gap que este plano se propôs a fechar. Trabalho novo = feature/bugfix nos contratos vigentes, não “Fase I”.
 
 ---
 
@@ -522,15 +533,16 @@ Testes: comando puro ou mapper em `tests/unit`; contrato HTTP em `tests/phase-1`
 
 | Documento | Papel depois deste plano |
 | :--- | :--- |
-| [`fsd.md`](../architecture/fsd.md) | Continua vigente; este plano só fecha o gap “app fino” e “public API” |
+| [`fsd.md`](../architecture/fsd.md) | Continua vigente; o plano fechou o gap “app fino”, “public API” e `entities/collection` |
 | [`coding-standards.md`](../coding-standards.md) | Continua vigente; Fase A é a aplicação da fronteira “rota ≠ negócio” |
 | [`http-api.md`](../http-api.md) | Contrato HTTP **não muda** de forma; só o miolo deixa de ser o use case |
 | [`nextjs-pwa.md`](../nextjs-pwa.md) | Fila offline continua falando com **as mesmas** actions, agora mais diretas |
 | [`typescript.md`](../typescript.md) | Sem `as` no parse de body de action após Fase A |
 | ADRs 0001–0008 | Sem mudança de decisão de plataforma |
 | [ADR 0009](../decisions/0009-data-access-layer.md) | **DAL congelada** — única abordagem de acesso a dados |
+| [ADR 0011](../decisions/0011-entities-collection.md) | **`entities/collection`** — status + DTO de detalhe; sem repository |
 
-Se a Fase H acontecer, registrar outro ADR. Fases A–G são cumprimento da DAL e do FSD já escritos, não escolha nova de stack.
+Fases A–H **cumpridas**. Este arquivo está **closed**. Nova `entities/` / `features/` só com pedido explícito e ADR.
 
 ---
 
@@ -546,8 +558,9 @@ O app ficou mais fácil de manter quando:
 6. Steiger volta a proteger a API pública das slices. — **F**
 7. Nenhuma RPC, RLS, número oficial ou contrato HTTP da Fase 1A foi “simplificado”.
 8. Auth e detalhe da coleta memoizados no mesmo request (`cache()`). — **E**
+9. Status e `CollectionDetailDTO` vivem em `entities/collection`; `shared/` não guarda domínio de coleta. — **H**
 
-Se um PR não move o ponteiro nesses itens, não é melhoria de arquitetura — é ruído.
+Critérios 1–9 atendidos. O plano **não** gera fase nova se um PR futuro não mover esses ponteiros — isso é ruído, não “Fase I”.
 
 ---
 

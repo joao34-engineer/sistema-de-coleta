@@ -32,11 +32,11 @@ Antes de qualquer implementacao, ler [AGENTS.md](../AGENTS.md), este indice e so
 | Contratos HTTP da Fase 1A | [http-api.md](http-api.md) |
 | Clean code e fronteiras | [coding-standards.md](coding-standards.md) |
 | Testes e validacao | [testing.md](testing.md) |
-| Decisoes de arquitetura | [decisions/](decisions/) — DAL unica: [0009](decisions/0009-data-access-layer.md) (**congelada**) |
-| Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — decisao DAL normativa; A–G feitas; H planned |
-| Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) — Fases 1–2 feitas (`cache()` auth = architecture E); 3–7 planned |
+| Decisoes de arquitetura | [decisions/](decisions/) — DAL unica: [0009](decisions/0009-data-access-layer.md) (**congelada**); `entities/collection`: [0011](decisions/0011-entities-collection.md) |
+| Organizacao do codigo / DAL | [design-patterns/architecture-improvement.md](design-patterns/architecture-improvement.md) — **CLOSED** 2026-09-13 (A–H). DAL normativa: [ADR 0009](decisions/0009-data-access-layer.md). `entities/collection`: [ADR 0011](decisions/0011-entities-collection.md). **Nao implementar** fases novas neste arquivo |
+| Plano de performance (informative) | [design-patterns/performance.md](design-patterns/performance.md) — Fases 1–4 feitas; 5–7 planned |
 | Inventario de bugs (scan 29/08/2026) | [design-patterns/system-scan-for-bugs.md](design-patterns/system-scan-for-bugs.md) — codigo Fases 0–5 fechado (5.6 entrega desde Pronto); 5.7/5.12/5.13 **adiados**; **nao reimplementar** linhas **feito** |
-| Telas Figma M01 / M06 (2026-09-07) | [design-system/figma-m01-m06-screens.md](design-system/figma-m01-m06-screens.md) — `/dashboard` e `/coletas` vs frames `229:1060` e `232:38` |
+| Telas Figma (página 15) | [design-system/figma-prototype-frames.md](design-system/figma-prototype-frames.md) — frames já no app (M01, M06, Q01–Q06) e o que falta. Histórico M01/M06: [figma-m01-m06-screens.md](design-system/figma-m01-m06-screens.md) |
 
 Os skills locais ficam em `.agents/skills/`: `$mjt-supabase` para banco/Auth/RLS/Storage e `$mjt-nextjs-pwa` para App Router/PWA. Leia o `SKILL.md` somente quando o gatilho da tarefa se aplicar.
 

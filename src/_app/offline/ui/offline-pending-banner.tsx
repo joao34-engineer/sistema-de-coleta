@@ -1,10 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   discardLocalDraft,
   ensureOfflineDraftStore,
-  isBrowserOnline,
   messageForQueueError,
   messageForRetryFailure,
   offlineCopy,
@@ -27,6 +27,7 @@ type DiscardIntent = Readonly<{
 }>;
 
 export function OfflinePendingBanner({ actor }: Props) {
+  const currentPathname = usePathname() ?? "";
   const [drafts, setDrafts] = useState<readonly OfflineDraftRecord[]>([]);
   const [busy, setBusy] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -51,12 +52,8 @@ export function OfflinePendingBanner({ actor }: Props) {
   useEffect(() => {
     void (async () => {
       await reloadPanel();
-      if (!isBrowserOnline()) {
-        return;
-      }
-      await drainAndReload();
     })();
-  }, [drainAndReload, reloadPanel]);
+  }, [reloadPanel]);
 
   useEffect(() => {
     const onOnline = () => {
@@ -102,8 +99,6 @@ export function OfflinePendingBanner({ actor }: Props) {
       </div>
     );
   }
-
-  const currentPathname = typeof window === "undefined" ? "" : window.location.pathname;
 
   return (
     <>

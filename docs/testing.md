@@ -18,6 +18,9 @@
 - Documento: PDF vem do snapshot e QR nao expoe dados sensiveis.
 - Arquivo: tipo/tamanho invalidos sao rejeitados; objeto privado nao abre sem permissao.
 - Offline: rascunho sobrevive a reabertura, sincroniza uma vez e nao emite numero antes do servidor.
+- Mutacao de oficina: pending no tap; sucesso navega ao hub; falha permanece na form (`tests/component/use-workshop-hub-submit.test.tsx`).
+- Finalize online: drain desta coleta nao replaya outra guia (`tests/unit/offline-runner.test.ts`); leftover desta coleta continua `online_failed`.
+- Passo do wizard: paint imediato e rollback se o IndexedDB falhar (`tests/component/collection-capture-step.test.tsx`, `tests/unit/set-draft-step.test.ts`).
 
 ## Comandos de CI
 

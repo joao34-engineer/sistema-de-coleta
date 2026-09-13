@@ -1,7 +1,7 @@
 import { listCollections } from "@/_pages/collection-lifecycle/index.server";
 import { DashboardRoute, getCollectionDashboardSummary, type DashboardActivityItem } from "@/_pages/dashboard/index.server";
 import { requireAuthenticatedAdministratorForPage } from "@/shared/auth/require-admin";
-import { inProgressStatuses } from "@/shared/model/collection-status";
+import { inProgressStatuses } from "@/entities/collection";
 
 export const dynamic = "force-dynamic";
 

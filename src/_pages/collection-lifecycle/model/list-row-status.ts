@@ -2,7 +2,7 @@ import {
   collectionStatusLabel,
   inRepairStatuses,
   type CollectionStatus,
-} from "@/shared/model/collection-status";
+} from "@/entities/collection";
 
 const inRepairStatusesSet: ReadonlySet<CollectionStatus> = new Set(inRepairStatuses);
 

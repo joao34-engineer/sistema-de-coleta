@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -11,6 +10,7 @@ import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { deliverToCustomerAction } from "../api/actions";
 import { customerDeliverySchema } from "../model/contracts";
+import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
 import {
   defaultDeliveredItemIds,
   isAlreadyDeliveredItem,
@@ -46,15 +46,12 @@ export function CustomerDeliveryPage({
   alreadyDeliveredItemIds,
   rowVersion,
 }: Props) {
-  const router = useRouter();
   const [deliveredItemIds, setDeliveredItemIds] = useState<string[]>(() => [...defaultDeliveredItemIds()]);
   const [receiverName, setReceiverName] = useState("");
   const [receiverTaxId, setReceiverTaxId] = useState("");
   const [notes, setNotes] = useState("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { error: errorMsg, isPending, setError, submit } = useWorkshopHubSubmit(collectionId);
 
   function toggleItem(itemId: string): void {
     const item = items.find((candidate) => candidate.id === itemId);
@@ -66,20 +63,20 @@ export function CustomerDeliveryPage({
     );
   }
 
-  async function handleSubmit(): Promise<void> {
-    if (isSubmitting) return;
-    setErrorMsg(null);
+  function handleSubmit(): void {
+    if (isPending) return;
+    setError(null);
 
     const selectedIds = deliveredItemIds.filter((itemId) => {
       const item = items.find((candidate) => candidate.id === itemId);
       return item !== undefined && isDeliverableItem(item.serviceOrderStatus, item.id, alreadyDeliveredItemIds);
     });
     if (selectedIds.length === 0) {
-      setErrorMsg("Selecione ao menos um item para entrega.");
+      setError("Selecione ao menos um item para entrega.");
       return;
     }
     if (!signatureDataUrl) {
-      setErrorMsg("Desenhe a assinatura antes de confirmar.");
+      setError("Desenhe a assinatura antes de confirmar.");
       return;
     }
 
@@ -95,32 +92,23 @@ export function CustomerDeliveryPage({
     });
 
     if (!parsed.success) {
-      setErrorMsg(parsed.error.issues[0]?.message ?? "Revise os dados informados e tente novamente.");
+      setError(parsed.error.issues[0]?.message ?? "Revise os dados informados e tente novamente.");
       return;
     }
 
-    setIsSubmitting(true);
-
-    const formData = new FormData();
-    formData.set("expectedVersion", String(rowVersion));
-    formData.set("receiverName", receiverName.trim());
-    formData.set("receiverTaxId", receiverTaxId.trim());
-    if (notes.trim() !== "") {
-      formData.set("notes", notes.trim());
-    }
-    formData.set("deliveredItemIds", JSON.stringify(selectedIds));
-    formData.set("signatureIntentId", signatureIntentId);
-    formData.set("signature", dataUrlToFile(signatureDataUrl));
-
-    const result = await deliverToCustomerAction(collectionId, formData);
-    if (!result.ok) {
-      setErrorMsg(result.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    startTransition(() => {
-      router.push(`/coletas/${collectionId}` as Route);
+    const signaturePng = signatureDataUrl;
+    submit(async () => {
+      const formData = new FormData();
+      formData.set("expectedVersion", String(rowVersion));
+      formData.set("receiverName", receiverName.trim());
+      formData.set("receiverTaxId", receiverTaxId.trim());
+      if (notes.trim() !== "") {
+        formData.set("notes", notes.trim());
+      }
+      formData.set("deliveredItemIds", JSON.stringify(selectedIds));
+      formData.set("signatureIntentId", signatureIntentId);
+      formData.set("signature", dataUrlToFile(signaturePng));
+      return deliverToCustomerAction(collectionId, formData);
     });
   }
 
@@ -186,7 +174,7 @@ export function CustomerDeliveryPage({
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggleItem(item.id)}
-                    disabled={isSubmitting || !deliverable}
+                    disabled={isPending || !deliverable}
                     aria-label={rowLabel}
                     className="h-5 w-5 accent-[var(--color-primary)]"
                   />
@@ -212,7 +200,7 @@ export function CustomerDeliveryPage({
             value={receiverName}
             onChange={(event) => setReceiverName(event.target.value)}
             maxLength={160}
-            disabled={isSubmitting}
+            disabled={isPending}
             required
           />
           <Input
@@ -221,7 +209,7 @@ export function CustomerDeliveryPage({
             inputMode="numeric"
             value={receiverTaxId}
             onChange={(event) => setReceiverTaxId(event.target.value)}
-            disabled={isSubmitting}
+            disabled={isPending}
             required
           />
           <Input
@@ -230,7 +218,7 @@ export function CustomerDeliveryPage({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             maxLength={1000}
-            disabled={isSubmitting}
+            disabled={isPending}
           />
         </section>
 
@@ -241,11 +229,11 @@ export function CustomerDeliveryPage({
           <SignaturePad
             onSave={(dataUrl) => setSignatureDataUrl(dataUrl)}
             onClear={() => setSignatureDataUrl(null)}
-            disabled={isSubmitting}
+            disabled={isPending}
           />
         </Card>
 
-        <Button variant="primary" size="md" isLoading={isSubmitting || isPending} onClick={() => void handleSubmit()}>
+        <Button variant="primary" size="md" isLoading={isPending} onClick={() => void handleSubmit()}>
           Confirmar entrega
         </Button>
       </div>

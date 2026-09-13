@@ -33,7 +33,9 @@ O sistema e online-first com continuidade de campo. O manifest define nome, icon
 
 Rascunhos de captura vivem em IndexedDB (`mjt-offline-v1`), com escopo por `userId`. A UI grava local primeiro e, se houver rede, drena a fila serial reusando as server actions existentes. O service worker nao participa do replay e continua sem cachear HTML, API ou PDF (ADR 0005 e ADR 0006).
 
-- Wizard de captura: `/coletas/nova` é só a entrada de uma coleta **nova**. Após criar o rascunho, as etapas ficam em `/coletas/[id]/itens|revisao|assinatura` (URL sincronizada via `router.replace`; `initialStep` da rota vence `currentStep` no IndexedDB). Alias `?rascunho=` redireciona para `/itens`.
+- Wizard de captura: `/coletas/nova` é só a entrada de uma coleta **nova**. Após criar o rascunho, as etapas ficam em `/coletas/[id]/itens|revisao|assinatura`. O tap muda o passo e a URL no mesmo tick (`setStep` + `router.replace`); `setDraftStep` grava o IndexedDB depois e faz rollback se falhar. Em `reload()`, `initialStep` da rota vence `currentStep` no IndexedDB. Alias `?rascunho=` redireciona para `/itens`.
+- Finalize online aguarda o drain **desta** coleta (`runAuthenticatedDrainCollection`) antes de abrir o hub ou “Salvo neste aparelho”; as outras guias da fila drenam sem bloquear o tap (`void drainAllPending`, ADR 0006).
+- Oficina: `useWorkshopHubSubmit` envolve a Server Action e o `router.push` do hub na mesma `startTransition`. Pending no primeiro tap; erro permanece na form. Sem `redirect()` nas actions. Login/configurações continuam em `useActionState` (forms com canvas/JSON).
 - Estados visiveis: online, salvo localmente, sincronizando, sincronizado, falhou.
 - Painel de pendentes no host PWA lista rascunhos locais, permite retry e retoma em `/coletas/{id}/itens`. Descarte local nao apaga guia oficial no servidor.
 - `PwaShell.canReload` le um snapshot em memoria (pendente ou drain em voo → nao recarregar). O aviso de update menciona trabalho pendente antes da confirmacao.

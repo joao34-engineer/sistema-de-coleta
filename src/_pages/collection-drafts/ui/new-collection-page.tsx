@@ -16,6 +16,7 @@ import { createLocalDraft, normalizeTaxId } from "../model/offline-capture";
 import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
 import { offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
+import { useCustomerSearch } from "../model/use-customer-search";
 import { SyncStatusChip } from "./sync-status-chip";
 
 type Props = Readonly<{
@@ -31,8 +32,6 @@ const BRAZILIAN_STATE_CODES = [
 export function NewCollectionPage({ actor, onCreated }: Props) {
   const [tab, setTab] = useState<"new" | "search">("new");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<readonly CustomerView[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerView | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [taxId, setTaxId] = useState("");
@@ -44,24 +43,11 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const online = useOnlineStatus();
-
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (!online) {
-      setSearchResults([]);
-      return;
-    }
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    const res = await searchCustomersAction(query.trim());
-    setIsSearching(false);
-    if (res.ok) {
-      setSearchResults(res.customers);
-    }
-  };
+  const { results: searchResults, isSearching } = useCustomerSearch({
+    query: searchQuery,
+    online,
+    search: searchCustomersAction,
+  });
 
   const handleSelectCustomer = (cust: CustomerView) => {
     setSelectedCustomer(cust);
@@ -207,7 +193,7 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
               label="Buscar cliente"
               placeholder="Digite o nome ou CPF/CNPJ..."
               value={searchQuery}
-              onChange={(event) => void handleSearch(event.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               disabled={!online}
             />
             {isSearching ? <p className="py-2 text-center text-[12px] text-[var(--color-text-muted)]">Buscando...</p> : null}

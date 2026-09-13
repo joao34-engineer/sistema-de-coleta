@@ -18,9 +18,10 @@ Ler primeiro `../../../docs/nextjs-pwa.md`, `../../../docs/typescript.md`, `../.
 3. Manter Server Component por padrao; isolar `'use client'` em folha interativa e passar somente DTO serializavel.
 4. Validar toda entrada no servidor, autenticar e autorizar cada mutacao. Tratar Action e Route Handler como endpoint publico.
 5. Definir cache explicitamente; dados autenticados, QR privado, PDF e erros nao entram em cache publico.
-6. Para PWA, preservar rascunho local e fila de sincronizacao, mas reservar numero oficial, PDF e envio para o servidor apos confirmacao.
-7. Testar interface, permissao, falha de rede, retry idempotente e atualizacao do service worker quando aplicavel.
-8. Atualizar documento/ADR se mudar rota, cache, offline ou fronteira server/client.
+6. Para PWA, preservar rascunho local e fila de sincronizacao, mas reservar numero oficial, PDF e envio para o servidor apos confirmacao. Finalize online espera o drain **desta** coleta; as outras guias drenam sem `await`.
+7. Mutacao de oficina que volta ao hub usa `useWorkshopHubSubmit` (action + `router.push` na mesma `startTransition`). Passo do wizard pinta e `replace` no tap; `setDraftStep` depois, com rollback.
+8. Testar interface, permissao, falha de rede, retry idempotente e atualizacao do service worker quando aplicavel.
+9. Atualizar documento/ADR se mudar rota, cache, offline ou fronteira server/client.
 
 ## Regras essenciais
 

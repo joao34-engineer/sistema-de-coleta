@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
@@ -9,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { registerInvoiceReferenceAction } from "../api/actions";
+import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
 
 type ExistingInvoice = Readonly<{
   number: string;
@@ -36,7 +36,6 @@ function toIsoLocal(value: string): string {
 }
 
 export function InvoiceReferencePage({ collectionId, officialCode, existingInvoice, rowVersion }: Props) {
-  const router = useRouter();
   const [number, setNumber] = useState(existingInvoice?.number ?? "");
   const [series, setSeries] = useState(existingInvoice?.series ?? "");
   const [issuedAt, setIssuedAt] = useState(() => {
@@ -48,11 +47,9 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
   });
   const [totalBrl, setTotalBrl] = useState(existingInvoice ? String(existingInvoice.totalBrl).replace(".", ",") : "");
   const [notes, setNotes] = useState(existingInvoice?.notes ?? "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { error: errorMsg, isPending, setError, submit } = useWorkshopHubSubmit(collectionId);
 
-  async function handleSubmit() {
+  function handleSubmit() {
     const parsedTotal = Number(totalBrl.replace(/\./g, "").replace(",", "."));
     const issues: string[] = [];
     if (!number.trim()) issues.push("Informe o número da NF-e.");
@@ -61,15 +58,12 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
     if (!Number.isFinite(parsedTotal) || parsedTotal <= 0) issues.push("Informe um valor total maior que zero.");
     if (notes.length > 1000) issues.push("As observações devem ter no máximo 1000 caracteres.");
     if (issues.length > 0) {
-      setErrorMsg(issues.join(" "));
+      setError(issues.join(" "));
       return;
     }
 
-    setIsSubmitting(true);
-    setErrorMsg(null);
-
-    try {
-      const result = await registerInvoiceReferenceAction(
+    submit(async () =>
+      registerInvoiceReferenceAction(
         collectionId,
         {
           collectionId,
@@ -81,21 +75,8 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
           notes: notes.trim() === "" ? undefined : notes.trim(),
         },
         crypto.randomUUID(),
-      );
-
-      if (!result.ok) {
-        setErrorMsg(result.error);
-        setIsSubmitting(false);
-        return;
-      }
-
-      startTransition(() => {
-        router.push(`/coletas/${collectionId}` as Route);
-      });
-    } catch {
-      setErrorMsg("Não foi possível registrar a NF-e. Verifique a conexão e tente novamente.");
-      setIsSubmitting(false);
-    }
+      ),
+    );
   }
 
   return (
@@ -176,7 +157,7 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
         <Button
           variant="primary"
           size="md"
-          isLoading={isSubmitting || isPending}
+          isLoading={isPending}
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >

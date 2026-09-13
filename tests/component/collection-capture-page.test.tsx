@@ -7,11 +7,12 @@ import { offlineDatabaseSchema, type OfflineDraftRecord, type OfflineItemRecord 
 import { ensureOfflineDraftStore, resetOfflinePortForTests, setOfflinePortForTests } from "@/_pages/collection-drafts/model/offline-port";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 
-const { fetchDraftWithItemsAction, collectionExistsAction, getCustomerAction, runAuthenticatedDrain } = vi.hoisted(() => ({
+const { fetchDraftWithItemsAction, collectionExistsAction, getCustomerAction, runAuthenticatedDrain, runAuthenticatedDrainCollection } = vi.hoisted(() => ({
   fetchDraftWithItemsAction: vi.fn(),
   collectionExistsAction: vi.fn(async () => false),
   getCustomerAction: vi.fn(),
   runAuthenticatedDrain: vi.fn(async () => ({ officialKept: false })),
+  runAuthenticatedDrainCollection: vi.fn(async () => ({ status: "completed" as const, officialKept: false })),
 }));
 
 const actor = { userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 };
@@ -106,6 +107,7 @@ vi.mock("@/app/actions/draft-flow.actions", () => ({
 
 vi.mock("@/_pages/collection-drafts/model/run-authenticated-drain", () => ({
   runAuthenticatedDrain,
+  runAuthenticatedDrainCollection,
 }));
 
 vi.mock("@/_pages/collection-drafts/model/offline-capture", async (importOriginal) => {
@@ -130,6 +132,8 @@ describe("CollectionCapturePage leftovers", () => {
     getCustomerAction.mockReset();
     runAuthenticatedDrain.mockReset();
     runAuthenticatedDrain.mockResolvedValue({ officialKept: false });
+    runAuthenticatedDrainCollection.mockReset();
+    runAuthenticatedDrainCollection.mockResolvedValue({ status: "completed", officialKept: false });
     setOfflinePortForTests(createMemoryOfflinePort(offlineDatabaseSchema));
   });
 
@@ -215,6 +219,8 @@ describe("CollectionCapturePage revisão", () => {
     getCustomerAction.mockReset();
     runAuthenticatedDrain.mockReset();
     runAuthenticatedDrain.mockResolvedValue({ officialKept: false });
+    runAuthenticatedDrainCollection.mockReset();
+    runAuthenticatedDrainCollection.mockResolvedValue({ status: "completed", officialKept: false });
     setOfflinePortForTests(createMemoryOfflinePort(offlineDatabaseSchema));
   });
 

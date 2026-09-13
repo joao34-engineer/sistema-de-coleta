@@ -396,7 +396,7 @@ Não misturar com schema (0) nem com a fatia 1 no mesmo PR.
 - Gates remotos Fase 1A (RLS cruzada, concorrência, Storage, cleanup) — adiados.
 - Recuperação de senha / SMTP de convite — adiados na Fase 0.
 - E-mail Resend (`DOCUMENT_EMAIL_SEND_ENABLED`) e recertificação WhatsApp/`navigator.share` — decisão de produto, não eixo deste scan.
-- [`architecture-improvement.md`](./architecture-improvement.md) — organização de código (A–H), não correção funcional. Não tratar como bug do scan.
+- [`architecture-improvement.md`](./architecture-improvement.md) — organização de código (**closed** A–H), não correção funcional. Não tratar como bug do scan.
 - Cheiros residuais **sem eixo até pedido explícito**:
   - UI de entrega lista todos os itens da coleta (já entregues desabilitados); não restringe à progressão **Pronto** do orçamento. A RPC também não exige item `pronto`. **PR 3 feito 07/09/2026 — migration `20260907000000` aplicada:** conjunto deliverable inclui `in_service`; `item_not_ready` (422); OS segue o restante.
   - `register_invoice_reference` aceita `ready | partial_delivery` (L2, `20260907030000` **no remoto**). NF-e depois de `delivered` continua eixo separado.

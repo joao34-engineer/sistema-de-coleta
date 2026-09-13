@@ -1,6 +1,5 @@
 import { Badge } from "@/shared/ui/badge";
-import type { CollectionStatus } from "@/shared/model/collection-status";
-import { collectionStatusLabel } from "@/shared/model/collection-status";
+import { collectionStatusLabel, type CollectionStatus } from "@/entities/collection";
 
 type Props = Readonly<{ status: CollectionStatus; className?: string }>;
 
