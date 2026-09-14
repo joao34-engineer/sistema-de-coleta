@@ -84,6 +84,8 @@ describe("CollectionsListPage filter chips", () => {
     expect(screen.getByRole("link", { name: "Entrega parcial" })).toHaveAttribute("href", "/coletas?filter=partial_delivery");
     expect(screen.getByRole("link", { name: "Cancelada" })).toHaveAttribute("href", "/coletas?filter=canceled");
     expect(screen.queryByRole("button", { name: "Coletada" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Coletas" })).toBeInTheDocument();
+    expect(screen.getByText("Buscar, filtrar e abrir")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Logo MJT Tornearia" })).toHaveAttribute(
       "src",
       "/logo/Logo_-_MJT-removebg-preview.png",
@@ -121,5 +123,25 @@ describe("CollectionsListPage filter chips", () => {
     expect(screen.queryByRole("link", { name: "Coletada" })).toBeNull();
     expect(screen.getByRole("link", { name: "Todos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Todos" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("renders Rascunhos titles without showing status chips", () => {
+    render(
+      <CollectionsListPage
+        initialItems={[]}
+        showStatusFilters={false}
+        status="draft"
+        title="Rascunhos"
+        subtitle="Salvos neste aparelho"
+        emptyTitle="Nenhum rascunho encontrado"
+        emptySubtitle="Não há coletas em rascunho. Crie uma nova coleta para começar."
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Rascunhos" })).toBeInTheDocument();
+    expect(screen.getByText("Salvos neste aparelho")).toBeInTheDocument();
+    expect(screen.getByText("Nenhum rascunho encontrado")).toBeInTheDocument();
+    expect(screen.queryByText("Todos")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Coletas" })).toBeNull();
   });
 });

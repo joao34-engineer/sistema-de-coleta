@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Button } from "@/shared/ui/button";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { pwaCopy } from "../model/pwa-copy";
 import {
   iosInstallHintKind,
@@ -11,7 +11,7 @@ import {
   wasInstallPromptDismissed,
   type BeforeInstallPromptEvent,
 } from "../model/install-prompt";
-import { PwaBanner, PwaBannerHost } from "./pwa-banner";
+import { PwaBannerHost } from "./pwa-banner";
 
 function subscribeNever(): () => void {
   return () => {};
@@ -80,24 +80,17 @@ export function InstallPrompt() {
   if (iosInstallDescription !== null && deferredPrompt === null) {
     return (
       <PwaBannerHost placement="top">
-        <PwaBanner
+        <MobileStatePanel
+          type="empty"
+          icon="+"
           role="status"
           labelledBy="pwa-install-title"
           describedBy="pwa-install-description"
-          emphasized
-        >
-          <h2 id="pwa-install-title" className="text-[16px] font-semibold text-[var(--color-text)]">
-            {pwaCopy.installTitle}
-          </h2>
-          <p id="pwa-install-description" className="mt-1 text-[14px] text-[var(--color-muted)]">
-            {iosInstallDescription}
-          </p>
-          <div className="mt-4">
-            <Button type="button" variant="secondary" onClick={dismiss}>
-              {pwaCopy.iosInstallDismiss}
-            </Button>
-          </div>
-        </PwaBanner>
+          title={pwaCopy.installTitle}
+          subtitle={iosInstallDescription}
+          actionText={pwaCopy.iosInstallDismiss}
+          onAction={dismiss}
+        />
       </PwaBannerHost>
     );
   }
@@ -107,21 +100,20 @@ export function InstallPrompt() {
   }
 
   return (
-    <PwaBanner role="dialog" labelledBy="pwa-install-title" describedBy="pwa-install-description">
-      <h2 id="pwa-install-title" className="text-[16px] font-semibold text-[var(--color-text)]">
-        {pwaCopy.installTitle}
-      </h2>
-      <p id="pwa-install-description" className="mt-1 text-[14px] text-[var(--color-muted)]">
-        {pwaCopy.installDescription}
-      </p>
-      <div className="mt-4 flex flex-col gap-2">
-        <Button type="button" variant="primary" onClick={() => void install()}>
-          {pwaCopy.installConfirm}
-        </Button>
-        <Button type="button" variant="secondary" onClick={dismiss}>
-          {pwaCopy.installDismiss}
-        </Button>
-      </div>
-    </PwaBanner>
+    <MobileStatePanel
+      type="empty"
+      icon="+"
+      role="dialog"
+      labelledBy="pwa-install-title"
+      describedBy="pwa-install-description"
+      title={pwaCopy.installTitle}
+      subtitle={pwaCopy.installDescription}
+      actionText={pwaCopy.installConfirm}
+      onAction={() => {
+        void install();
+      }}
+      secondaryActionText={pwaCopy.installDismiss}
+      onSecondaryAction={dismiss}
+    />
   );
 }

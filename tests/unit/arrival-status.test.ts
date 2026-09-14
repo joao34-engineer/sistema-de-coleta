@@ -14,8 +14,8 @@ describe("arrival-status helpers", () => {
   });
 
   it("builds the O02b counter copy", () => {
-    expect(arrivalCounterLabel(2, 1)).toBe("Recebidos 1 de 2 · 1 não chegou");
-    expect(arrivalCounterLabel(2, 0)).toBe("Recebidos 2 de 2 · 0 não chegou");
+    expect(arrivalCounterLabel(2, 1)).toBe("2 itens · 1 não chegou");
+    expect(arrivalCounterLabel(2, 0)).toBe("2 itens");
   });
 
   it("forces missing payload to qty 0 and the canonical condition", () => {

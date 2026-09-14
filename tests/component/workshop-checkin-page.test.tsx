@@ -49,7 +49,7 @@ describe("WorkshopCheckInPage (PR 5 O02b)", () => {
     expect(screen.getAllByRole("radio", { name: "Conferido" })).toHaveLength(2);
     expect(screen.getAllByRole("radio", { name: "Divergência" })).toHaveLength(2);
     expect(screen.getAllByRole("radio", { name: "Não chegou" })).toHaveLength(2);
-    expect(screen.getByText("Recebidos 2 de 2 · 0 não chegou")).toBeInTheDocument();
+    expect(screen.getByText(/Guia MJT-2026-000099 · 2 itens/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Conferir item a item" })).toBeInTheDocument();
   });
 
@@ -62,7 +62,7 @@ describe("WorkshopCheckInPage (PR 5 O02b)", () => {
       throw new Error("expected Não chegou radio for the second item");
     }
     fireEvent.click(ferroMissing);
-    expect(screen.getByText("Recebidos 1 de 2 · 1 não chegou")).toBeInTheDocument();
+    expect(screen.getByText(/2 itens · 1 não chegou/)).toBeInTheDocument();
     expect(screen.getByText("Este item permanece na guia; não entra em orçamento, progresso nem entrega.")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nome do administrador *"), {
       target: { value: "Maria Souza" },

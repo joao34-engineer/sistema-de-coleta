@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { collectionExistsAction } from "../api/actions";
 import { canFinalizeCollection } from "../model/can-finalize-collection";
@@ -33,6 +34,7 @@ type Props = Readonly<{
   actor: CaptureActor;
   draftId: string;
   draft: OfflineDraftRecord | null;
+  itemCount: number;
   status: SyncUxState;
   errorMsg: string | null;
   onAwaitHydrate: () => Promise<void>;
@@ -45,6 +47,7 @@ export function CaptureSignatureStep({
   actor,
   draftId,
   draft,
+  itemCount,
   status,
   errorMsg,
   onAwaitHydrate,
@@ -61,18 +64,34 @@ export function CaptureSignatureStep({
   const signerName = signerNameDraft ?? draft?.responsibleName ?? "";
   const signerTaxId = signerTaxIdDraft ?? draft?.responsibleTaxId ?? "";
 
+  const itemWord = itemCount === 1 ? "item" : "itens";
+
+  if (isFinalizing) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+        <MobilePageHeader title="Assinatura do signatário" subtitle="Emissão da guia" backHref={captureStepHref(draftId, "revisao") as Route} />
+        <MobileStatePanel type="loading" title={offlineCopy.syncing} subtitle={offlineCopy.syncingBody} />
+        <MobileBottomNav />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-      <MobilePageHeader title="Assinatura do cliente" subtitle="Emissão da guia" backHref={captureStepHref(draftId, "revisao") as Route} />
+      <MobilePageHeader title="Assinatura do signatário" subtitle="Emissão da guia" backHref={captureStepHref(draftId, "revisao") as Route} />
       <div className="flex flex-col gap-5 px-6 pt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">Confirme a entrega dos itens descritos.</h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-[24px] font-semibold leading-8 tracking-tight text-[var(--color-text-primary)]">Confirme a entrega dos itens descritos.</h2>
           <SyncStatusChip state={status} lastError={draft?.lastError ?? null} />
         </div>
+        <p className="text-[13px] font-medium leading-5 text-[var(--color-primary-strong)]">
+          Coleta · {itemCount} {itemWord}
+        </p>
         {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">{displayError}</div> : null}
-        <div className="flex flex-col gap-2 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-          <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">Assine no espaço abaixo</h3>
+        <div className="flex w-full max-w-[342px] flex-col gap-2 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-5 shadow-xs">
+          <h3 className="text-[14px] font-semibold leading-5 text-[var(--color-text-primary)]">Assine no espaço abaixo</h3>
           <SignaturePad disabled={isFinalizing} onClear={() => setSignatureDataUrl(null)} onSave={(url) => setSignatureDataUrl(url)} />
+          <p className="text-center text-[12px] font-normal text-[var(--color-text-muted)]">Assinatura do signatário da guia</p>
         </div>
         <Input label="Nome de quem assinou *" value={signerName} onChange={(event) => setSignerNameDraft(event.target.value)} required />
         <Input

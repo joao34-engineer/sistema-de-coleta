@@ -1,6 +1,5 @@
-import { Button } from "@/shared/ui/button";
+import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { pwaCopy } from "../model/pwa-copy";
-import { PwaBanner } from "./pwa-banner";
 
 type PwaUpdateBannerProps = {
   readonly onConfirm: () => void;
@@ -10,21 +9,18 @@ type PwaUpdateBannerProps = {
 
 export function PwaUpdateBanner({ onConfirm, onDismiss, hasPendingWork = false }: PwaUpdateBannerProps) {
   return (
-    <PwaBanner role="dialog" labelledBy="pwa-update-title" describedBy="pwa-update-description">
-      <h2 id="pwa-update-title" className="text-[16px] font-semibold text-[var(--color-text)]">
-        {pwaCopy.updateTitle}
-      </h2>
-      <p id="pwa-update-description" className="mt-1 text-[14px] text-[var(--color-muted)]">
-        {hasPendingWork ? pwaCopy.updatePendingDescription : pwaCopy.updateDescription}
-      </p>
-      <div className="mt-4 flex flex-col gap-2">
-        <Button type="button" variant="primary" onClick={onConfirm}>
-          {pwaCopy.updateConfirm}
-        </Button>
-        <Button type="button" variant="secondary" onClick={onDismiss}>
-          {pwaCopy.updateDismiss}
-        </Button>
-      </div>
-    </PwaBanner>
+    <MobileStatePanel
+      type="empty"
+      icon="↑"
+      role="dialog"
+      labelledBy="pwa-update-title"
+      describedBy="pwa-update-description"
+      title={pwaCopy.updateTitle}
+      subtitle={hasPendingWork ? pwaCopy.updatePendingDescription : pwaCopy.updateDescription}
+      actionText={pwaCopy.updateConfirm}
+      onAction={onConfirm}
+      secondaryActionText={pwaCopy.updateDismiss}
+      onSecondaryAction={onDismiss}
+    />
   );
 }

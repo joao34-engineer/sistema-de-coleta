@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createElement } from "react";
-import { listCollectionDocuments, listCollectionDocumentsWithMeta } from "./api/delivery/queries.server";
+import { listCollectionDocumentsWithMeta } from "./api/delivery/queries.server";
 import { getCollectionOfficialCode } from "./api/delivery/collection-code.server";
 import { verifyCollectionDocument } from "./api/public/verification";
 import { CollectionDocumentsPage } from "./ui/collection-documents-page";
@@ -38,13 +38,15 @@ export async function CollectionDocumentViewerRoute({
   collectionId,
   documentId,
 }: Readonly<{ collectionId: string; documentId: string }>) {
-  const documents = await listCollectionDocuments(collectionId);
-  const document = documents.find((item) => item.id === documentId);
+  const listed = await listCollectionDocumentsWithMeta(collectionId);
+  const document = listed.documents.find((item) => item.id === documentId);
   const hasPdf = document?.artifacts.some((artifact) => artifact.type === "pdf") ?? false;
   return createElement(DocumentViewerPage, {
     collectionId,
     documentId,
     hasPdf,
+    officialCode: listed.officialCode,
+    version: document?.version ?? null,
     ...(document?.pdfJobStatus === undefined ? {} : { pdfJobStatus: document.pdfJobStatus }),
   });
 }

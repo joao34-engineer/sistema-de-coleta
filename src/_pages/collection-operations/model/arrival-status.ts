@@ -15,8 +15,11 @@ export function arrivalStatusFromSegment(segment: ArrivalUiSegment): ArrivalStat
 }
 
 export function arrivalCounterLabel(total: number, missingCount: number): string {
-  const received = Math.max(0, total - missingCount);
-  return `Recebidos ${received} de ${total} · ${missingCount} não chegou`;
+  const itemWord = total === 1 ? "item" : "itens";
+  if (missingCount === 0) {
+    return `${total} ${itemWord}`;
+  }
+  return `${total} ${itemWord} · ${missingCount} não chegou`;
 }
 
 export function payloadConditionForSegment(

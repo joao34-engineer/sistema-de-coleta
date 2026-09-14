@@ -13,7 +13,7 @@ import {
   patchLocalDraft,
   setDraftStep,
 } from "../model/offline-capture";
-import { messageForQueueError, offlineCopy } from "../model/offline-copy";
+import { messageForQueueError, offlineCopy, titleForOperatorError } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { presentFinalizeSync } from "../model/present-finalize-sync";
 import { runAuthenticatedDrain } from "../model/run-authenticated-drain";
@@ -388,7 +388,7 @@ function CaptureSteps({
         <MobilePageHeader title="Sincronização" subtitle="Falha ao enviar" backHref={"/coletas" as Route} />
         <MobileStatePanel
           type="error"
-          title={offlineCopy.failed}
+          title={titleForOperatorError(onlineFinalizeError, offlineCopy.failed)}
           subtitle={onlineFinalizeError}
           actionText={offlineCopy.retry}
           onAction={() => {
@@ -428,8 +428,8 @@ function CaptureSteps({
         <MobilePageHeader title="Coleta salva" subtitle="Sincronização" backHref={"/coletas" as Route} />
         <MobileStatePanel
           type="success"
-          title="Salvo neste aparelho"
-          subtitle={offlineCopy.queuedFinalize}
+          title={offlineCopy.savedLocally}
+          subtitle={offlineCopy.savedLocallyBody}
           actionText="Ver coletas"
           onAction={onOpenCollectionList}
         />
@@ -475,8 +475,9 @@ function CaptureSteps({
     <CaptureSignatureStep
       actor={actor}
       draftId={draftId}
-      draft={draft}
-      status={status}
+        draft={draft}
+        itemCount={items.length}
+        status={status}
       errorMsg={errorMsg}
       onAwaitHydrate={onAwaitHydrate}
       onQueuedDone={onQueuedDone}

@@ -6,7 +6,7 @@ export const offlineCopy = {
   syncing: "Sincronizando",
   synced: "Sincronizado",
   failed: "Falha ao sincronizar",
-  pendingTitle: "Coletas pendentes de sincronizar",
+  pendingTitle: "Coletas pendentes neste aparelho",
   pendingEmpty: "Nenhuma coleta pendente neste aparelho.",
   retry: "Tentar de novo",
   retryBusy: "Tentando novamente…",
@@ -36,6 +36,14 @@ export const offlineCopy = {
   stepItens: "Itens",
   stepRevisao: "Revisão",
   stepAssinatura: "Assinatura",
+  savedLocallyBody: "Coleta salva neste aparelho.",
+  syncingBody: "Enviando o rascunho",
+  syncedBody: "Coleta enviada",
+  permissionTitle: "Sem permissão",
+  validationTitle: "Validação",
+  quotaTitle: "Sem espaço",
+  sessionTitle: "Sessão expirada",
+  pendingBody: "Há rascunhos para sincronizar. Retome, tente de novo ou descarte o rascunho local.",
 } as const;
 
 const queueErrorMessages: Readonly<Record<string, string>> = {
@@ -96,4 +104,33 @@ export function messageForQueueError(code: string | null | undefined): string {
 /** Distinct retry outcome when drain leaves the same leftover error. */
 export function messageForRetryFailure(code: string | null | undefined): string {
   return `${offlineCopy.retryStillFailed} ${messageForQueueError(code)}`;
+}
+
+const VALIDATION_MESSAGES: ReadonlySet<string> = new Set([
+  "Informe um CPF ou CNPJ válido.",
+  "Preencha Nome/Razão Social, CPF/CNPJ e Telefone.",
+  "Informe o local da coleta.",
+  "Selecione um cliente existente ou preencha os dados do novo cliente.",
+  "Revise os dados informados e tente novamente.",
+  "Preencha o nome e a assinatura.",
+  "Informe o local da coleta antes de continuar.",
+  INVALID_SIGNER_TAX_ID_COPY,
+  "CPF inválido, revise e tente novamente.",
+  "CNPJ inválido, revise e tente novamente.",
+]);
+
+export function titleForOperatorError(message: string, fallback: string): string {
+  if (message === offlineCopy.quotaExceeded) {
+    return offlineCopy.quotaTitle;
+  }
+  if (message === offlineCopy.authExpired) {
+    return offlineCopy.sessionTitle;
+  }
+  if (message === "Você não tem permissão para esta operação.") {
+    return offlineCopy.permissionTitle;
+  }
+  if (VALIDATION_MESSAGES.has(message) || message === offlineCopy.cadastralIncomplete) {
+    return offlineCopy.validationTitle;
+  }
+  return fallback;
 }

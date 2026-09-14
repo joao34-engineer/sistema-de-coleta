@@ -26,6 +26,10 @@ export default async function CollectionDraftsRoute({ searchParams }: Props) {
       totalCount={result.totalCount}
       showStatusFilters={false}
       status="draft"
+      title="Rascunhos"
+      subtitle="Salvos neste aparelho"
+      emptyTitle="Nenhum rascunho encontrado"
+      emptySubtitle="Não há coletas em rascunho. Crie uma nova coleta para começar."
     />
   );
 }

@@ -1,78 +1,64 @@
-import Link from "next/link";
 import type { Route } from "next";
-import { Button } from "@/shared/ui/button";
-import { Card, CardHeader, CardContent } from "@/shared/ui/card";
-import { Badge } from "@/shared/ui/badge";
+import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { PdfPendingStatus } from "./pdf-pending-status";
 import { LazyPdfPreview } from "./lazy-pdf-preview";
+import { CollectionDocumentLetterhead } from "./collection-document-letterhead";
+import { DocumentViewerActions } from "./document-viewer-actions";
 import type { DocumentJobStatus } from "../api/delivery/contracts";
 
 type Props = Readonly<{
   collectionId: string;
   documentId: string;
   hasPdf: boolean;
+  officialCode: string | null;
+  version: number | null;
   pdfJobStatus?: DocumentJobStatus;
 }>;
 
-export function DocumentViewerPage({ collectionId, documentId, hasPdf, pdfJobStatus }: Props) {
+export function DocumentViewerPage({
+  collectionId,
+  documentId,
+  hasPdf,
+  officialCode,
+  version,
+  pdfJobStatus,
+}: Props) {
   const pdfDownloadUrl = `/api/documents/${documentId}/download?artifact=pdf`;
-  const failed = !hasPdf && pdfJobStatus === "failed";
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-6 flex flex-col">
-      <header className="mb-4 flex items-center justify-between">
-        <div>
-          <Link
-            href={`/coletas/${collectionId}/documentos` as Route}
-            className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
-          >
-            ← Voltar aos documentos
-          </Link>
-          <h1 className="mt-1 text-xl font-bold text-[var(--color-text)]">
-            Visualizador de PDF
-          </h1>
-        </div>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-[calc(5.25rem+env(safe-area-inset-bottom,0px)+1.5rem)]">
+      <MobilePageHeader
+        title="Guia de coleta"
+        subtitle="Visualização"
+        backHref={`/coletas/${collectionId}/documentos` as Route}
+      />
+
+      <div className="flex flex-col items-center gap-4 px-6 pt-6">
+        <CollectionDocumentLetterhead officialCode={officialCode} version={version} />
+
+        {hasPdf && version !== null ? (
+          <DocumentViewerActions
+            documentId={documentId}
+            version={version}
+            officialCode={officialCode}
+            pdfDownloadUrl={pdfDownloadUrl}
+          />
+        ) : (
+          <PdfPendingStatus
+            collectionId={collectionId}
+            documentId={documentId}
+            hasPdf={hasPdf}
+            {...(pdfJobStatus === undefined ? {} : { pdfJobStatus })}
+          />
+        )}
+
         {hasPdf ? (
-          <a href={pdfDownloadUrl} download target="_blank" rel="noopener noreferrer">
-            <Button variant="primary" size="sm">
-              Baixar
-            </Button>
-          </a>
+          <LazyPdfPreview src={pdfDownloadUrl} title="Visualizador de PDF da Coleta MJT" />
         ) : null}
-      </header>
+      </div>
 
-      <Card className="flex flex-1 flex-col overflow-hidden p-0">
-        <CardHeader className="border-b border-[var(--color-border)] p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
-                Recibo Imutável
-              </span>
-              <p className="text-xs text-[var(--color-muted)]">
-                ID do Documento: {documentId}
-              </p>
-            </div>
-            <Badge status={hasPdf ? "ready" : failed ? "rejected" : "draft"}>
-              {hasPdf ? "Integridade Preservada" : failed ? "Falha na geração" : "Gerando PDF"}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="flex flex-1 flex-col p-0 min-h-[500px]">
-          {hasPdf ? (
-            <LazyPdfPreview src={pdfDownloadUrl} title="Visualizador de PDF da Coleta MJT" />
-          ) : (
-            <div className="flex flex-1 items-center justify-center p-4">
-              <PdfPendingStatus
-                collectionId={collectionId}
-                documentId={documentId}
-                hasPdf={hasPdf}
-                {...(pdfJobStatus === undefined ? {} : { pdfJobStatus })}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <MobileBottomNav />
     </main>
   );
 }

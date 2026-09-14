@@ -20,6 +20,14 @@ import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 
+const DEFAULT_TITLE = "Coletas";
+const DEFAULT_SUBTITLE = "Buscar, filtrar e abrir";
+const DEFAULT_EMPTY_TITLE = "Nenhuma coleta encontrada";
+const DEFAULT_EMPTY_SUBTITLE =
+  "Você ainda não registrou nenhuma coleta. Crie a primeira para começar.";
+const FILTERED_EMPTY_SUBTITLE =
+  "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta.";
+
 type Props = Readonly<{
   initialItems: ReadonlyArray<CollectionListItemDTO>;
   searchTerm?: string;
@@ -29,6 +37,10 @@ type Props = Readonly<{
   loadFailed?: boolean;
   showStatusFilters?: boolean;
   status?: CollectionStatus;
+  title?: string;
+  subtitle?: string;
+  emptyTitle?: string;
+  emptySubtitle?: string;
 }>;
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -52,6 +64,10 @@ export function CollectionsListPage({
   loadFailed = false,
   showStatusFilters = true,
   status,
+  title = DEFAULT_TITLE,
+  subtitle = DEFAULT_SUBTITLE,
+  emptyTitle = DEFAULT_EMPTY_TITLE,
+  emptySubtitle = DEFAULT_EMPTY_SUBTITLE,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -104,8 +120,8 @@ export function CollectionsListPage({
       <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-28">
         <MobilePageHeader
           logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
-          title="Coletas"
-          subtitle="Buscar, filtrar e abrir"
+          title={title}
+          subtitle={subtitle}
         />
         <MobileStatePanel
           type="error"
@@ -142,8 +158,8 @@ export function CollectionsListPage({
     <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
         logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
-        title="Coletas"
-        subtitle="Buscar, filtrar e abrir"
+        title={title}
+        subtitle={subtitle}
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
@@ -170,11 +186,9 @@ export function CollectionsListPage({
         {items.length === 0 ? (
           <MobileStatePanel
             type="empty"
-            title="Nenhuma coleta encontrada"
+            title={emptyTitle}
             subtitle={
-              searchTerm.trim() || selectedFilter !== "all"
-                ? "Nenhuma coleta corresponde aos filtros aplicados. Ajuste a busca ou crie uma nova coleta."
-                : "Você ainda não registrou nenhuma coleta. Crie a primeira para começar."
+              searchTerm.trim() || selectedFilter !== "all" ? FILTERED_EMPTY_SUBTITLE : emptySubtitle
             }
             actionText="Nova coleta"
             onAction={() => router.push("/coletas/nova" as Route)}

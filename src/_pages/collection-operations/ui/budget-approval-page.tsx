@@ -60,9 +60,9 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
         backHref={`/coletas/${collectionId}` as Route}
       />
 
-      <div className="flex flex-col gap-4 px-6 pt-4">
-        <Card className="flex flex-col gap-1 bg-[var(--color-card-bg)]">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Total do orçamento</span>
+      <div className="flex w-full max-w-[342px] flex-col gap-4 px-6 pt-4 mx-auto">
+        <Card className="flex w-full max-w-[342px] flex-col gap-1 bg-[var(--color-card-bg)] px-4 py-3.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">TOTAL DO ORÇAMENTO</span>
           <span className="text-[28px] font-semibold leading-tight text-[var(--color-text-primary)]">{formatBrl(budgetTotal)}</span>
         </Card>
 
@@ -102,7 +102,7 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
           disabled={isPending}
         />
 
-        <div className="mt-2 grid grid-cols-2 gap-3">
+        <div className="mt-auto grid grid-cols-2 gap-3 pt-8">
           <Button
             variant="primary"
             size="md"

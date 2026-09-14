@@ -17,6 +17,9 @@ export interface MobileStatePanelProps {
   onSecondaryAction?: () => void;
   footer?: ReactNode;
   actionSlot?: ReactNode;
+  role?: "dialog" | "status";
+  labelledBy?: string;
+  describedBy?: string;
 }
 
 const iconMap = {
@@ -48,6 +51,9 @@ export function MobileStatePanel({
   onSecondaryAction,
   footer,
   actionSlot,
+  role,
+  labelledBy,
+  describedBy,
 }: MobileStatePanelProps) {
   const titleTone =
     type === "error" || type === "empty"
@@ -59,16 +65,27 @@ export function MobileStatePanel({
   const showHrefAction = Boolean(actionText && actionHref && !onAction);
 
   return (
-    <div className="mx-auto flex min-h-[340px] w-full max-w-md flex-col items-center justify-center p-4">
-      <div className="flex w-full max-w-[342px] flex-col items-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-8 text-center shadow-xs">
+    <div
+      className={`mx-auto flex min-h-[340px] w-full max-w-md flex-col items-center justify-center p-4 ${role ? "pointer-events-auto" : ""}`}
+    >
+      <div
+        {...(role
+          ? { role, "aria-labelledby": labelledBy, "aria-describedby": describedBy }
+          : {})}
+        className="flex w-full max-w-[342px] flex-col items-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-8 text-center shadow-xs"
+      >
         <div
           className={`mb-6 flex h-[92px] w-[92px] items-center justify-center rounded-full text-[36px] font-semibold leading-8 ${markClassMap[type]}`}
         >
           {icon ?? iconMap[type]}
         </div>
 
-        <h2 className={`text-[20px] font-semibold leading-8 ${titleTone}`}>{title}</h2>
-        <p className="mt-1 max-w-[260px] text-[14px] leading-5 text-[var(--color-text-muted)]">{subtitle}</p>
+        <h2 id={labelledBy} className={`text-[20px] font-semibold leading-8 ${titleTone}`}>
+          {title}
+        </h2>
+        <p id={describedBy} className="mt-1 max-w-[260px] text-[14px] leading-5 text-[var(--color-text-muted)]">
+          {subtitle}
+        </p>
         {footer}
 
         {showClickAction || showHrefAction || actionSlot ? (

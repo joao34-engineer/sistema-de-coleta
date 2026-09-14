@@ -117,21 +117,24 @@ export function CustomerDeliveryPage({
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
         title="Entrega ao cliente"
-        subtitle={officialCode ? `${officialCode} · Somente itens prontos` : "Somente itens prontos"}
+        subtitle="Somente itens prontos"
         backHref={`/coletas/${collectionId}` as Route}
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
         {errorMsg ? (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
+          <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--color-danger)_40%,white)] bg-[color-mix(in_srgb,var(--color-danger)_8%,white)] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">
             {errorMsg}
           </div>
         ) : null}
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            Itens entregues
+          <h2 className="text-[24px] font-semibold leading-8 text-[var(--color-text-primary)]">
+            Selecione os itens para entrega
           </h2>
+          {officialCode ? (
+            <p className="text-[13px] text-[var(--color-text-muted)]">Guia {officialCode}</p>
+          ) : null}
           {items.map((item) => {
             const alreadyDelivered = isAlreadyDeliveredItem(item.id, alreadyDeliveredItemIds);
             const continuesInRepair = !alreadyDelivered && item.serviceOrderStatus === "em_reparo";
@@ -145,7 +148,7 @@ export function CustomerDeliveryPage({
             return (
               <label
                 key={item.id}
-                className={`flex items-center justify-between gap-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-4 py-3 shadow-xs transition-all ${
+                className={`flex min-h-[88px] items-center justify-between gap-3 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-5 py-4 shadow-xs transition-all ${
                   deliverable
                     ? "cursor-pointer active:scale-[0.99]"
                     : "cursor-not-allowed opacity-70"
@@ -228,7 +231,7 @@ export function CustomerDeliveryPage({
           />
         </Card>
 
-        <Button variant="primary" size="md" isLoading={isPending} onClick={() => void handleSubmit()}>
+        <Button variant="primary" size="md" isLoading={isPending} className="h-[52px]" onClick={() => void handleSubmit()}>
           Confirmar entrega
         </Button>
       </div>

@@ -145,8 +145,8 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
         <section className="flex flex-col gap-3">
           <h2 className="text-[22px] font-semibold leading-8 text-[var(--color-text-primary)]">Conferir item a item</h2>
           <p className="text-[14px] text-[var(--color-text-muted)]">
-            {officialCode ? <span>{officialCode} · </span> : null}
-            <span>{arrivalCounterLabel(items.length, missingCount)}</span>
+            {officialCode ? `Guia ${officialCode} · ` : null}
+            {arrivalCounterLabel(items.length, missingCount)}
           </p>
           {items.map((row) => {
             const source = itemSourceById.get(row.itemId);

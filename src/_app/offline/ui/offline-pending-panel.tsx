@@ -51,19 +51,30 @@ export function OfflinePendingPanel({
     <div className="pointer-events-auto fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-md px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
       <section
         aria-labelledby="offline-pending-title"
-        className="rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-surface)]"
+        className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-surface)]"
         role="status"
       >
-        <div className="flex items-start justify-between gap-3">
-          <h2 id="offline-pending-title" className="text-[15px] font-semibold text-[var(--color-text)]">
-            {first === undefined && notice !== null ? notice : offlineCopy.pendingTitle}
-          </h2>
-          {onClose ? (
-            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
-              {offlineCopy.closePanel}
-            </Button>
-          ) : null}
+        <div className="flex items-start gap-3">
+          <div
+            className="flex h-[92px] w-[92px] shrink-0 items-center justify-center rounded-full bg-[#fcf3f1] text-[36px] font-semibold leading-8 text-[#a8443b]"
+            aria-hidden
+          >
+            !
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 id="offline-pending-title" className="text-[20px] font-semibold leading-8 text-[var(--color-danger)]">
+              {first === undefined && notice !== null ? notice : offlineCopy.pendingTitle}
+            </h2>
+            {onClose ? (
+              <Button type="button" variant="secondary" size="sm" className="mt-2 w-auto" onClick={onClose}>
+                {offlineCopy.closePanel}
+              </Button>
+            ) : null}
+          </div>
         </div>
+        {first !== undefined ? (
+          <p className="mt-3 text-[14px] leading-5 text-[var(--color-text-muted)]">{offlineCopy.pendingBody}</p>
+        ) : null}
         {notice !== null && first !== undefined ? (
           <p className="mt-2 text-[12px] font-medium text-[var(--color-text)]">{notice}</p>
         ) : null}

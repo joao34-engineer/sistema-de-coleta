@@ -88,8 +88,9 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
+        <p className="text-[24px] font-semibold leading-8 text-[var(--color-text-primary)]">Referência manual</p>
         <p className="text-[13px] font-normal text-[var(--color-text-muted)]">
-          Registro interno opcional. A entrega ao cliente não depende deste passo.
+          Referência manual. O sistema não emite a nota.
         </p>
         {existingInvoice ? (
           <Card className="flex flex-col gap-1 bg-[var(--color-card-bg)]">
@@ -106,7 +107,7 @@ export function InvoiceReferencePage({ collectionId, officialCode, existingInvoi
         ) : null}
 
         {errorMsg && (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
+          <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--color-danger)_40%,white)] bg-[color-mix(in_srgb,var(--color-danger)_8%,white)] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">
             {errorMsg}
           </div>
         )}

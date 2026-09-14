@@ -20,6 +20,9 @@ type Props = Readonly<{
 const actionCopy = {
   cancel: {
     title: "Cancelar coleta",
+    subtitle: "Histórico preservado",
+    introTitle: "Esta guia continuará existindo.",
+    introBody: "O número oficial não é reutilizado. O histórico e o motivo ficam registrados.",
     buttonLabel: "Confirmar cancelamento",
     buttonVariant: "danger" as const,
     reasonLabel: "Motivo do cancelamento *",
@@ -27,6 +30,9 @@ const actionCopy = {
   },
   reopen: {
     title: "Reabrir coleta",
+    subtitle: "Mesmo número oficial",
+    introTitle: "O mesmo número oficial é preservado.",
+    introBody: "A reabertura reativa o mesmo registro e gera nova versão documental se a guia já existia.",
     buttonLabel: "Confirmar reabertura",
     buttonVariant: "primary" as const,
     reasonLabel: "Motivo da reabertura *",
@@ -63,32 +69,36 @@ export function CancelReopenPage({ collectionId, officialCode, allowedAction, ro
     <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
       <MobilePageHeader
         title={copy.title}
-        subtitle={officialCode ? `Guia ${officialCode}` : "Coleta"}
+        subtitle={copy.subtitle}
         backHref={`/coletas/${collectionId}` as Route}
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
         {errorMsg && (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
+          <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--color-danger)_40%,white)] bg-[color-mix(in_srgb,var(--color-danger)_8%,white)] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">
             {errorMsg}
           </div>
         )}
 
-        <Card className="flex flex-col gap-2 bg-[var(--color-card-bg)]">
-          <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">Justificativa obrigatória</span>
-          <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-            Esta operação fica registrada no histórico da coleta com sua justificativa.
-          </p>
-        </Card>
+        <section className="flex flex-col gap-2">
+          <h2 className="text-[24px] font-semibold leading-8 text-[var(--color-text-primary)]">{copy.introTitle}</h2>
+          <p className="text-[14px] leading-5 text-[var(--color-text-muted)]">{copy.introBody}</p>
+          {officialCode ? (
+            <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Guia {officialCode}</p>
+          ) : null}
+        </section>
 
-        <Input
-          label={copy.reasonLabel}
-          placeholder={copy.placeholder}
-          value={reason}
-          maxLength={1000}
-          onChange={(event) => setReason(event.target.value)}
-          required
-        />
+        <Card className="flex w-full max-w-[342px] flex-col gap-3 bg-[var(--color-card-bg)]">
+          <Input
+            label={copy.reasonLabel}
+            placeholder={copy.placeholder}
+            value={reason}
+            maxLength={1000}
+            onChange={(event) => setReason(event.target.value)}
+            required
+          />
+          <p className="text-[12px] font-normal text-[var(--color-text-muted)]">Ação auditada pela administradora</p>
+        </Card>
 
         <Button
           variant={copy.buttonVariant}

@@ -128,13 +128,15 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
 
       <div className="flex flex-col gap-4 px-6 pt-4">
         {errorMsg && (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
+          <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--color-danger)_40%,white)] bg-[color-mix(in_srgb,var(--color-danger)_8%,white)] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">
             {errorMsg}
           </div>
         )}
 
+        <h2 className="text-[24px] font-semibold leading-8 text-[var(--color-text-primary)]">Por item</h2>
+
         {items.map((item) => (
-          <Card key={item.itemId} className="flex flex-col gap-3 bg-[var(--color-card-bg)]">
+          <Card key={item.itemId} className="flex w-full max-w-[342px] flex-col gap-3 bg-[var(--color-card-bg)]">
             <span className="break-words text-[14px] font-semibold text-[var(--color-text-primary)]">
               {item.itemDescription}
             </span>
@@ -175,7 +177,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
           </Card>
         ))}
 
-        <Card className="flex flex-col gap-1 bg-[var(--color-card-bg)]">
+        <Card className="flex w-full max-w-[342px] flex-col gap-1 bg-[var(--color-card-bg)]">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Total</span>
           <span className="text-[28px] font-semibold leading-tight text-[var(--color-text-primary)]">{formatBrl(liveTotal)}</span>
         </Card>
@@ -196,7 +198,7 @@ export function TechnicalBudgetPage({ collectionId, officialCode, budgetItems, r
           onClick={() => void handleSubmit()}
           className="mt-2 h-[52px]"
         >
-          Registrar orçamento
+          Salvar orçamento
         </Button>
       </div>
 

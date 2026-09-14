@@ -81,15 +81,12 @@ export function ServiceProgressPage({ collectionId, officialCode, progressItems,
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
-        <div className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-          <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">Itens prontos</span>
-          <span className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-            {readyCount} de {items.length}
-          </span>
-        </div>
+        <h2 className="text-[24px] font-semibold leading-8 text-[var(--color-text-primary)]">
+          Itens prontos {readyCount} de {items.length}
+        </h2>
 
         {errorMsg && (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
+          <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--color-danger)_40%,white)] bg-[color-mix(in_srgb,var(--color-danger)_8%,white)] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">
             {errorMsg}
           </div>
         )}

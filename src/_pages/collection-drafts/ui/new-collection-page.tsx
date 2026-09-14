@@ -14,7 +14,7 @@ import { hasRequiredCollectionLocation } from "../model/has-required-collection-
 import { cadastralAddressForSync, isIncompleteCadastral } from "../model/cadastral-address-for-sync";
 import { createLocalDraft, normalizeTaxId } from "../model/offline-capture";
 import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
-import { offlineCopy } from "../model/offline-copy";
+import { offlineCopy, titleForOperatorError } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { useCustomerSearch } from "../model/use-customer-search";
 import { SyncStatusChip } from "./sync-status-chip";
@@ -138,36 +138,34 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
       <MobilePageHeader title="Nova coleta" subtitle="Etapa 1 de 3 · Cliente" backHref={"/coletas" as Route} />
 
       <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-2.5">
-        <div className="flex items-center gap-1.5">
-          <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
-          <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
-          <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
+        <div className="flex items-center gap-2.5">
+          <div className="h-1 w-8 rounded-full bg-[var(--color-primary)]" />
+          <div className="h-1 w-8 rounded-full bg-[var(--color-border)]" />
+          <div className="h-1 w-8 rounded-full bg-[var(--color-border)]" />
         </div>
         <SyncStatusChip state={online ? "online" : "saved_locally"} />
       </div>
 
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6 px-6 pt-6">
-        <div>
-          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-            Quem está entregando os itens?
-          </h2>
-        </div>
+        <h2 className="text-[24px] font-semibold leading-8 tracking-tight text-[var(--color-text-primary)]">
+          Dados do cliente
+        </h2>
 
         {errorMsg ? (
           <MobileStatePanel
             type="error"
-            title="Não foi possível criar a coleta"
+            title={titleForOperatorError(errorMsg, "Não foi possível criar a coleta")}
             subtitle={errorMsg}
             actionText="Tentar novamente"
             onAction={() => setErrorMsg(null)}
           />
         ) : null}
 
-        <div className="grid grid-cols-2 rounded-[12px] bg-[var(--color-surface-neutral)] p-1">
+        <div className="grid h-10 w-full max-w-[342px] grid-cols-2 rounded-[12px] bg-[var(--color-surface-neutral)] p-1">
           <button
             type="button"
             onClick={() => setTab("new")}
-            className={`min-h-[40px] rounded-[10px] text-[12px] font-semibold transition-all ${
+            className={`h-8 rounded-[10px] text-[12px] font-semibold transition-all ${
               tab === "new" ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-xs" : "text-[var(--color-text-muted)]"
             }`}
           >
@@ -176,7 +174,7 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
           <button
             type="button"
             onClick={() => setTab("search")}
-            className={`min-h-[40px] rounded-[10px] text-[12px] font-semibold transition-all ${
+            className={`h-8 rounded-[10px] text-[12px] font-semibold transition-all ${
               tab === "search" ? "bg-[var(--color-card-bg)] text-[var(--color-text-primary)] shadow-xs" : "text-[var(--color-text-muted)]"
             }`}
           >
@@ -185,17 +183,19 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
         </div>
 
         {tab === "search" ? (
-          <div className="flex flex-col gap-3">
-            {!online ? (
-              <p className="rounded-[12px] bg-[#fff8ec] p-3 text-[12px] font-medium text-[#a36b2c]">{offlineCopy.searchOffline}</p>
-            ) : null}
+          <div className="flex w-full max-w-[342px] flex-col gap-3">
             <Input
-              label="Buscar cliente"
               placeholder="Digite o nome ou CPF/CNPJ..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               disabled={!online}
+              aria-label="Digite o nome ou CPF/CNPJ..."
             />
+            {!online ? (
+              <p className="rounded-[12px] bg-[#fff8ec] px-3 py-2 text-[11px] font-semibold leading-4 text-[#a36b2c]">
+                {offlineCopy.searchOffline}
+              </p>
+            ) : null}
             {isSearching ? <p className="py-2 text-center text-[12px] text-[var(--color-text-muted)]">Buscando...</p> : null}
             {searchResults.length > 0 ? (
               <div className="flex flex-col gap-2">
@@ -204,18 +204,16 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
                     key={cust.id}
                     type="button"
                     onClick={() => handleSelectCustomer(cust)}
-                    className={`flex items-center justify-between rounded-[12px] border p-3.5 text-left transition-colors ${
+                    className={`flex min-h-[58px] flex-col items-start justify-center rounded-[12px] border px-3.5 py-3 text-left transition-colors ${
                       selectedCustomer?.id === cust.id
-                        ? "border-[var(--color-primary)] bg-[var(--color-surface-green)]"
+                        ? "border-[#4c916f] bg-[#e5f1e8]"
                         : "border-[var(--color-border)] bg-[var(--color-card-bg)]"
                     }`}
                   >
-                    <div>
-                      <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">{cust.displayName}</p>
-                      <p className="text-[11px] text-[var(--color-text-muted)]">
-                        {cust.taxId} · {cust.phone}
-                      </p>
-                    </div>
+                    <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">{cust.displayName}</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)]">
+                      {cust.taxId} · {cust.phone}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -223,11 +221,11 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex w-full max-w-[342px] flex-col gap-4">
           <Input label="Nome ou razão social *" placeholder="Digite o nome" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
           <Input label="CPF/CNPJ *" placeholder="Digite apenas números" value={taxId} onChange={(event) => setTaxId(event.target.value)} required />
           <Input label="Telefone *" placeholder="(00) 00000-0000" value={phone} onChange={(event) => setPhone(event.target.value)} required />
-          <Input label="Endereço cadastral (opcional)" placeholder="Rua e número, se houver" value={street} onChange={(event) => setStreet(event.target.value)} />
+          <Input label="Endereço cadastral" placeholder="Opcional" value={street} onChange={(event) => setStreet(event.target.value)} />
           <Input label="Cidade (se houver endereço)" placeholder="Opcional" value={city} onChange={(event) => setCity(event.target.value)} />
           <label className="flex w-full flex-col gap-1.5">
             <span className="text-[12px] font-semibold text-[var(--color-muted)]">UF (se houver endereço)</span>
