@@ -36,11 +36,13 @@ describe("CollectorProfilePage", () => {
     expect(form).toHaveAttribute("method", "post");
   });
 
-  it("keeps the M11 hub heading distinct from the issuer leaf", () => {
+  it("keeps the CFG01 hub heading distinct from the issuer leaf", () => {
     render(<CollectorProfilePage administrator={administrator} />);
 
-    expect(screen.getByRole("heading", { name: "Empresa" })).toBeInTheDocument();
-    expect(screen.getByText("Dados institucionais")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Perfil institucional" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Conta" })).toBeInTheDocument();
+    expect(screen.getByText("Configurações da conta")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Operador autenticado" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Editar perfil institucional" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Empresa" })).not.toBeInTheDocument();
   });
 });

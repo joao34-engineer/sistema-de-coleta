@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
+import { signatureDataUrlToPngFile } from "@/shared/lib/file/signature-data-url-to-png-file";
 import { workshopCheckInAction } from "../api/actions";
 import { workshopCheckInSchema } from "../model/contracts";
 import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
@@ -34,12 +35,6 @@ type ItemRow = Readonly<{
   conditionObserved: string;
   divergenceNotes: string;
 }>;
-
-function dataUrlToFile(dataUrl: string): File {
-  const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
-  const buffer = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
-  return new File([buffer], "signature.png", { type: "image/png" });
-}
 
 export function WorkshopCheckInPage({ collectionId, officialCode, collectionItems, rowVersion }: Props) {
   const [items, setItems] = useState<ItemRow[]>(() =>
@@ -127,7 +122,7 @@ export function WorkshopCheckInPage({ collectionId, officialCode, collectionItem
       formData.set("administratorTaxId", administratorTaxId.trim());
       formData.set("items", JSON.stringify(parsed.data.items));
       formData.set("signatureIntentId", signatureIntentId);
-      formData.set("signature", dataUrlToFile(signaturePng));
+      formData.set("signature", signatureDataUrlToPngFile(signaturePng));
       return workshopCheckInAction(collectionId, formData);
     });
   }

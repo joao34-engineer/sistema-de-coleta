@@ -21,10 +21,13 @@ describe("CollectionDocumentsPage", () => {
       artifacts: [{ id: "33333333-3333-4333-8333-333333333333", type: "pdf", contentType: "application/pdf", byteSize: 128, createdAt: "2026-08-20T15:31:00.000Z" }],
     }]} />);
 
-    expect(screen.getByRole("heading", { name: "Versão 2" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Baixar PDF/i })).toHaveAttribute("href", expect.stringContaining("artifact=pdf"));
+    expect(screen.getByRole("heading", { name: "Guia de coleta" })).toBeInTheDocument();
+    expect(screen.getByText(/Versão 2 · Emitida/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Baixar" })).toHaveAttribute("href", expect.stringContaining("artifact=pdf"));
     expect(screen.queryByRole("link", { name: /Baixar QR/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Criar link seguro" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Destinatário *")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar e-mail" })).toBeDisabled();
     expect(screen.queryByText(/PDF pendente/i)).not.toBeInTheDocument();
   });
 
@@ -39,10 +42,10 @@ describe("CollectionDocumentsPage", () => {
       artifacts: [],
     }]} />);
 
-    expect(screen.getByRole("heading", { name: "Versão 1" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Baixar PDF/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF da guia/i);
-    expect(screen.getByRole("status")).toHaveTextContent(/WhatsApp/i);
+    expect(screen.getByRole("heading", { name: "Guia de coleta" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Baixar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF/i);
+    expect(screen.getByRole("button", { name: "Aguarde" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Criar link seguro" })).not.toBeInTheDocument();
   });
 
@@ -58,7 +61,7 @@ describe("CollectionDocumentsPage", () => {
     }]} />);
 
     expect(screen.getByRole("status")).toHaveTextContent(/Não foi possível gerar o PDF/i);
-    expect(screen.queryByText(/Gerando o PDF da guia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Gerando o PDF$/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
   });
 

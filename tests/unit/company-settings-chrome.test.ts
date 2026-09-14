@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import { hubChrome, leafChrome } from "@/_pages/company-settings/model/settings-chrome";
 
 describe("settings chrome copy", () => {
-  it("keeps Figma M11 on the hub", () => {
+  it("keeps Figma CFG01 on the hub", () => {
     expect(hubChrome).toEqual({
-      title: "Empresa",
-      subtitle: "Dados institucionais",
+      title: "Conta",
+      subtitle: "Configurações da conta",
     });
   });
 
-  it("names the issuer leaf as a distinct page", () => {
+  it("keeps Figma M11 on the issuer leaf", () => {
     expect(leafChrome).toEqual({
-      title: "Perfil institucional",
-      subtitle: "Razão social, CNPJ e rodapé da guia",
+      title: "Empresa",
+      subtitle: "Dados institucionais",
     });
   });
 

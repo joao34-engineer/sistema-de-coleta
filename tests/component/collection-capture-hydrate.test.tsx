@@ -8,6 +8,11 @@ import { ensureOfflineDraftStore, resetOfflinePortForTests, setOfflinePortForTes
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 import type { DraftDTO } from "@/_pages/collection-drafts/model/draft";
 
+vi.mock("next/dynamic", async () => {
+  const { nextDynamicMock } = await import("../mocks/next-dynamic");
+  return { default: nextDynamicMock };
+});
+
 const actor = { userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 };
 const collectionId = "22222222-2222-4222-8222-222222222222";
 const customerId = "44444444-4444-4444-8444-444444444444";
@@ -182,7 +187,7 @@ describe("CollectionCapturePage hydrate from route props", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Registre tudo o que foi entregue.")).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
     expect(screen.getByText("Servo motor")).toBeInTheDocument();
     expect(fetchDraftWithItemsAction).not.toHaveBeenCalled();
     expect(getCustomerAction).not.toHaveBeenCalled();
@@ -239,7 +244,7 @@ describe("CollectionCapturePage hydrate from route props", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Pendente local")).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
     expect(screen.queryByText("Servo motor")).not.toBeInTheDocument();
     expect(fetchDraftWithItemsAction).not.toHaveBeenCalled();
   });

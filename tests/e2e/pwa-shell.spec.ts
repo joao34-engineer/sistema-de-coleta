@@ -32,4 +32,6 @@ test("serves the 180 apple-touch-icon", async ({ request }) => {
   const response = await request.get("/icons/apple-touch-icon.png");
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"] ?? "").toMatch(/image\/png/);
+  const cacheControl = response.headers()["cache-control"] ?? "";
+  expect(cacheControl).not.toMatch(/no-store/);
 });

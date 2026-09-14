@@ -35,7 +35,8 @@ describe("PdfPendingStatus", () => {
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF da guia/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF/i);
+    expect(screen.getByRole("button", { name: "Aguarde" })).toBeDisabled();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10);
@@ -67,7 +68,7 @@ describe("PdfPendingStatus", () => {
     );
 
     expect(screen.getByRole("status")).toHaveTextContent(/Não foi possível gerar o PDF/i);
-    expect(screen.queryByText(/Gerando o PDF da guia/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Gerando o PDF" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: offlineCopy.retry }));
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/collections/${collectionId}/documents/${documentId}/retry`,

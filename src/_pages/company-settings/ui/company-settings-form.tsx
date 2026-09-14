@@ -17,6 +17,8 @@ import {
   issuerFieldValuesFromDto,
   issuerRequiredFields,
 } from "../model/issuer-settings";
+import { Button } from "@/shared/ui/button";
+import { buttonClassName } from "@/shared/lib/button-class-name";
 
 type Props = Readonly<{ settings: CompanySettingsDTO }>;
 
@@ -59,7 +61,7 @@ function IssuerSetupBanner({ settings }: Readonly<{ settings: CompanySettingsDTO
     return (
       <div
         role="status"
-        className="rounded-md border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
+        className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-[13px] text-[var(--color-text-primary)]"
       >
         Emissão habilitada
       </div>
@@ -70,7 +72,7 @@ function IssuerSetupBanner({ settings }: Readonly<{ settings: CompanySettingsDTO
   return (
     <div
       role="status"
-      className="rounded-md border border-border bg-surface px-4 py-3 text-sm text-muted"
+        className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-[13px] text-[var(--color-text-muted)]"
     >
       <p className="font-medium">Emissão da guia ainda não habilitada.</p>
       {missing.length > 0 ? (
@@ -103,14 +105,14 @@ export function CompanySettingsForm({ settings }: Props) {
   usePersistedSettingsEffect(logoState, dispatch);
 
   return (
-    <div className="space-y-8">
-      <p className="text-sm text-muted">
+    <div className="flex flex-col gap-6">
+      <p className="text-[14px] leading-5 text-[var(--color-text-muted)]">
         Estes dados identificam a MJT na guia de coleta (PDF) e destravam a emissão do número oficial.
       </p>
       <IssuerSetupBanner settings={settings} />
 
-      <form action={formAction} className="space-y-6" noValidate>
-        <div className="grid gap-4">
+      <form action={formAction} className="flex flex-col gap-5" noValidate>
+        <div className="flex flex-col gap-4">
           <Field name="legalName" label="Razão social" required={isRequired("legalName")} value={formState.values.legalName} onChange={(value) => dispatch({ type: "update_field", field: "legalName", value })} error={state.fieldErrors?.["legalName"]} maxLength={160} autoComplete="organization" />
           <Field name="taxId" label="CNPJ" required={isRequired("taxId")} value={formState.values.taxId} onChange={(value) => dispatch({ type: "update_field", field: "taxId", value })} error={state.fieldErrors?.["taxId"]} inputMode="numeric" maxLength={18} />
           <Field name="phone" label="Telefone" required={isRequired("phone")} value={formState.values.phone} onChange={(value) => dispatch({ type: "update_field", field: "phone", value })} error={state.fieldErrors?.["phone"]} maxLength={30} autoComplete="tel" />
@@ -126,7 +128,7 @@ export function CompanySettingsForm({ settings }: Props) {
         </div>
 
         <div>
-          <label htmlFor="receiptLegalText" className="mb-1 block text-sm font-medium">
+          <label htmlFor="receiptLegalText" className="mb-1.5 block text-[12px] font-semibold text-[var(--color-text-primary)]">
             Texto jurídico do recibo <span aria-hidden="true">*</span>
           </label>
           <textarea
@@ -137,23 +139,43 @@ export function CompanySettingsForm({ settings }: Props) {
             rows={5}
             maxLength={2000}
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2"
+            className="w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-4 py-3 text-[14px] text-[var(--color-text-primary)] focus:border-[var(--color-primary)] focus:outline-none"
           />
-          {state.fieldErrors?.["receiptLegalText"] ? <p className="mt-1 text-sm text-danger">{state.fieldErrors["receiptLegalText"]}</p> : null}
+          {state.fieldErrors?.["receiptLegalText"] ? (
+            <p className="mt-1.5 text-[11px] font-medium text-[var(--color-danger)]">{state.fieldErrors["receiptLegalText"]}</p>
+          ) : null}
         </div>
 
-        {state.message ? <p role="status" className={state.status === "success" ? "text-sm text-success" : "text-sm text-danger"}>{state.message}</p> : null}
-        <button type="submit" disabled={anyPending} className="rounded-md bg-primary px-5 py-2 font-semibold text-white disabled:opacity-60">{pending ? "Salvando…" : "Salvar configurações"}</button>
+        {state.message ? (
+          <p role="status" className={state.status === "success" ? "text-[13px] text-[var(--color-primary-strong)]" : "text-[13px] text-[var(--color-danger)]"}>
+            {state.message}
+          </p>
+        ) : null}
+        <Button type="submit" variant="primary" size="md" disabled={anyPending} isLoading={pending}>
+          {pending ? "Salvando…" : "Salvar configurações"}
+        </Button>
       </form>
 
-      <form action={logoAction} className="border-t border-border pt-6">
-        <label htmlFor="logo" className="mb-1 block text-sm font-medium">
+      <form action={logoAction} className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-6">
+        <label htmlFor="logo" className="text-[12px] font-semibold text-[var(--color-text-primary)]">
           Logo institucional <span aria-hidden="true">*</span>
         </label>
-        <input id="logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" className="block w-full text-sm" />
-        <p className="mt-1 text-xs text-muted">PNG, JPEG ou WebP, até 2 MB. O bucket é privado.</p>
-        {logoState.message ? <p role="status" className={logoState.status === "success" ? "mt-2 text-sm text-success" : "mt-2 text-sm text-danger"}>{logoState.message}</p> : null}
-        <button type="submit" disabled={anyPending} className="mt-3 rounded-md border border-border bg-surface px-4 py-2 font-semibold disabled:opacity-60">{logoPending ? "Enviando…" : "Enviar logo"}</button>
+        <input
+          id="logo"
+          name="logo"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="block w-full text-[13px] text-[var(--color-text-primary)]"
+        />
+        <p className="text-[12px] text-[var(--color-text-muted)]">PNG, JPEG ou WebP, até 2 MB. O bucket é privado.</p>
+        {logoState.message ? (
+          <p role="status" className={logoState.status === "success" ? "text-[13px] text-[var(--color-primary-strong)]" : "text-[13px] text-[var(--color-danger)]"}>
+            {logoState.message}
+          </p>
+        ) : null}
+        <button type="submit" disabled={anyPending} className={buttonClassName({ variant: "secondary", size: "md" })}>
+          {logoPending ? "Enviando…" : "Enviar logo"}
+        </button>
       </form>
     </div>
   );
@@ -175,7 +197,7 @@ function Field({ name, label, value, onChange, error, required = false, inputMod
   const errorId = `${name}-error`;
   return (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
+      <label htmlFor={name} className="mb-1.5 block text-[12px] font-semibold text-[var(--color-text-primary)]">
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
       </label>
@@ -188,11 +210,11 @@ function Field({ name, label, value, onChange, error, required = false, inputMod
         maxLength={maxLength}
         autoComplete={autoComplete}
         required={required}
-        className="w-full rounded-md border border-border bg-surface px-3 py-2"
+        className="h-[48px] w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-4 text-[14px] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:outline-none"
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
       />
-      {error ? <p id={errorId} className="mt-1 text-sm text-danger">{error}</p> : null}
+      {error ? <p id={errorId} className="mt-1.5 text-[11px] font-medium text-[var(--color-danger)]">{error}</p> : null}
     </div>
   );
 }

@@ -1,64 +1,91 @@
+import type { ReactNode } from "react";
+import type { Route } from "next";
+import Link from "next/link";
 import { Button } from "./button";
+import { buttonClassName } from "@/shared/lib/button-class-name";
 
 export interface MobileStatePanelProps {
   type: "loading" | "empty" | "error" | "success" | "confirmation";
   title: string;
   subtitle: string;
+  icon?: string;
   actionText?: string;
   onAction?: () => void;
+  actionDisabled?: boolean;
+  actionHref?: Route;
   secondaryActionText?: string;
   onSecondaryAction?: () => void;
+  footer?: ReactNode;
+  actionSlot?: ReactNode;
 }
+
+const iconMap = {
+  loading: "…",
+  empty: "+",
+  error: "!",
+  success: "✓",
+  confirmation: "!",
+} as const;
+
+const markClassMap = {
+  loading: "bg-[#eef8f2] text-[#3b7a5b]",
+  empty: "bg-[#fcf3f1] text-[#a8443b]",
+  error: "bg-[#fcf3f1] text-[#a8443b]",
+  success: "bg-[#eef8f2] text-[#3b7a5b]",
+  confirmation: "bg-[#fff8ec] text-[#a36b2c]",
+} as const;
 
 export function MobileStatePanel({
   type,
   title,
   subtitle,
+  icon,
   actionText,
   onAction,
+  actionDisabled,
+  actionHref,
   secondaryActionText,
   onSecondaryAction,
+  footer,
+  actionSlot,
 }: MobileStatePanelProps) {
-  const iconMap = {
-    loading: "…",
-    empty: "+",
-    error: "!",
-    success: "✓",
-    confirmation: "!",
-  };
-
-  const bgMap = {
-    loading: "bg-[#eef8f2] text-[#3b7a5b]",
-    empty: "bg-[#eef8f2] text-[#3b7a5b]",
-    error: "bg-[#fdf2f1] text-[#ba5b52]",
-    success: "bg-[#eef8f2] text-[#3b7a5b]",
-    confirmation: "bg-[#fff8ec] text-[#a36b2c]",
-  };
+  const titleTone =
+    type === "error" || type === "empty"
+      ? "text-[var(--color-danger)]"
+      : type === "confirmation"
+        ? "text-[#a36b2c]"
+        : "text-[var(--color-text-primary)]";
+  const showClickAction = Boolean(actionText && onAction);
+  const showHrefAction = Boolean(actionText && actionHref && !onAction);
 
   return (
-    <div className="mx-auto flex min-h-[460px] w-full max-w-md flex-col items-center justify-center rounded-[24px] bg-[var(--color-background)] p-4">
-      <div className="flex w-full flex-col items-center justify-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-xs">
-        {/* Mark Circular 92x92px */}
+    <div className="mx-auto flex min-h-[340px] w-full max-w-md flex-col items-center justify-center p-4">
+      <div className="flex w-full max-w-[342px] flex-col items-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-8 text-center shadow-xs">
         <div
-          className={`mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full text-3xl font-bold ${bgMap[type]}`}
+          className={`mb-6 flex h-[92px] w-[92px] items-center justify-center rounded-full text-[36px] font-semibold leading-8 ${markClassMap[type]}`}
         >
-          {iconMap[type]}
+          {icon ?? iconMap[type]}
         </div>
 
-        <h2 className="text-[20px] font-semibold text-[var(--color-text)]">
-          {title}
-        </h2>
-        <p className="mt-1 max-w-xs text-[14px] text-[var(--color-muted)]">
-          {subtitle}
-        </p>
+        <h2 className={`text-[20px] font-semibold leading-8 ${titleTone}`}>{title}</h2>
+        <p className="mt-1 max-w-[260px] text-[14px] leading-5 text-[var(--color-text-muted)]">{subtitle}</p>
+        {footer}
 
-        {actionText && onAction ? (
-          <div className="mt-6 flex w-full flex-col gap-2">
-            <Button variant="primary" onClick={onAction}>
-              {actionText}
-            </Button>
+        {showClickAction || showHrefAction || actionSlot ? (
+          <div className="mt-8 flex w-full max-w-[258px] flex-col gap-2">
+            {showClickAction ? (
+              <Button type="button" variant="primary" onClick={onAction} disabled={actionDisabled}>
+                {actionText}
+              </Button>
+            ) : null}
+            {showHrefAction && actionHref ? (
+              <Link href={actionHref} className={buttonClassName({ variant: "primary", size: "md" })}>
+                {actionText}
+              </Link>
+            ) : null}
+            {actionSlot}
             {secondaryActionText && onSecondaryAction ? (
-              <Button variant="secondary" onClick={onSecondaryAction}>
+              <Button type="button" variant="secondary" onClick={onSecondaryAction}>
                 {secondaryActionText}
               </Button>
             ) : null}

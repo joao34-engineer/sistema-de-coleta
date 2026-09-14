@@ -125,12 +125,18 @@ export function requestIpRateLimitSubject(request: Pick<Request, "headers">): st
   return "ip:unavailable";
 }
 
-function createRateLimitClient() {
+type RateLimitClient = ReturnType<typeof createClient<RateLimitDatabase>>;
+
+let rateLimitClient: RateLimitClient | undefined;
+
+function getRateLimitClient(): RateLimitClient {
+  if (rateLimitClient) return rateLimitClient;
   const environment = getServiceEnvironment();
   assertServiceProjectRef(environment);
-  return createClient<RateLimitDatabase>(environment.supabaseUrl, environment.supabaseSecretKey, {
+  rateLimitClient = createClient<RateLimitDatabase>(environment.supabaseUrl, environment.supabaseSecretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  return rateLimitClient;
 }
 
 function loginRateLimitSubject(request: Pick<Request, "headers">, email: string): string {
@@ -141,7 +147,7 @@ function loginRateLimitSubject(request: Pick<Request, "headers">, email: string)
 
 export async function enforceDocumentRateLimit(rule: DocumentRateLimitRule, subject: string): Promise<void> {
   const subjectHash = hashDocumentRateLimitSubject(subject, getDocumentRateLimitSecret());
-  const { data, error } = await createRateLimitClient().rpc("consume_document_rate_limit", {
+  const { data, error } = await getRateLimitClient().rpc("consume_document_rate_limit", {
     p_scope: rule.scope,
     p_subject_hash: subjectHash,
     p_window_seconds: rule.windowSeconds,
@@ -169,7 +175,7 @@ export async function enforceLoginRateLimit(request: Pick<Request, "headers">, e
 
 export async function peekDocumentRateLimit(rule: DocumentRateLimitRule, subject: string): Promise<void> {
   const subjectHash = hashDocumentRateLimitSubject(subject, getDocumentRateLimitSecret());
-  const { data, error } = await createRateLimitClient().rpc("peek_document_rate_limit", {
+  const { data, error } = await getRateLimitClient().rpc("peek_document_rate_limit", {
     p_scope: rule.scope,
     p_subject_hash: subjectHash,
     p_window_seconds: rule.windowSeconds,
@@ -188,7 +194,7 @@ export async function resetDocumentRateLimit(
   subject: string,
 ): Promise<void> {
   const subjectHash = hashDocumentRateLimitSubject(subject, getDocumentRateLimitSecret());
-  const { error } = await createRateLimitClient().rpc("reset_document_rate_limit", {
+  const { error } = await getRateLimitClient().rpc("reset_document_rate_limit", {
     p_scope: rule.scope,
     p_subject_hash: subjectHash,
     p_window_seconds: rule.windowSeconds,

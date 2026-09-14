@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Json } from "@/shared/api/database.types";
@@ -49,7 +50,7 @@ type OperationsDatabase = {
   };
 };
 
-export async function createOperationsSupabaseClient() {
+export const createOperationsSupabaseClient = cache(async () => {
   const environment = getPublicEnvironment();
   const cookieStore = await cookies();
   return createServerClient<OperationsDatabase>(environment.supabaseUrl, environment.supabasePublishableKey, {
@@ -64,4 +65,4 @@ export async function createOperationsSupabaseClient() {
       },
     },
   });
-}
+});

@@ -14,28 +14,16 @@ type Props = Readonly<{
   officialCode: string | null;
 }>;
 
-function formatIssuedAt(value: string): string {
-  return formatDateTimePtBr(value);
-}
-
 export function CollectionDocumentsPage({ collectionId, documents, officialCode }: Props) {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-[calc(5.25rem+env(safe-area-inset-bottom,0px)+1.5rem)]">
       <MobilePageHeader
         title="Documentos"
         subtitle={officialCode ? `Guia ${officialCode}` : "Rascunho sem guia emitida"}
         backHref={`/coletas/${collectionId}` as Route}
       />
 
-      <div className="flex flex-col gap-4 px-6 pt-4">
-        <Link
-          href={`/coletas/${collectionId}` as Route}
-          prefetch
-          className="text-center text-[13px] font-semibold text-[var(--color-primary)] active:opacity-70"
-        >
-          Voltar ao detalhe da coleta
-        </Link>
-
+      <div className="flex flex-col gap-4 px-6 pt-6">
         {documents.length === 0 ? (
           <MobileStatePanel
             type="empty"
@@ -50,45 +38,56 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
           documents.map((doc) => {
             const hasPdf = doc.artifacts.some((artifact) => artifact.type === "pdf");
             return (
-              <div
+              <article
                 key={doc.id}
-                className="flex flex-col gap-3 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs"
+                className="flex w-full max-w-[342px] flex-col gap-3 self-center rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-5 shadow-xs"
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-                    Versão {doc.version}
-                  </h3>
-                  <span className="text-[11px] font-normal text-[var(--color-text-muted)]">
-                    {formatIssuedAt(doc.issuedAt)}
-                  </span>
+                <div>
+                  <h2 className="text-[16px] font-semibold leading-6 text-[var(--color-text-primary)]">
+                    Guia de coleta
+                  </h2>
+                  <p className="mt-1 text-[12px] leading-4 text-[var(--color-text-muted)]">
+                    Versão {doc.version} · Emitida · {formatDateTimePtBr(doc.issuedAt)}
+                  </p>
                 </div>
 
-                <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3">
-                  <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--color-text-muted)]">
-                    <Link href={`/coletas/${collectionId}/documentos/${doc.id}` as Route} className="hover:text-[var(--color-primary)]">
-                      Ver
-                    </Link>
-                    {hasPdf ? (
-                      <>
-                        <span>·</span>
-                        <a href={`/api/documents/${doc.id}/download?artifact=pdf`} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary)]">
-                          Baixar PDF
-                        </a>
-                      </>
-                    ) : null}
-                  </div>
-                  <PdfPendingStatus
-                    collectionId={collectionId}
-                    documentId={doc.id}
-                    hasPdf={hasPdf}
-                    {...(doc.pdfJobStatus === undefined ? {} : { pdfJobStatus: doc.pdfJobStatus })}
-                  />
-                </div>
+                <p className="text-[11px] font-semibold leading-4 text-[var(--color-primary-strong)]">
+                  <Link
+                    href={`/coletas/${collectionId}/documentos/${doc.id}` as Route}
+                    className="hover:underline"
+                  >
+                    Ver
+                  </Link>
+                  {hasPdf ? (
+                    <>
+                      {" · "}
+                      <a
+                        href={`/api/documents/${doc.id}/download?artifact=pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        Baixar
+                      </a>
+                    </>
+                  ) : null}
+                </p>
+
+                <PdfPendingStatus
+                  collectionId={collectionId}
+                  documentId={doc.id}
+                  hasPdf={hasPdf}
+                  {...(doc.pdfJobStatus === undefined ? {} : { pdfJobStatus: doc.pdfJobStatus })}
+                />
 
                 {hasPdf ? (
-                  <DocumentDeliveryActions documentId={doc.id} version={doc.version} officialCode={officialCode} />
+                  <DocumentDeliveryActions
+                    documentId={doc.id}
+                    version={doc.version}
+                    officialCode={officialCode}
+                  />
                 ) : null}
-              </div>
+              </article>
             );
           })
         )}

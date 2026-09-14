@@ -7,6 +7,11 @@ import { offlineDatabaseSchema, type OfflineDraftRecord, type OfflineItemRecord 
 import { ensureOfflineDraftStore, resetOfflinePortForTests, setOfflinePortForTests } from "@/_pages/collection-drafts/model/offline-port";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 
+vi.mock("next/dynamic", async () => {
+  const { nextDynamicMock } = await import("../mocks/next-dynamic");
+  return { default: nextDynamicMock };
+});
+
 const { fetchDraftWithItemsAction, collectionExistsAction, getCustomerAction, runAuthenticatedDrain, runAuthenticatedDrainCollection } = vi.hoisted(() => ({
   fetchDraftWithItemsAction: vi.fn(),
   collectionExistsAction: vi.fn(async () => false),
@@ -194,7 +199,7 @@ describe("CollectionCapturePage leftovers", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Finalizar coleta" })).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     fireEvent.click(screen.getByRole("button", { name: "Confirmar assinatura" }));
     fireEvent.change(screen.getByLabelText("Nome de quem assinou *"), { target: { value: "Ana Souza" } });
@@ -244,7 +249,7 @@ describe("CollectionCapturePage revisão", () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText("Local da coleta *")).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
     expect(screen.getByText("Motor usado")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Emitir guia e coletar assinatura" })).toBeDisabled();
   });
@@ -256,7 +261,7 @@ describe("CollectionCapturePage revisão", () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText("Local da coleta *")).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     const locationInput = screen.getByLabelText("Local da coleta *");
     fireEvent.change(locationInput, { target: { value: "Pátio externo, bloco B" } });

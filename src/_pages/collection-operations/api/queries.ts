@@ -18,6 +18,16 @@ function normalizeOperationsPayload(value: unknown): unknown {
   );
 }
 
+export const serviceOrderColumns =
+  "id,organization_id,collection_id,administrator_id,labor_brl,parts_brl,due_days,status,approval_signer_name,approval_signer_tax_id,check_in_signature_path,created_at";
+export const budgetItemColumns =
+  "id,collection_item_id,labor_cost_brl,parts_cost_brl,estimated_days,status,notes";
+export const deliveryTermColumns =
+  "id,organization_id,collection_id,service_order_id,receiver_name,receiver_tax_id,signature_path,notes,created_at";
+export const deliveryTermItemColumns = "id,delivery_term_id,collection_item_id,quantity";
+export const invoiceReferenceColumns =
+  "id,organization_id,collection_id,number,series,issued_at,total_brl,notes,created_at";
+
 export const serviceOrderSchema = z.object({
   id: uuidSchema,
   organizationId: z.number().int().positive(),
@@ -78,7 +88,7 @@ export async function getServiceOrder(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
     .from("service_orders")
-    .select("*")
+    .select(serviceOrderColumns)
     .eq("collection_id", collectionId)
     .maybeSingle();
   if (error) throw error;
@@ -89,7 +99,7 @@ export async function getBudgetItems(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
     .from("service_order_items")
-    .select("*")
+    .select(budgetItemColumns)
     .eq("collection_id", collectionId);
   if (error) throw error;
   return parseOperationsRows(budgetItemSchema, normalizeOperationsPayload(data));
@@ -99,7 +109,7 @@ export async function getDeliveryTerms(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
     .from("delivery_terms")
-    .select("*")
+    .select(deliveryTermColumns)
     .eq("collection_id", collectionId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -110,7 +120,7 @@ export async function getDeliveryTermItems(deliveryTermId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
     .from("delivery_term_items")
-    .select("*")
+    .select(deliveryTermItemColumns)
     .eq("delivery_term_id", deliveryTermId);
   if (error) throw error;
   return z.array(deliveryTermItemSchema).safeParse(normalizeOperationsPayload(data)).data ?? [];
@@ -126,7 +136,7 @@ export async function getInvoiceReference(collectionId: string) {
   const supabase = await createOperationsSupabaseClient();
   const { data, error } = await supabase
     .from("invoice_references")
-    .select("*")
+    .select(invoiceReferenceColumns)
     .eq("collection_id", collectionId)
     .order("issued_at", { ascending: false })
     .maybeSingle();

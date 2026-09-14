@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardHeader, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { PdfPendingStatus } from "./pdf-pending-status";
+import { LazyPdfPreview } from "./lazy-pdf-preview";
 import type { DocumentJobStatus } from "../api/delivery/contracts";
 
 type Props = Readonly<{
@@ -59,11 +60,7 @@ export function DocumentViewerPage({ collectionId, documentId, hasPdf, pdfJobSta
 
         <CardContent className="flex flex-1 flex-col p-0 min-h-[500px]">
           {hasPdf ? (
-            <iframe
-              src={pdfDownloadUrl}
-              title="Visualizador de PDF da Coleta MJT"
-              className="h-full w-full border-0 min-h-[500px]"
-            />
+            <LazyPdfPreview src={pdfDownloadUrl} title="Visualizador de PDF da Coleta MJT" />
           ) : (
             <div className="flex flex-1 items-center justify-center p-4">
               <PdfPendingStatus

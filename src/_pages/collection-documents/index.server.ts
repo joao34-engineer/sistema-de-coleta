@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createElement } from "react";
-import { listCollectionDocuments } from "./api/delivery/queries.server";
+import { listCollectionDocuments, listCollectionDocumentsWithMeta } from "./api/delivery/queries.server";
 import { getCollectionOfficialCode } from "./api/delivery/collection-code.server";
 import { verifyCollectionDocument } from "./api/public/verification";
 import { CollectionDocumentsPage } from "./ui/collection-documents-page";
@@ -15,6 +15,7 @@ export { cleanupExpiredDocumentRenderIntents } from "./api/rendering/cleanup.ser
 export { scheduleDocumentRenderKick } from "./api/schedule-document-render-kick";
 export { PublicVerificationPage } from "./ui/public-verification-page";
 export { PublicVerificationWaitPage } from "./ui/public-verification-wait-page";
+export { DocumentShareAvailablePage, DocumentShareUnavailablePage } from "./ui/document-share-page";
 
 export async function PublicVerificationRoute({ token }: Readonly<{ token: string }>) {
   try {
@@ -26,11 +27,11 @@ export async function PublicVerificationRoute({ token }: Readonly<{ token: strin
 }
 
 export async function CollectionDocumentsRoute({ collectionId }: Readonly<{ collectionId: string }>) {
-  const [documents, officialCode] = await Promise.all([
-    listCollectionDocuments(collectionId),
-    getCollectionOfficialCode(collectionId),
-  ]);
-  return createElement(CollectionDocumentsPage, { collectionId, documents, officialCode });
+  const listed = await listCollectionDocumentsWithMeta(collectionId);
+  const officialCode =
+    listed.officialCode ??
+    (listed.documents.length === 0 ? await getCollectionOfficialCode(collectionId) : null);
+  return createElement(CollectionDocumentsPage, { collectionId, documents: listed.documents, officialCode });
 }
 
 export async function CollectionDocumentViewerRoute({

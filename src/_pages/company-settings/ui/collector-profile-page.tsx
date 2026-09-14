@@ -1,78 +1,56 @@
-import Link from "next/link";
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
-import { Card, CardHeader, CardContent, CardFooter } from "@/shared/ui/card";
-import { Button } from "@/shared/ui/button";
+import { Card } from "@/shared/ui/card";
 import { SignOutForm } from "@/shared/ui/sign-out-form";
+import { PendingNavLink } from "@/shared/ui/pending-nav-link";
+import { buttonClassName } from "@/shared/lib/button-class-name";
 import { operatorDisplayName } from "@/shared/auth/operator-display-name";
-import { hubChrome } from "../model/settings-chrome";
+import { hubChrome, settingsLogoSrc } from "../model/settings-chrome";
 
 type Props = Readonly<{
   administrator: AuthenticatedAdministrator;
 }>;
 
+function AccountFact({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <Card className="min-h-[58px] px-5 py-3">
+      <p className="text-[12px] font-semibold leading-4 text-[var(--color-text-muted)]">{label}</p>
+      <p className="mt-0.5 break-words text-[13px] font-normal leading-5 text-[var(--color-text-muted)]">{value}</p>
+    </Card>
+  );
+}
+
 export function CollectorProfilePage({ administrator }: Props) {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-[calc(5.25rem+env(safe-area-inset-bottom,0px)+1.5rem)]">
       <MobilePageHeader
+        logoSrc={settingsLogoSrc}
         title={hubChrome.title}
         subtitle={hubChrome.subtitle}
-        backHref={"/coletas" as Route}
       />
 
-      <div className="flex flex-col gap-4 px-4">
+      <div className="flex flex-col gap-3.5 px-6 pt-7">
         <div>
-          <h2 className="text-[20px] font-semibold text-[var(--color-text)]">
-            Configurações da conta
+          <h2 className="text-[20px] font-semibold leading-8 text-[var(--color-text-primary)]">
+            Operador autenticado
           </h2>
-          <p className="text-[12px] text-[var(--color-muted)]">
-            {administrator.email}
+          <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-muted)]">
+            {operatorDisplayName(administrator.fullName)}
           </p>
         </div>
 
-        {/* Card do Perfil do Operador */}
-        <Card>
-          <CardHeader>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-primary-strong)]">
-              Operador Autenticado
-            </span>
-            <h3 className="text-[16px] font-semibold text-[var(--color-text)]">
-              {operatorDisplayName(administrator.fullName)}
-            </h3>
-          </CardHeader>
+        <AccountFact label="Organização" value={administrator.organizationName} />
+        <AccountFact label="Função" value={administrator.role} />
+        <AccountFact label="E-mail" value={administrator.email} />
 
-          <CardContent className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3 text-[12px]">
-            <div className="flex justify-between">
-              <span className="text-[var(--color-muted)]">Organização:</span>
-              <span className="font-semibold text-[var(--color-text)]">{administrator.organizationName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--color-muted)]">Função:</span>
-              <span className="font-semibold uppercase text-[var(--color-text)]">{administrator.role}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card da Empresa do Figma */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-[14px] font-semibold text-[var(--color-text)]">
-              Dados Jurídicos & Impressão
-            </h3>
-            <p className="text-[12px] text-[var(--color-muted)]">
-              Razão social, CNPJ, telefone e rodapé dos recibos.
-            </p>
-          </CardHeader>
-          <CardFooter>
-            <Link href={"/configuracoes/empresa?from=/configuracoes" as Route} className="w-full">
-              <Button variant="secondary" size="md">
-                Editar Perfil Institucional
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
+        <PendingNavLink
+          href={"/configuracoes/empresa?from=/configuracoes" as Route}
+          className={buttonClassName({ variant: "primary", size: "md" })}
+        >
+          Editar perfil institucional
+        </PendingNavLink>
 
         <SignOutForm size="md" />
       </div>

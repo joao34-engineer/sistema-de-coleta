@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { SignaturePad } from "@/shared/ui/signature-pad";
+import { signatureDataUrlToPngFile } from "@/shared/lib/file/signature-data-url-to-png-file";
 import { deliverToCustomerAction } from "../api/actions";
 import { customerDeliverySchema } from "../model/contracts";
 import { useWorkshopHubSubmit } from "../model/use-workshop-hub-submit";
@@ -32,12 +33,6 @@ type Props = Readonly<{
   alreadyDeliveredItemIds: ReadonlyArray<string>;
   rowVersion: number;
 }>;
-
-function dataUrlToFile(dataUrl: string): File {
-  const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
-  const buffer = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
-  return new File([buffer], "signature.png", { type: "image/png" });
-}
 
 export function CustomerDeliveryPage({
   collectionId,
@@ -107,7 +102,7 @@ export function CustomerDeliveryPage({
       }
       formData.set("deliveredItemIds", JSON.stringify(selectedIds));
       formData.set("signatureIntentId", signatureIntentId);
-      formData.set("signature", dataUrlToFile(signaturePng));
+      formData.set("signature", signatureDataUrlToPngFile(signaturePng));
       return deliverToCustomerAction(collectionId, formData);
     });
   }

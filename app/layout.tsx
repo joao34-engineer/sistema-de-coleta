@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Geist } from "next/font/google";
 import { AppPwaShell, buildDevServiceWorkerCleanupScript } from "@/_app/pwa";
 import "@/_app/styles/globals.css";
+
+const geistSans = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+});
 
 export const metadata: Metadata = {
   title: { default: "Sistema de Coleta MJT", template: "%s | Coleta MJT" },
@@ -24,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   const isDev = process.env.NODE_ENV !== "production";
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={geistSans.variable}>
       <head>
         {isDev ? (
           <script

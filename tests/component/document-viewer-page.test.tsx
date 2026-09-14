@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 describe("DocumentViewerPage", () => {
   afterEach(() => cleanup());
 
-  it("shows the PDF iframe and download when the artifact exists", () => {
+  it("shows download and a preview control without mounting the iframe", () => {
     render(
       <DocumentViewerPage
         collectionId="11111111-1111-4111-8111-111111111111"
@@ -18,10 +18,8 @@ describe("DocumentViewerPage", () => {
       />,
     );
 
-    expect(screen.getByTitle("Visualizador de PDF da Coleta MJT")).toHaveAttribute(
-      "src",
-      "/api/documents/22222222-2222-4222-8222-222222222222/download?artifact=pdf",
-    );
+    expect(screen.queryByTitle("Visualizador de PDF da Coleta MJT")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pré-visualizar" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Baixar/i })).toBeInTheDocument();
     expect(screen.getByText("Integridade Preservada")).toBeInTheDocument();
   });
@@ -38,7 +36,7 @@ describe("DocumentViewerPage", () => {
 
     expect(screen.queryByTitle("Visualizador de PDF da Coleta MJT")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Baixar/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF da guia/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/Gerando o PDF/i);
     expect(screen.getByText("Gerando PDF")).toBeInTheDocument();
   });
 
@@ -53,7 +51,7 @@ describe("DocumentViewerPage", () => {
     );
 
     expect(screen.getByRole("status")).toHaveTextContent(/Não foi possível gerar o PDF/i);
-    expect(screen.queryByText(/Gerando o PDF da guia/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Gerando o PDF" })).not.toBeInTheDocument();
     expect(screen.getByText("Falha na geração")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
   });

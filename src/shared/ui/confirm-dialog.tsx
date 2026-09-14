@@ -19,10 +19,10 @@ export function ConfirmDialog({ title, body, cancelLabel, confirmLabel, onCancel
         aria-labelledby={titleId}
         aria-describedby={bodyId}
         aria-modal="true"
-        className="flex w-full max-w-[320px] flex-col items-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-[var(--shadow-surface)]"
+        className="flex w-full max-w-[342px] flex-col items-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-[var(--shadow-surface)]"
         role="dialog"
       >
-        <div className="mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#fff8ec] text-3xl font-bold text-[#a36b2c]">
+        <div className="mb-4 flex h-[92px] w-[92px] items-center justify-center rounded-full bg-[#fff8ec] text-[36px] font-semibold leading-8 text-[#a36b2c]">
           !
         </div>
         <h2 id={titleId} className="text-[20px] font-semibold text-[var(--color-text)]">

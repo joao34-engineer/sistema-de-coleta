@@ -3,12 +3,14 @@ export type SettingsChrome = Readonly<{
   subtitle: string;
 }>;
 
+export const settingsLogoSrc = "/logo/Logo_-_MJT-removebg-preview.png";
+
 export const hubChrome: SettingsChrome = {
-  title: "Empresa",
-  subtitle: "Dados institucionais",
+  title: "Conta",
+  subtitle: "Configurações da conta",
 };
 
 export const leafChrome: SettingsChrome = {
-  title: "Perfil institucional",
-  subtitle: "Razão social, CNPJ e rodapé da guia",
+  title: "Empresa",
+  subtitle: "Dados institucionais",
 };

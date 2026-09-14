@@ -11,6 +11,7 @@ export interface SignaturePadProps {
 
 export type SignaturePadPhase = "idle" | "drawn" | "confirmed";
 
+/** Rubric PNG only (~parent width × 180). Do not reuse this pad for evidence photos. */
 export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear, disabled = false }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);

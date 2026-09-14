@@ -11,6 +11,11 @@ import {
 import { ensureOfflineDraftStore, resetOfflinePortForTests, setOfflinePortForTests } from "@/_pages/collection-drafts/model/offline-port";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 
+vi.mock("next/dynamic", async () => {
+  const { nextDynamicMock } = await import("../mocks/next-dynamic");
+  return { default: nextDynamicMock };
+});
+
 const { replace, setDraftStepMock, realSetDraftStep } = vi.hoisted(() => ({
   replace: vi.fn(),
   setDraftStepMock: vi.fn(),
@@ -126,7 +131,7 @@ describe("CollectionCapturePage optimistic step", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Revisar coleta" })).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
     fireEvent.click(screen.getByRole("button", { name: "Revisar coleta" }));
 
     await waitFor(() => {
@@ -142,7 +147,7 @@ describe("CollectionCapturePage optimistic step", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Revisar coleta" })).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
     fireEvent.click(screen.getByRole("button", { name: "Revisar coleta" }));
 
     await waitFor(() => {

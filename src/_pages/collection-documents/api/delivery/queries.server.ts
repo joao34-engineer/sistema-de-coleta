@@ -3,38 +3,33 @@ import "server-only";
 import { createServerSupabaseClient } from "@/shared/auth/supabase-server";
 import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { createPhaseTwoServiceClient } from "../rendering/server-client";
-import { documentArtifactRowSchema, documentJobRowSchema, documentListRowSchema, consumedShareSchema, inspectedShareSchema, type ConsumedShare, type DocumentListDTO, type InspectedShare } from "./contracts";
+import { documentArtifactRowSchema, consumedShareSchema, inspectedShareSchema, type ConsumedShare, type DocumentListDTO, type InspectedShare } from "./contracts";
+import { mapNestedDocumentList, type CollectionDocumentListResult } from "./document-list-map";
 import { DocumentDeliveryError } from "./errors";
 
-export async function listCollectionDocuments(collectionId: string): Promise<ReadonlyArray<DocumentListDTO>> {
+const documentListSelect = [
+  "id,collection_id,version,status,issued_at",
+  "document_artifacts(id,document_id,artifact_type,storage_path,content_type,byte_size,created_at)",
+  "document_jobs(document_id,status,job_type)",
+  "collections!documents_collection_id_organization_id_fkey(official_code)",
+].join(",");
+
+export async function listCollectionDocumentsWithMeta(
+  collectionId: string,
+): Promise<CollectionDocumentListResult> {
   await requireAuthenticatedAdministrator();
   const supabase = await createServerSupabaseClient();
-  const { data: documentRows, error } = await supabase.from("documents").select("id,collection_id,version,status,issued_at").eq("collection_id", collectionId).order("version", { ascending: false });
+  const { data: documentRows, error } = await supabase
+    .from("documents")
+    .select(documentListSelect)
+    .eq("collection_id", collectionId)
+    .order("version", { ascending: false });
   if (error) throw error;
-  const documents = (documentRows ?? []).map((row) => documentListRowSchema.parse(row));
-  if (documents.length === 0) return [];
+  return mapNestedDocumentList(documentRows);
+}
 
-  const documentIds = documents.map((document) => document.id);
-  const [{ data: artifactRows, error: artifactsError }, { data: jobRows, error: jobsError }] = await Promise.all([
-    supabase.from("document_artifacts").select("id,document_id,artifact_type,storage_path,content_type,byte_size,created_at").in("document_id", documentIds),
-    supabase.from("document_jobs").select("document_id,status").in("document_id", documentIds).eq("job_type", "render_pdf"),
-  ]);
-  if (artifactsError) throw artifactsError;
-  if (jobsError) throw jobsError;
-  const artifacts = (artifactRows ?? []).map((row) => documentArtifactRowSchema.parse(row));
-  const pdfJobs = (jobRows ?? []).map((row) => documentJobRowSchema.parse(row));
-  return documents.map((document) => {
-    const pdfJob = pdfJobs.find((job) => job.document_id === document.id);
-    return {
-      id: document.id,
-      collectionId: document.collection_id,
-      version: document.version,
-      status: document.status,
-      issuedAt: document.issued_at,
-      ...(pdfJob ? { pdfJobStatus: pdfJob.status } : {}),
-      artifacts: artifacts.filter((artifact) => artifact.document_id === document.id).map((artifact) => ({ id: artifact.id, type: artifact.artifact_type, contentType: artifact.content_type, byteSize: artifact.byte_size, createdAt: artifact.created_at })),
-    };
-  });
+export async function listCollectionDocuments(collectionId: string): Promise<ReadonlyArray<DocumentListDTO>> {
+  return (await listCollectionDocumentsWithMeta(collectionId)).documents;
 }
 
 export async function createDocumentArtifactDownload(documentId: string, artifactType: "pdf" | "qr"): Promise<string> {

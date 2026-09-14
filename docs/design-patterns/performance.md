@@ -2,10 +2,10 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `planned` — Fases 6–7; **Fase 1–5 entregues** (5 = draft nas rotas + `next/dynamic` por passo; 5.2 = actions DTO, architecture Fase A) |
+| **Status** | `closed` — Fases 1–7 **entregues** (7 = 2026-09-14: paginação 25 já existia; barrels nomeados; singleton de rate-limit; PNG de rubrica; `draft-items-page` apagada) |
 | **Authority** | `informative` |
 | **Owner** | product / sistema-coleta |
-| **Last verified** | 2026-09-13 |
+| **Last verified** | 2026-09-14 |
 | **Escopo** | Somente `sistema-coleta/` |
 | **Pedido** | Análise explícita do humano (atraso ao tocar botões + varredura de desempenho) |
 | **Método** | Revisão estática do código. Sem profiler de produção, sem tempos medidos em campo. |
@@ -49,6 +49,12 @@ O service worker **não** é o culpado. A busca da lista debounceia no cliente; 
 | Finalize online | Fase 4.2. `runAuthenticatedDrainCollection` desta guia; `void drainAllPending` para o resto. |
 | Passo do wizard | Fase 4.3. `setStep` + `replace` no tap; `setDraftStep` depois; rollback se o IDB falhar. |
 | Draft nas rotas + chunk por passo | Fase 5 (2026-09-13). `itens` / `revisao` / `assinatura` passam `initialDraft`; SignaturePad só no passo de assinatura. |
+| Headers de estáticos | Fase 6.1. Catch-all continua `private, no-store`. `/_next/static` immutable; `/icons` `max-age=86400`. |
+| Queries de oficina | Fase 6.2. `select` alinhado ao Zod; `createOperationsSupabaseClient` em `cache()`. |
+| Lista de documentos | Fase 6.3. Nested artifacts/jobs/`official_code`. Slim `official_code` só se a lista vier vazia. |
+| Geist | Fase 6.4. `next/font/google` no `app/layout.tsx` liga `--font-geist-sans`. |
+| Viewer de PDF | Fase 6.5. Lazy iframe (`Pré-visualizar`); **não** é o frame Figma M10. |
+| Lista `/coletas` | Fase 7.1. Cursor `limit: 25` + **Carregar mais** (já existia). Sem virtualização. |
 | Páginas autenticadas dinâmicas | `cookies()` + RLS exigem render no request. O ganho **não** é “tornar o dashboard estático”. |
 
 ---
@@ -74,7 +80,7 @@ toque no Link
 | Destino | Auth I/O no mesmo RSC | Depois disso |
 | :--- | ---: | :--- |
 | `/dashboard` | **1** (layout / queries / `DashboardRoute` compartilham o cache) | settings + lista |
-| `/coletas` | **1** | lista (limit 50) |
+| `/coletas` | **1** | lista (limit 25 + cursor) |
 | `/coletas/nova` | **1** | wizard client hidrata sozinho |
 | `/coletas/[id]` | **1** auth + **1** detalhe por id | eventos + service order + budget (paralelo) |
 
@@ -146,13 +152,14 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P1-1 — `force-dynamic` + `Cache-Control: private, no-store` em `/(.*)`
+### P1-1 — `force-dynamic` + `Cache-Control: private, no-store` em `/(.*)` — **feito (Fase 6.1)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Nenhuma navegação reaproveita HTML/RSC. Assets estáticos também recebem `no-store` no header catch-all. |
 | **Onde** | `app/(protected)/layout.tsx` (`dynamic = "force-dynamic"`) e a maioria das pages. `next.config.ts` headers `source: "/(.*)"`. |
-| **Por que dói** | `force-dynamic` em dado autenticado é correto. O catch-all `no-store` em `/_next/static` e `/icons` impede cache de JS/CSS/ícones no HTTP (o SW mitiga só parte). |
+| **Por que doía** | `force-dynamic` em dado autenticado é correto. O catch-all `no-store` em `/_next/static` e `/icons` impedia cache de JS/CSS/ícones no HTTP (o SW mitigava só parte). |
+| **Entregue** | Catch-all `private, no-store` permanece. Overrides depois: `/_next/static` `public, max-age=31536000, immutable`; `/icons` `public, max-age=86400`. `/sw.js`, `/d/*`, `/verificar/*` intactos. |
 
 ---
 
@@ -197,14 +204,14 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P1-6 — Wizard hidrata **depois** do mount — **feito (Fase 5.1 / 5.3)**
+### P1-6 — Wizard hidrata **depois** do mount — **feito (Fase 5.1 / 5.3; legado 7.5)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | `/coletas/nova` e passos de rascunho abriam vazios/parciais até IndexedDB + action + drain. |
 | **Onde** | `itens` / `revisao` / `assinatura` agora chamam `loadWizardDraftForPage` e passam `initialDraft`. `CollectionCapturePage` pinta a partir das props e hidrata o IDB; `fetchDraftWithItemsAction` fica de fallback. Passos via `next/dynamic` (SignaturePad só em assinatura). |
 | **Por que doía** | Dado que o servidor já poderia ter buscado chegava tarde. Um chunk JS grande no aparelho de campo. |
-| **Legado** | `draft-items-page.tsx` continua órfã e ainda busca no mount se `initialDraft` faltar (Fase 7.5). `draft-review-page.tsx` é só apresentação no wizard. `draft-signature-page.tsx` foi apagada (scan 5.15, `30d8621`). |
+| **Legado** | `draft-items-page.tsx` apagada (Fase 7.5). `draft-review-page.tsx` é só apresentação no wizard. `draft-signature-page.tsx` foi apagada (scan 5.15, `30d8621`). |
 
 ---
 
@@ -219,43 +226,47 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P1-8 — Documentos: auth extra + queries em série
+### P1-8 — Documentos: auth extra + queries em série — **feito (Fase 6.3)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Abrir documentos da coleta espera auth + `documents` + **depois** `document_artifacts`. |
 | **Onde** | `collection-documents/api/delivery/queries.server.ts` (`listCollectionDocuments`). Há fetch separado de `official_code` que o detalhe da coleta já tem. |
-| **Por que dói** | Duas idas ao banco onde um join/`in` paralelo basta. Auth já é `cache()` (Fase 2). |
+| **Por que doía** | Duas idas ao banco onde um join/`in` paralelo basta. Auth já é `cache()` (Fase 2). |
+| **Entregue** | Nested `document_artifacts` + `document_jobs` + `collections.official_code` num select. Slim `getCollectionOfficialCode` só na lista vazia. |
 
 ---
 
-### P1-9 — Viewer de PDF em iframe autenticado
+### P1-9 — Viewer de PDF em iframe autenticado — **feito (Fase 6.5)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Tela de documento baixa o PDF inteiro no iframe (redirect + download). |
 | **Onde** | `document-viewer-page.tsx`. |
-| **Por que dói** | Memória e rede no celular. Geração no servidor está correta; o embed é o custo. |
+| **Por que doía** | Memória e rede no celular. Geração no servidor está correta; o embed é o custo. |
+| **Entregue** | `LazyPdfPreview`: Baixar/abrir nativo no tap de entrada; iframe só após **Pré-visualizar**. Não é o lote visual Figma M10. |
 
 ---
 
-### P1-10 — Assinatura PNG no main thread
+### P1-10 — Assinatura PNG no main thread — **feito (Fase 7.4)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Confirmar assinatura faz `toDataURL` + `atob` + `File` antes do upload. |
 | **Onde** | `signature-pad.tsx`; `dataUrlToFile` em `workshop-checkin-page.tsx` (e equivalentes). |
-| **Por que dói** | Canvas grande trava o thread. Aceitável para rubrica pequena; não reutilizar para foto de evidência. |
+| **Por que doía** | Canvas grande trava o thread. Aceitável para rubrica pequena; não reutilizar para foto de evidência. |
+| **Entregue** | Pad permanece ~parent × 180 PNG. `signatureDataUrlToPngFile` único em check-in e entrega. Evidência continua `validateEvidenceFile`, não o pad. |
 
 ---
 
-### P1-11 — `select("*")` nas queries de oficina
+### P1-11 — `select("*")` nas queries de oficina — **feito (Fase 6.2)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | Hub e oficina puxam linha larga. |
 | **Onde** | `collection-operations/api/queries.ts` — `service_orders`, `service_order_items`, `delivery_terms`, etc. Cada função cria cliente novo (`createOperationsSupabaseClient`). |
-| **Por que dói** | Payload maior que o view-model. Drafts já usam lista de colunas — copiar o hábito. |
+| **Por que doía** | Payload maior que o view-model. Drafts já usam lista de colunas — copiar o hábito. |
+| **Entregue** | Colunas 1:1 com Zod. `createOperationsSupabaseClient` em `cache()`. Check-in já era explícito. |
 
 ---
 
@@ -269,40 +280,41 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P2-1 — Geist no CSS, sem `next/font`
+### P2-1 — Geist no CSS, sem `next/font` — **feito (Fase 6.4)**
 
 | | |
 | :--- | :--- |
 | **Sintoma** | `--font-geist-sans` no `globals.css`; `app/layout.tsx` não carrega a fonte. |
-| **Por que dói** | Fallback do sistema + possível shift no primeiro paint. |
+| **Por que doía** | Fallback do sistema + possível shift no primeiro paint. |
+| **Entregue** | `Geist` via `next/font/google` no `app/layout.tsx`; `--font-geist-sans` no `<html>`. |
 
 ---
 
-### P2-2 — Lista sem virtualização (hoje limit 50)
+### P2-2 — Lista sem virtualização — **feito (Fase 7.1; paginação já existia)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | `/coletas` e dashboard pedem `limit: 50`. Filtro local re-renderiza todos os cards. Sem `React.memo` nas linhas. |
-| **Por que dói** | Ok no volume atual. Dói se o limite crescer sem paginação/virtualização. |
+| **Sintoma** | O inventário citava `limit: 50` e filtro local. |
+| **Entregue** | `/coletas` e `/coletas/rascunhos` já usam `limit: 25` + cursor **Carregar mais**. Dashboard pede `limit: 2`. Filtros da lista são URL + servidor (Fase 1.5). Virtualização adiada até o limite passar de ~50. |
 
 ---
 
-### P2-3 — Barrel `export *` no slice de operations
+### P2-3 — Barrel `export *` no slice de operations — **feito (Fase 7.2)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | `collection-operations/index.server.ts` e `api/index.server.ts` reexportam tudo. |
-| **Por que dói** | Grafo de import mais largo para o bundler. Preferir import direto. Server-only, risco baixo. |
+| **Sintoma** | `collection-operations/index.server.ts` e `api/index.server.ts` reexportavam com `export *`. |
+| **Entregue** | API pública nomeada (padrão de lifecycle/drafts). `app/` e `_app/` continuam nos barrels `index.ts` / `index.server.ts` (Fase F). Sem sidestep. |
 
 ---
 
-### P2-4 — Rate-limit cria client service a cada chamada
+### P2-4 — Rate-limit cria client service a cada chamada — **feito (Fase 7.3)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | Login e download público constroem `createClient` por request. |
+| **Sintoma** | Login e download público construíam `createClient` por chamada. |
 | **Onde** | `shared/lib/rate-limit.server.ts`. |
-| **Por que dói** | Segurança está correta (RPC + limite). Singleton de módulo reduz só o setup. Não afrouxar o limite. |
+| **Entregue** | `getRateLimitClient()` singleton de módulo. RPC, janelas, HMAC e fail-closed intactos. Sem `cache()` do React (cliente service-role, sem cookies). |
 
 ---
 
@@ -466,53 +478,53 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 ---
 
-### Fase 6 — Headers, payload e higiene de leitura
+### Fase 6 — Headers, payload e higiene de leitura — **feita** (2026-09-14)
 
 **Objetivo:** menos byte e menos round-trip **depois** do tap já parecer instantâneo.
 
-#### Passo 6.1 — `Cache-Control` só onde precisa `no-store`
+#### Passo 6.1 — `Cache-Control` só onde precisa `no-store` — **feito**
 
-**Faz:** manter `private, no-store` em HTML autenticado, `/api` (exceto health se já público), `/d/*`, `/verificar/*`. Tirar o catch-all de `/_next/static` e `/icons` — deixar cache longo (o SW já trata o shell).
+**Faz:** manter `private, no-store` em HTML autenticado, `/api`, `/d/*`, `/verificar/*`. Overrides depois do catch-all: `/_next/static` immutable; `/icons` um dia (nomes não hashed).
 
 **Aceite:** Response headers de um JS em `/_next/static/` não são `no-store`. Páginas de coleta continuam sem cache compartilhado.
 
-#### Passo 6.2 — Colunas explícitas nas queries de oficina
+#### Passo 6.2 — Colunas explícitas nas queries de oficina — **feito**
 
-**Faz:** `select` alinhado aos schemas Zod já existentes. Reusar um cliente por request se for trivial.
+**Faz:** `select` alinhado aos schemas Zod já existentes. `createOperationsSupabaseClient` em `cache()`.
 
 **Aceite:** o hub não pede colunas que o view-model descarta.
 
-#### Passo 6.3 — Documentos em paralelo / um round-trip
+#### Passo 6.3 — Documentos em paralelo / um round-trip — **feito**
 
-**Faz:** artifacts no mesmo fluxo que a lista (join ou `Promise.all` após ids). Auth já via `cache()` da Fase 2. Não refetch de `official_code` se o detalhe já veio.
+**Faz:** nested artifacts + jobs + `collections.official_code`. Slim `official_code` só na lista vazia. Auth via `cache()` da Fase 2.
 
 **Aceite:** uma ida a menos ao banco no caminho feliz da lista de documentos.
 
-#### Passo 6.4 — Geist via `next/font`
+#### Passo 6.4 — Geist via `next/font` — **feito**
 
 **Faz:** carregar no `app/layout.tsx` e ligar a variável CSS.
 
 **Aceite:** `--font-geist-sans` resolve; sem flash de fonte genérica se a rede permitir.
 
-#### Passo 6.5 — PDF viewer (quando doer em campo)
+#### Passo 6.5 — PDF viewer (quando doer em campo) — **feito**
 
-**Faz:** link de download + abrir nativo, ou lazy do iframe. Sem processar PDF no client.
+**Faz:** link de download + abrir nativo; iframe só após **Pré-visualizar**. Sem processar PDF no client. **Não** é o frame Figma M10.
 
 **Aceite:** a tela de documento não aloca o PDF inteiro só para “entrar” na página, se o operador só quer o link.
 
 ---
 
-### Fase 7 — Higiene (quando o arquivo já estiver aberto)
+### Fase 7 — Higiene — **feita** (2026-09-14)
 
-Não abrir PR só para isto, salvo o humano pedir.
+Não era P0. Entregue no mesmo PR porque o humano pediu a fase.
 
 | Passo | Issue | Faz |
 | :--- | :--- | :--- |
-| 7.1 | P2-2 | Paginação ou virtualização **se** o limite passar de ~50. |
-| 7.2 | P2-3 | Imports diretos no lugar de `export *` ao tocar o slice. |
-| 7.3 | P2-4 | Client de rate-limit em módulo (singleton), sem mudar a RPC. |
-| 7.4 | P1-10 | Manter PNG pequeno; não reusar o pad para foto. |
-| 7.5 | P1-6 legado | Apagar ou alinhar `draft-*-page.tsx` se ninguém montar. |
+| 7.1 | P2-2 | **Feito (já existia).** Cursor `limit: 25` em `/coletas` e rascunhos; dashboard `limit: 2`. Sem virtualização. |
+| 7.2 | P2-3 | **Feito.** Exports nomeados nos barrels de operations. Sem sidestep da Fase F. |
+| 7.3 | P2-4 | **Feito.** Singleton `getRateLimitClient()`. RPC e limites intactos. |
+| 7.4 | P1-10 | **Feito.** Pad 180px PNG; helper único; não reusar para foto. |
+| 7.5 | P1-6 legado | **Feito.** `draft-items-page.tsx` apagada. `draft-review-page.tsx` permanece. |
 
 ---
 
@@ -524,11 +536,11 @@ Fase 2  cache() auth + detalhe     → feita (2026-09-13; = architecture Fase E)
 Fase 3  drain + debounce           → feita (2026-09-13; mount lista só; reconectar/Retry/captura drenam)
 Fase 4  mutações                   → feita (2026-09-13; oficina transition; finalize só desta coleta; passo otimista)
 Fase 5  wizard + actions diretas   → feita (2026-09-13; 5.1 props RSC; 5.2 = architecture Fase A; 5.3 dynamic por passo)
-Fase 6  headers / select / font    → próxima (depois do tap já parecer instantâneo)
-Fase 7  higiene                    → opportunista
+Fase 6  headers / select / font    → feita (2026-09-14; 6.5 = lazy iframe, não Figma M10)
+Fase 7  higiene                    → feita (2026-09-14; 7.1 paginação 25 já existia; 7.2 barrels nomeados; 7.3 singleton rate-limit; 7.4 PNG rubrica; 7.5 draft-items órfã apagada)
 ```
 
-Não juntar Fase 1 com Fase 5 no mesmo PR. Não juntar performance com Chat 5 de backup.
+Não juntar Fase 1 com Fase 5 no mesmo PR. Não juntar performance com Chat 5 de backup. Fase 7 fechou o plano de latência percebida; P0-3 (`getClaims` no proxy) permanece fora deste eixo.
 
 ---
 
@@ -541,6 +553,7 @@ Não juntar Fase 1 com Fase 5 no mesmo PR. Não juntar performance com Chat 5 de
 | [`decisions/0006-offline-draft-queue.md`](../decisions/0006-offline-draft-queue.md) | Fila oficial. Fase 3: **quando** drena (não cada paint do layout). Fase 4.2: finalize online espera só **esta** coleta. Fase 4.3: URL do wizard no tap, IDB depois, com rollback. |
 | [`execution/phase-4-hardening-launch.md`](../execution/phase-4-hardening-launch.md) | PWA/offline já verdes. Performance não é um chat da Fase 4. |
 | [`http-api.md`](../http-api.md) | Contrato HTTP intacto. |
+| [`figma-prototype-frames.md`](../design-system/figma-prototype-frames.md) | Inventário visual. Fase 6.5 não implementa M10. |
 
 Sem ADR novo de plataforma. A Fase 4.2 emendou [ADR 0006](../decisions/0006-offline-draft-queue.md) (finalize online aguarda só a fila desta coleta). A Fase 4.3 emendou o timing B12: `replace` antes do write local, com rollback.
 
@@ -568,4 +581,4 @@ Se um PR não move esses ponteiros, não é trabalho de performance — é ruíd
 - Next.js — [`useLinkStatus`](https://nextjs.org/docs/app/api-reference/functions/use-link-status)
 - Next.js — [Data Security / Data Access Layer](https://nextjs.org/docs/app/guides/data-security)
 - Local: revisão de `proxy.ts`, `(protected)/layout.tsx`, `require-admin.ts`, `next.config.ts`, `collection-capture-page.tsx`, `workshop-checkin-page.tsx`, `use-workshop-hub-submit.ts`, `offline-pending-banner.tsx`, `queries.ts` (lifecycle e operations), `collections-list-page.tsx`
-- Data da revisão: 2026-08-29; chips da lista em 2026-09-07; Fase 4 e Fase 5 em 2026-09-13
+- Data da revisão: 2026-08-29; chips da lista em 2026-09-07; Fase 4 e Fase 5 em 2026-09-13; Fase 6 e Fase 7 em 2026-09-14

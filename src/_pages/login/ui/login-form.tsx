@@ -13,7 +13,7 @@ export function LoginForm() {
     <form action={formAction} className="flex flex-col gap-5" noValidate>
       <div>
         <label htmlFor="email" className="mb-1.5 block text-[12px] font-semibold text-[var(--color-text-primary)]">
-          E-mail Corporativo *
+          E-mail
         </label>
 
         <input
@@ -36,7 +36,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="password" className="mb-1.5 block text-[12px] font-semibold text-[var(--color-text-primary)]">
-          Senha *
+          Senha
         </label>
         <div className="relative">
           <input
@@ -78,7 +78,7 @@ export function LoginForm() {
         isLoading={pending}
         className="mt-3 h-[52px] rounded-[12px] text-[14px] font-semibold"
       >
-        {pending ? "Entrando..." : "Entrar no sistema"}
+        {pending ? "Entrando..." : "Entrar"}
       </Button>
     </form>
   );

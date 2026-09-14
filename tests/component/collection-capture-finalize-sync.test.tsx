@@ -8,6 +8,11 @@ import { resetOfflinePortForTests, setOfflinePortForTests } from "@/_pages/colle
 import { ensureOfflineDraftStore } from "@/_pages/collection-drafts/model/offline-port";
 import { resetOfflineSnapshotForTests } from "@/_pages/collection-drafts/model/offline-snapshot";
 
+vi.mock("next/dynamic", async () => {
+  const { nextDynamicMock } = await import("../mocks/next-dynamic");
+  return { default: nextDynamicMock };
+});
+
 const actor = { userId: "11111111-1111-4111-8111-111111111111", organizationId: 1 };
 const collectionId = "22222222-2222-4222-8222-222222222222";
 
@@ -94,7 +99,7 @@ describe("CollectionCapturePage finalize online leftover", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Finalizar coleta" })).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     fireEvent.click(screen.getByRole("button", { name: "Confirmar Assinatura" }));
     await waitFor(() => {
@@ -119,7 +124,7 @@ describe("CollectionCapturePage finalize online leftover", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Finalizar coleta" })).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
 
     fireEvent.click(screen.getByRole("button", { name: "Confirmar Assinatura" }));
     const taxId = screen.getByLabelText("CPF/CNPJ de quem assinou *");

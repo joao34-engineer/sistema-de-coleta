@@ -9,14 +9,17 @@ type Props = Readonly<{ settings: CompanySettingsDTO; backHref: Route }>;
 
 export function CompanySettingsPage({ settings, backHref }: Props) {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-background)] pb-28">
+    <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-surface-bg)] pb-[calc(5.25rem+env(safe-area-inset-bottom,0px)+1.5rem)]">
       <MobilePageHeader
         title={leafChrome.title}
         subtitle={leafChrome.subtitle}
         backHref={backHref}
       />
 
-      <div className="flex flex-col gap-4 px-4 pt-4">
+      <div className="flex flex-col gap-4 px-6 pt-7">
+        <h2 className="text-[20px] font-semibold leading-8 text-[var(--color-text-primary)]">
+          {settings.setupStatus === "complete" ? "Dados da empresa" : "Configuração pendente"}
+        </h2>
         <CompanySettingsForm settings={settings} />
       </div>
 
