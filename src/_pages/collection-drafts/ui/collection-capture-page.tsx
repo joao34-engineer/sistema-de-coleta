@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
@@ -7,43 +8,41 @@ import { isOfflineQuotaExceeded } from "@/shared/lib/offline";
 import type { CaptureActor, CaptureStep, SyncUxState } from "../model/capture-actor";
 import { captureStepHref } from "../model/capture-step-href";
 import {
-  addLocalItem,
-  DEFAULT_ACCEPTANCE_TEXT,
   hydrateServerDraft,
   isBrowserOnline,
-  asStoredTaxId,
-  normalizeTaxId,
   patchLocalDraft,
-  removeLocalItem,
-  saveLocalSignature,
   setDraftStep,
-  updateLocalItem,
 } from "../model/offline-capture";
-import { isSignerTaxIdQueueError, messageForQueueError, offlineCopy } from "../model/offline-copy";
+import { messageForQueueError, offlineCopy } from "../model/offline-copy";
 import { ensureOfflineDraftStore } from "../model/offline-port";
 import { presentFinalizeSync } from "../model/present-finalize-sync";
-import { runAuthenticatedDrain, runAuthenticatedDrainCollection } from "../model/run-authenticated-drain";
+import { runAuthenticatedDrain } from "../model/run-authenticated-drain";
 import type { OfflineDraftRecord, OfflineItemRecord } from "../model/offline-records";
-import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
 import { collectionExistsAction, fetchDraftWithItemsAction } from "../api/actions";
 import { getCustomerAction } from "@/app/actions/draft-flow.actions";
-import { canFinalizeCollection } from "../model/can-finalize-collection";
-import { invalidCpfOrCnpjMessage, isValidCpfOrCnpj } from "@/shared/lib/cpf";
-import { NewCollectionPage } from "./new-collection-page";
-import { DraftReviewPage } from "./draft-review-page";
-import { SyncStatusChip } from "./sync-status-chip";
+import { toOfflineExistingCustomer, toOfflineDraftPreview, type WizardDraftProps } from "../model/wizard-draft-props";
+import { CaptureStepFallback } from "./capture-step-fallback";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
-import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
-import { Input } from "@/shared/ui/input";
-import { SignaturePad } from "@/shared/ui/signature-pad";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
-import { EditItemModal } from "./edit-item-modal";
-import type { DraftItemDTO } from "../model/draft";
 
-const MISSING_COLLECTION_LOCATION_MSG = "Informe o local da coleta antes de continuar.";
+const NewCollectionPage = dynamic(
+  () => import("./new-collection-page").then((mod) => ({ default: mod.NewCollectionPage })),
+  { loading: CaptureStepFallback },
+);
+const CaptureItemsStep = dynamic(
+  () => import("./capture-items-step").then((mod) => ({ default: mod.CaptureItemsStep })),
+  { loading: CaptureStepFallback },
+);
+const DraftReviewPage = dynamic(
+  () => import("./draft-review-page").then((mod) => ({ default: mod.DraftReviewPage })),
+  { loading: CaptureStepFallback },
+);
+const CaptureSignatureStep = dynamic(
+  () => import("./capture-signature-step").then((mod) => ({ default: mod.CaptureSignatureStep })),
+  { ssr: false, loading: CaptureStepFallback },
+);
 
 type HydrateStatus = "pending" | "ready" | "failed";
 
@@ -51,6 +50,7 @@ type Props = Readonly<{
   actor: CaptureActor;
   resumeDraftId?: string;
   initialStep?: CaptureStep;
+  initialDraft?: WizardDraftProps;
 }>;
 
 function uxState(online: boolean, syncStatus: OfflineDraftRecord["syncStatus"]): SyncUxState {
@@ -61,18 +61,42 @@ function uxState(online: boolean, syncStatus: OfflineDraftRecord["syncStatus"]):
   return "saved_locally";
 }
 
-export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Props) {
+function createHydrateGate(): { readonly promise: Promise<void>; resolve: () => void } {
+  let resolveGate = () => {};
+  const promise = new Promise<void>((resolve) => {
+    resolveGate = resolve;
+  });
+  return { promise, resolve: resolveGate };
+}
+
+export function CollectionCapturePage({ actor, resumeDraftId, initialStep, initialDraft }: Props) {
   const router = useRouter();
+  const preview = useMemo(() => {
+    if (initialDraft === undefined) {
+      return null;
+    }
+    return toOfflineDraftPreview({
+      actor,
+      draft: initialDraft.draft,
+      items: initialDraft.items,
+      hasSignature: initialDraft.hasSignature,
+      step: initialStep ?? "itens",
+      customer: initialDraft.customer,
+    });
+  }, [actor, initialDraft, initialStep]);
   const [step, setStep] = useState<CaptureStep>(initialStep ?? (resumeDraftId ? "itens" : "cliente"));
   const [draftId, setDraftId] = useState<string | null>(resumeDraftId ?? null);
-  const [draft, setDraft] = useState<OfflineDraftRecord | null>(null);
-  const [items, setItems] = useState<readonly OfflineItemRecord[]>([]);
+  const [draft, setDraft] = useState<OfflineDraftRecord | null>(preview?.draft ?? null);
+  const [items, setItems] = useState<readonly OfflineItemRecord[]>(preview?.items ?? []);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [hydrateStatus, setHydrateStatus] = useState<HydrateStatus>(resumeDraftId ? "pending" : "ready");
+  const [hydrateStatus, setHydrateStatus] = useState<HydrateStatus>(
+    resumeDraftId && preview === null ? "pending" : "ready",
+  );
   const online = useOnlineStatus();
   const [queuedDone, setQueuedDone] = useState(false);
   const [onlineFinalizeError, setOnlineFinalizeError] = useState<string | null>(null);
   const stepChangeInFlight = useRef(false);
+  const [hydrateGate] = useState(createHydrateGate);
 
   const abortHydrate = useCallback((message: string) => {
     setErrorMsg(message);
@@ -80,86 +104,112 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
     return null;
   }, []);
 
-  const reload = useCallback(async (id: string) => {
-    const store = await ensureOfflineDraftStore();
-    const local = await store.getDraft(id, actor.userId);
-    if (local) {
-      // Route `initialStep` wins over IDB so deep links are not overridden by stale local step.
-      if (initialStep !== undefined && initialStep !== local.currentStep) {
-        await setDraftStep(store, actor, id, initialStep);
-      }
-      const resolved =
-        (await store.getDraft(id, actor.userId)) ??
-        (initialStep !== undefined ? { ...local, currentStep: initialStep } : local);
-      setDraft(resolved);
-      setItems(await store.listItems(id, actor.userId));
-      setStep(initialStep ?? resolved.currentStep);
+  const applyLoaded = useCallback(
+    (resolved: OfflineDraftRecord, nextItems: readonly OfflineItemRecord[]) => {
+      const nextStep = initialStep ?? resolved.currentStep;
+      setDraft({ ...resolved, currentStep: nextStep });
+      setItems(nextItems);
+      setStep(nextStep);
       setDraftId(resolved.id);
       setErrorMsg(null);
       setHydrateStatus("ready");
-      return resolved;
-    }
-    if (!isBrowserOnline()) {
-      return abortHydrate("Rascunho de coleta não encontrado.");
-    }
-    const remote = await fetchDraftWithItemsAction(id);
-    if (!remote.ok) {
-      return abortHydrate("Rascunho de coleta não encontrado.");
-    }
-    const customerId = remote.draft.customerId;
-    if (customerId === null) {
-      return abortHydrate(offlineCopy.hydrateCustomerFailed);
-    }
-    const fetched = await getCustomerAction(customerId);
-    if (!fetched.ok) {
-      return abortHydrate(offlineCopy.hydrateCustomerFailed);
-    }
-    const taxId = asStoredTaxId(fetched.customer.taxId);
-    if (taxId === null || !isValidCpfOrCnpj(taxId) || fetched.customer.phone.trim().length < 8) {
-      return abortHydrate(offlineCopy.hydrateCustomerFailed);
-    }
-    const city = fetched.customer.address?.city?.trim() ?? "";
-    const stateCode = fetched.customer.address?.stateCode?.trim().toUpperCase() ?? "";
-    try {
-      const hydrated = await hydrateServerDraft({
-        store,
-        actor,
-        draft: remote.draft,
-        items: remote.items,
-        hasSignature: remote.hasSignature,
-        step: initialStep ?? "itens",
-        customer: {
-          mode: "existing",
-          customerId,
-          displayName: fetched.customer.displayName,
-          taxId,
-          phone: fetched.customer.phone,
-          street: fetched.customer.address?.street ?? null,
-          ...(city === "" ? {} : { city }),
-          ...(stateCode === "" || !/^[A-Z]{2}$/.test(stateCode) ? {} : { stateCode }),
-        },
-      });
-      setDraft(hydrated);
-      setItems(await store.listItems(id, actor.userId));
-      setDraftId(hydrated.id);
-      setStep(initialStep ?? hydrated.currentStep);
-      setErrorMsg(null);
-      setHydrateStatus("ready");
-      return hydrated;
-    } catch {
-      return abortHydrate(offlineCopy.hydrateCustomerFailed);
-    }
-  }, [abortHydrate, actor, initialStep]);
+    },
+    [initialStep],
+  );
 
-  const drainIfOnline = useCallback(async (id?: string) => {
-    if (!isBrowserOnline()) {
-      return;
-    }
-    await runAuthenticatedDrain(actor);
-    if (id) {
-      await reload(id);
-    }
-  }, [actor, reload]);
+  const reload = useCallback(
+    async (id: string) => {
+      const store = await ensureOfflineDraftStore();
+      if (initialDraft !== undefined && initialDraft.draft.id === id) {
+        try {
+          const hydrated = await hydrateServerDraft({
+            store,
+            actor,
+            draft: initialDraft.draft,
+            items: initialDraft.items,
+            hasSignature: initialDraft.hasSignature,
+            step: initialStep ?? "itens",
+            customer: initialDraft.customer,
+          });
+          if (initialStep !== undefined && hydrated.currentStep !== initialStep) {
+            await setDraftStep(store, actor, id, initialStep);
+          }
+          const resolved = (await store.getDraft(id, actor.userId)) ?? hydrated;
+          applyLoaded(resolved, await store.listItems(id, actor.userId));
+          return resolved;
+        } catch {
+          return abortHydrate(offlineCopy.hydrateCustomerFailed);
+        }
+      }
+      const local = await store.getDraft(id, actor.userId);
+      if (local) {
+        if (initialStep !== undefined && initialStep !== local.currentStep) {
+          await setDraftStep(store, actor, id, initialStep);
+        }
+        const resolved =
+          (await store.getDraft(id, actor.userId)) ??
+          (initialStep !== undefined ? { ...local, currentStep: initialStep } : local);
+        applyLoaded(resolved, await store.listItems(id, actor.userId));
+        return resolved;
+      }
+      if (!isBrowserOnline()) {
+        return abortHydrate("Rascunho de coleta não encontrado.");
+      }
+      const remote = await fetchDraftWithItemsAction(id);
+      if (!remote.ok) {
+        return abortHydrate("Rascunho de coleta não encontrado.");
+      }
+      const customerId = remote.draft.customerId;
+      if (customerId === null) {
+        return abortHydrate(offlineCopy.hydrateCustomerFailed);
+      }
+      const fetched = await getCustomerAction(customerId);
+      if (!fetched.ok) {
+        return abortHydrate(offlineCopy.hydrateCustomerFailed);
+      }
+      const customer = toOfflineExistingCustomer({
+        customerId,
+        displayName: fetched.customer.displayName,
+        taxId: fetched.customer.taxId,
+        phone: fetched.customer.phone,
+        street: fetched.customer.address?.street ?? null,
+        city: fetched.customer.address?.city ?? null,
+        stateCode: fetched.customer.address?.stateCode ?? null,
+      });
+      if (customer === null) {
+        return abortHydrate(offlineCopy.hydrateCustomerFailed);
+      }
+      try {
+        const hydrated = await hydrateServerDraft({
+          store,
+          actor,
+          draft: remote.draft,
+          items: remote.items,
+          hasSignature: remote.hasSignature,
+          step: initialStep ?? "itens",
+          customer,
+        });
+        applyLoaded(hydrated, await store.listItems(id, actor.userId));
+        return hydrated;
+      } catch {
+        return abortHydrate(offlineCopy.hydrateCustomerFailed);
+      }
+    },
+    [abortHydrate, actor, applyLoaded, initialDraft, initialStep],
+  );
+
+  const drainIfOnline = useCallback(
+    async (id?: string) => {
+      if (!isBrowserOnline()) {
+        return;
+      }
+      await runAuthenticatedDrain(actor);
+      if (id) {
+        await reload(id);
+      }
+    },
+    [actor, reload],
+  );
 
   useEffect(() => {
     if (!online) {
@@ -175,25 +225,25 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
 
   useEffect(() => {
     void (async () => {
-      const store = await ensureOfflineDraftStore();
-      await store.refreshSnapshot(actor.userId);
-      if (resumeDraftId) {
-        await reload(resumeDraftId);
+      try {
+        const store = await ensureOfflineDraftStore();
+        await store.refreshSnapshot(actor.userId);
+        if (resumeDraftId) {
+          await reload(resumeDraftId);
+        }
+        await drainIfOnline(resumeDraftId);
+      } finally {
+        hydrateGate.resolve();
       }
-      await drainIfOnline(resumeDraftId);
     })();
-  }, [actor.userId, resumeDraftId, reload, drainIfOnline]);
+  }, [actor.userId, resumeDraftId, reload, drainIfOnline, hydrateGate]);
+
+  const awaitHydrate = useCallback(() => hydrateGate.promise, [hydrateGate]);
 
   const status = useMemo(() => uxState(online, draft?.syncStatus ?? "local"), [online, draft]);
 
   if (resumeDraftId && hydrateStatus === "pending") {
-    return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-        <MobilePageHeader title="Coleta" subtitle="Carregando" backHref={"/coletas" as Route} />
-        <MobileStatePanel type="loading" title="Carregando coleta" subtitle="Buscando os dados do cliente." />
-        <MobileBottomNav />
-      </main>
-    );
+    return <CaptureStepFallback />;
   }
 
   if (hydrateStatus === "failed") {
@@ -247,6 +297,7 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
       errorMsg={errorMsg}
       queuedDone={queuedDone}
       onlineFinalizeError={onlineFinalizeError}
+      onAwaitHydrate={awaitHydrate}
       onReload={() => void reload(draftId)}
       onStep={async (next) => {
         if (stepChangeInFlight.current || next === step) {
@@ -257,6 +308,7 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep }: Pro
         setStep(next);
         router.replace(captureStepHref(draftId, next) as Route);
         try {
+          await awaitHydrate();
           const store = await ensureOfflineDraftStore();
           await setDraftStep(store, actor, draftId, next);
         } catch (error: unknown) {
@@ -286,6 +338,7 @@ type StepsProps = Readonly<{
   errorMsg: string | null;
   queuedDone: boolean;
   onlineFinalizeError: string | null;
+  onAwaitHydrate: () => Promise<void>;
   onReload: () => void;
   onStep: (step: CaptureStep) => Promise<void>;
   onQueuedDone: () => void;
@@ -305,6 +358,7 @@ function CaptureSteps({
   errorMsg,
   queuedDone,
   onlineFinalizeError,
+  onAwaitHydrate,
   onReload,
   onStep,
   onQueuedDone,
@@ -313,41 +367,8 @@ function CaptureSteps({
   onOpenCollection,
   onOpenCollectionList,
 }: StepsProps) {
-  const [editingItem, setEditingItem] = useState<DraftItemDTO | null>(null);
-  const [isAddingNew, setIsAddingNew] = useState(false);
-  const [signerNameDraft, setSignerNameDraft] = useState<string | null>(null);
-  const [signerTaxIdDraft, setSignerTaxIdDraft] = useState<string | null>(null);
-  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-  const displayError = errorMsg ?? localError;
-  const signerName = signerNameDraft ?? draft?.responsibleName ?? "";
-  const signerTaxId = signerTaxIdDraft ?? draft?.responsibleTaxId ?? "";
-
-  async function persistItem(updatedData: {
-    description: string;
-    quantity: number;
-    condition: string | null;
-    notes: string | null;
-  }) {
-    const store = await ensureOfflineDraftStore();
-    if (editingItem) {
-      const current = items.find((item) => item.id === editingItem.id);
-      if (current) {
-        await updateLocalItem({ store, actor, item: current, ...updatedData });
-      }
-    } else if (isAddingNew) {
-      await addLocalItem({ store, actor, collectionId: draftId, ...updatedData });
-    }
-    setEditingItem(null);
-    setIsAddingNew(false);
-    onReload();
-    if (isBrowserOnline()) {
-      void runAuthenticatedDrain(actor).then(onReload);
-    }
-  }
-
   async function persistLocation(nextLocation: string) {
+    await onAwaitHydrate();
     const store = await ensureOfflineDraftStore();
     await patchLocalDraft({
       store,
@@ -372,6 +393,7 @@ function CaptureSteps({
           actionText={offlineCopy.retry}
           onAction={() => {
             void (async () => {
+              await onAwaitHydrate();
               const store = await ensureOfflineDraftStore();
               await runAuthenticatedDrain(actor);
               const leftover = await store.getDraft(draftId, actor.userId);
@@ -418,73 +440,17 @@ function CaptureSteps({
 
   if (step === "itens") {
     return (
-      <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-        <MobilePageHeader title="Itens da coleta" subtitle={`Etapa 2 de 3 · ${items.length} itens`} backHref={"/coletas" as Route} />
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-card-bg)] px-6 py-2.5">
-          <div className="flex items-center gap-1.5">
-            <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
-            <div className="h-1 w-12 rounded-full bg-[var(--color-primary)]" />
-            <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
-          </div>
-          <SyncStatusChip state={status} lastError={draft?.lastError ?? null} />
-        </div>
-        <div className="flex flex-col gap-6 px-6 pt-6">
-          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">Registre tudo o que foi entregue.</h2>
-          {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">{displayError}</div> : null}
-          <div className="flex flex-col gap-3">
-            {items.map((item, index) => (
-              <div key={item.id} className="flex items-center justify-between rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">{String(index + 1).padStart(2, "0")}</span>
-                    <Badge status="ready">{item.condition ?? "Usado"}</Badge>
-                  </div>
-                  <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">{item.description}</h3>
-                  <p className="text-[12px] font-normal text-[var(--color-text-muted)]">
-                    {item.quantity} un. · {item.notes || "Foto opcional"}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <button type="button" onClick={() => setEditingItem(toDto(item))} className="text-[11px] font-semibold text-[var(--color-primary-strong)] hover:underline">
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void (async () => {
-                        const store = await ensureOfflineDraftStore();
-                        await removeLocalItem({ store, actor, item });
-                        onReload();
-                      })();
-                    }}
-                    className="text-[11px] font-semibold text-[#ba5b52] hover:underline"
-                  >
-                    Remover
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Button type="button" variant="secondary" onClick={() => setIsAddingNew(true)} className="h-[52px] rounded-[12px] text-[14px] font-semibold">
-            + Adicionar item
-          </Button>
-          <Button type="button" variant="primary" disabled={items.length === 0} onClick={() => void onStep("revisao")} className="mt-2 h-[52px] rounded-[12px] text-[14px] font-semibold">
-            Revisar coleta
-          </Button>
-        </div>
-        {editingItem || isAddingNew ? (
-          <EditItemModal
-            isOpen
-            item={editingItem ?? undefined}
-            onClose={() => {
-              setEditingItem(null);
-              setIsAddingNew(false);
-            }}
-            onSave={persistItem}
-          />
-        ) : null}
-        <MobileBottomNav />
-      </main>
+      <CaptureItemsStep
+        actor={actor}
+        draftId={draftId}
+        draft={draft}
+        items={items}
+        status={status}
+        displayError={errorMsg}
+        onReload={onReload}
+        onStep={onStep}
+        onAwaitHydrate={onAwaitHydrate}
+      />
     );
   }
 
@@ -506,122 +472,16 @@ function CaptureSteps({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
-      <MobilePageHeader title="Assinatura do cliente" subtitle="Emissão da guia" backHref={captureStepHref(draftId, "revisao") as Route} />
-      <div className="flex flex-col gap-5 px-6 pt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">Confirme a entrega dos itens descritos.</h2>
-          <SyncStatusChip state={status} lastError={draft?.lastError ?? null} />
-        </div>
-        {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">{displayError}</div> : null}
-        <div className="flex flex-col gap-2 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-4 shadow-xs">
-          <h3 className="text-[14px] font-semibold text-[var(--color-text-primary)]">Assine no espaço abaixo</h3>
-          <SignaturePad disabled={isFinalizing} onClear={() => setSignatureDataUrl(null)} onSave={(url) => setSignatureDataUrl(url)} />
-        </div>
-        <Input label="Nome de quem assinou *" value={signerName} onChange={(event) => setSignerNameDraft(event.target.value)} required />
-        <Input
-          label="CPF/CNPJ de quem assinou *"
-          value={signerTaxId}
-          onChange={(event) => {
-            const next = event.target.value;
-            setSignerTaxIdDraft(next);
-            const digits = normalizeTaxId(next);
-            if (/^\d{11}$|^\d{14}$/.test(digits) && !isValidCpfOrCnpj(digits)) {
-              setLocalError(invalidCpfOrCnpjMessage(digits));
-              return;
-            }
-            setLocalError(null);
-          }}
-          required
-        />
-        <Button
-          type="button"
-          variant="primary"
-          isLoading={isFinalizing}
-          disabled={
-            !canFinalizeCollection({
-              collectionLocation: draft?.collectionLocation,
-              signatureDataUrl,
-              signerName,
-              signerTaxId,
-            })
-          }
-          className="mt-3 h-[52px] rounded-[12px] text-[14px] font-semibold"
-          onClick={() => {
-            void (async () => {
-              if (!hasRequiredCollectionLocation(draft?.collectionLocation)) {
-                setLocalError(MISSING_COLLECTION_LOCATION_MSG);
-                return;
-              }
-              if (!signerName.trim() || !signatureDataUrl) {
-                setLocalError("Preencha o nome e a assinatura.");
-                return;
-              }
-              const taxId = normalizeTaxId(signerTaxId);
-              if (!isValidCpfOrCnpj(taxId)) {
-                setLocalError(invalidCpfOrCnpjMessage(taxId));
-                return;
-              }
-              setIsFinalizing(true);
-              try {
-                const store = await ensureOfflineDraftStore();
-                await saveLocalSignature({
-                  store,
-                  actor,
-                  collectionId: draftId,
-                  signerName: signerName.trim(),
-                  signerTaxId: taxId,
-                  acceptanceText: DEFAULT_ACCEPTANCE_TEXT,
-                  dataUrl: signatureDataUrl,
-                });
-                const wasOnline = isBrowserOnline();
-                if (wasOnline) {
-                  await runAuthenticatedDrainCollection(actor, draftId);
-                  void runAuthenticatedDrain(actor);
-                }
-                const leftover = await store.getDraft(draftId, actor.userId);
-                const outcome = presentFinalizeSync({
-                  wasOnline,
-                  leftover,
-                  serverRowExists: leftover === null ? await collectionExistsAction(draftId) : false,
-                });
-                if (outcome === "open_collection") {
-                  onOpenCollection();
-                  return;
-                }
-                if (outcome === "online_failed") {
-                  if (isSignerTaxIdQueueError(leftover?.lastError)) {
-                    setLocalError(messageForQueueError(leftover?.lastError));
-                    return;
-                  }
-                  onOnlineFinalizeFailed(messageForQueueError(leftover?.lastError) || offlineCopy.onlineFinalizeFailed);
-                  return;
-                }
-                onQueuedDone();
-              } catch (error: unknown) {
-                setLocalError(isOfflineQuotaExceeded(error) ? offlineCopy.quotaExceeded : "Não foi possível guardar a assinatura.");
-              } finally {
-                setIsFinalizing(false);
-              }
-            })();
-          }}
-        >
-          Finalizar coleta
-        </Button>
-      </div>
-      <MobileBottomNav />
-    </main>
+    <CaptureSignatureStep
+      actor={actor}
+      draftId={draftId}
+      draft={draft}
+      status={status}
+      errorMsg={errorMsg}
+      onAwaitHydrate={onAwaitHydrate}
+      onQueuedDone={onQueuedDone}
+      onOnlineFinalizeFailed={onOnlineFinalizeFailed}
+      onOpenCollection={onOpenCollection}
+    />
   );
-}
-
-function toDto(item: OfflineItemRecord): DraftItemDTO {
-  return {
-    id: item.id,
-    description: item.description,
-    quantity: item.quantity,
-    condition: item.condition,
-    notes: item.notes,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-  };
 }

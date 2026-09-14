@@ -11,3 +11,6 @@ export { addItem, createDraft, discardCollectionDraft, patchDraft, patchItem, re
 export { collectionExists, getDraft } from "./api/queries";
 export { draftCreateSchema } from "./model/draft";
 export type { DraftDTO, DraftItemDTO, EvidenceDTO } from "./model/draft";
+export { toOfflineExistingCustomer } from "./model/wizard-draft-props";
+export type { WizardDraftProps } from "./model/wizard-draft-props";
+

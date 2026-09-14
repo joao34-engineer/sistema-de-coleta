@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | :--- | :--- |
-| **Status** | `planned` — Fases 5–7; **Fase 1–4 entregues** (4 = mutações oficina + finalize por coleta + passo otimista, 2026-09-13) |
+| **Status** | `planned` — Fases 6–7; **Fase 1–5 entregues** (5 = draft nas rotas + `next/dynamic` por passo; 5.2 = actions DTO, architecture Fase A) |
 | **Authority** | `informative` |
 | **Owner** | product / sistema-coleta |
 | **Last verified** | 2026-09-13 |
@@ -48,6 +48,7 @@ O service worker **não** é o culpado. A busca da lista debounceia no cliente; 
 | Submit da oficina | Fase 4.1. `useWorkshopHubSubmit` — action + `router.push` do hub na mesma `startTransition`. Sem `redirect()` nas actions. |
 | Finalize online | Fase 4.2. `runAuthenticatedDrainCollection` desta guia; `void drainAllPending` para o resto. |
 | Passo do wizard | Fase 4.3. `setStep` + `replace` no tap; `setDraftStep` depois; rollback se o IDB falhar. |
+| Draft nas rotas + chunk por passo | Fase 5 (2026-09-13). `itens` / `revisao` / `assinatura` passam `initialDraft`; SignaturePad só no passo de assinatura. |
 | Páginas autenticadas dinâmicas | `cookies()` + RLS exigem render no request. O ganho **não** é “tornar o dashboard estático”. |
 
 ---
@@ -196,25 +197,25 @@ Cada issue abaixo é um item isolado. Severidade: **P0** = o operador sente no p
 
 ---
 
-### P1-6 — Wizard hidrata **depois** do mount
+### P1-6 — Wizard hidrata **depois** do mount — **feito (Fase 5.1 / 5.3)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | `/coletas/nova` e passos de rascunho abrem vazios/parciais até IndexedDB + action + drain. |
-| **Onde** | Rotas passam só `actor` + `resumeDraftId`. `CollectionCapturePage` (~466 linhas, `"use client"`) no `useEffect`: store → `reload` → `fetchDraftWithItemsAction` se faltar local → `drainIfOnline`. |
-| **Por que dói** | Dado que o servidor já poderia ter buscado chega tarde. Um chunk JS grande no aparelho de campo. |
-| **Legado** | `draft-items-page.tsx` / `draft-review-page.tsx` ainda fazem fetch no mount se `initialDraft` faltar (rotas atuais usam o wizard; o padrão permanece perigoso). `draft-signature-page.tsx` foi apagada (scan 5.15, `30d8621`). |
+| **Sintoma** | `/coletas/nova` e passos de rascunho abriam vazios/parciais até IndexedDB + action + drain. |
+| **Onde** | `itens` / `revisao` / `assinatura` agora chamam `loadWizardDraftForPage` e passam `initialDraft`. `CollectionCapturePage` pinta a partir das props e hidrata o IDB; `fetchDraftWithItemsAction` fica de fallback. Passos via `next/dynamic` (SignaturePad só em assinatura). |
+| **Por que doía** | Dado que o servidor já poderia ter buscado chegava tarde. Um chunk JS grande no aparelho de campo. |
+| **Legado** | `draft-items-page.tsx` continua órfã e ainda busca no mount se `initialDraft` faltar (Fase 7.5). `draft-review-page.tsx` é só apresentação no wizard. `draft-signature-page.tsx` foi apagada (scan 5.15, `30d8621`). |
 
 ---
 
-### P1-7 — Server Action fabrica `Request` para `http://localhost`
+### P1-7 — Server Action fabrica `Request` para `http://localhost` — **feito (Fase 5.2 / architecture Fase A)**
 
 | | |
 | :--- | :--- |
-| **Sintoma** | Cada add/patch/remove item (e busca de cliente no fluxo draft) serializa JSON duas vezes. |
-| **Onde** | `src/_pages/collection-drafts/api/actions.ts`; `src/_app/actions/draft-flow.actions.ts`. |
-| **Por que dói** | CPU + parse + auth de novo no handler HTTP-shaped. Stack trace ilegível. |
-| **Relação** | [`architecture-improvement.md`](./architecture-improvement.md) Fase A — **mesmo PR**, dois benefícios (manutenção + latência). |
+| **Sintoma** | Cada add/patch/remove item serializava JSON duas vezes via shim. |
+| **Onde** | `src/_pages/collection-drafts/api/actions.ts` e `src/_app/actions/draft-flow.actions.ts` chamam comandos/queries DTO. HTTP da Fase 1A permanece em `api/http.ts`. |
+| **Entregue** | Zero `new Request("http://localhost/...")` nas actions. |
+| **Relação** | [`architecture-improvement.md`](./architecture-improvement.md) Fase A — **fechado**. |
 
 ---
 
@@ -437,29 +438,29 @@ Não tornar rotas autenticadas estáticas. Não cachear HTML de coleta no SW.
 
 ---
 
-### Fase 5 — Dados do wizard no servidor + actions diretas
+### Fase 5 — Dados do wizard no servidor + actions diretas — **feita** (2026-09-13)
 
 **Objetivo:** menos waterfall no client; menos JSON interno.
 
 **Não faz:** apagar `/api/collections`. Não criar `entities/`.
 
-#### Passo 5.1 — Draft como props da rota
+#### Passo 5.1 — Draft como props da rota — **feito**
 
-**Faz:** `itens` / `revisao` / `assinatura` (e resume em `nova`) buscam o draft no Server Component e passam `initialDraft` / itens. O client só hidrata o store local se precisar.
+**Faz:** `itens` / `revisao` / `assinatura` buscam o draft no Server Component (`loadWizardDraftForPage`) e passam `initialDraft`. Resume em `nova` continua redirect para `/itens`. O client pinta com as props e hidrata o IDB; IndexedDB com mutações pendentes vence. Fallback `fetchDraftWithItemsAction` se o RSC não trouxe draft.
 
 **Aceite:** com rede, o primeiro paint do passo já tem itens. Offline continua IndexedDB-first.
 
-#### Passo 5.2 — Action chama o comando, não o `Request` fake
+#### Passo 5.2 — Action chama o comando, não o `Request` fake — **feito** (architecture Fase A)
 
-**Faz:** `addItemToDraftAction` etc. chamam funções DTO em `drafts.server` / commands extraídos. Fim de `new Request("http://localhost/...")`.
+**Faz:** `addItemToDraftAction` etc. chamam funções DTO em `commands.ts` / `queries.ts`. Fim de `new Request("http://localhost/...")`.
 
 **Aceite:** zero shim localhost nas actions. Contrato HTTP da Fase 1A inalterado.
 
 **Relação:** [`architecture-improvement.md`](./architecture-improvement.md) Fase A.
 
-#### Passo 5.3 — Fatiar `CollectionCapturePage`
+#### Passo 5.3 — Fatiar `CollectionCapturePage` — **feito**
 
-**Faz:** `next/dynamic` por passo (cliente / itens / revisão / assinatura) ou voltar a páginas por rota já existentes, com o mesmo store.
+**Faz:** `next/dynamic` por passo (cliente / itens / revisão / assinatura). `SignaturePad` só no chunk de assinatura. `CollectionCapturePage` permanece o controlador offline.
 
 **Aceite:** abrir “Nova coleta” não parseia SignaturePad até o passo de assinatura.
 
@@ -522,8 +523,8 @@ Fase 1  loading + pending Link     → feita
 Fase 2  cache() auth + detalhe     → feita (2026-09-13; = architecture Fase E)
 Fase 3  drain + debounce           → feita (2026-09-13; mount lista só; reconectar/Retry/captura drenam)
 Fase 4  mutações                   → feita (2026-09-13; oficina transition; finalize só desta coleta; passo otimista)
-Fase 5  wizard + actions diretas   → próxima (5.2 = architecture Fase A, já feita)
-Fase 6  headers / select / font    → depois do tap já parecer instantâneo
+Fase 5  wizard + actions diretas   → feita (2026-09-13; 5.1 props RSC; 5.2 = architecture Fase A; 5.3 dynamic por passo)
+Fase 6  headers / select / font    → próxima (depois do tap já parecer instantâneo)
 Fase 7  higiene                    → opportunista
 ```
 
@@ -567,4 +568,4 @@ Se um PR não move esses ponteiros, não é trabalho de performance — é ruíd
 - Next.js — [`useLinkStatus`](https://nextjs.org/docs/app/api-reference/functions/use-link-status)
 - Next.js — [Data Security / Data Access Layer](https://nextjs.org/docs/app/guides/data-security)
 - Local: revisão de `proxy.ts`, `(protected)/layout.tsx`, `require-admin.ts`, `next.config.ts`, `collection-capture-page.tsx`, `workshop-checkin-page.tsx`, `use-workshop-hub-submit.ts`, `offline-pending-banner.tsx`, `queries.ts` (lifecycle e operations), `collections-list-page.tsx`
-- Data da revisão: 2026-08-29; chips da lista em 2026-09-07; Fase 4 em 2026-09-13
+- Data da revisão: 2026-08-29; chips da lista em 2026-09-07; Fase 4 e Fase 5 em 2026-09-13

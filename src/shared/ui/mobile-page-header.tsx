@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import type { Route } from "next";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
+import { BackChevronGlyph } from "@/shared/ui/back-chevron-glyph";
 
 export interface MobilePageHeaderProps {
   title: string;
@@ -35,10 +36,10 @@ export function MobilePageHeader({
               href={backHref}
               aria-label="Voltar"
               className="flex h-9 w-9 items-center justify-center rounded-full text-[22px] font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-neutral)] active:scale-95"
-              contentClassName="flex h-full w-full items-center justify-center rounded-full"
+              contentClassName="grid h-full w-full place-items-center rounded-full leading-none"
               pendingClassName="bg-[var(--color-surface-neutral)] opacity-80 ring-2 ring-[var(--color-primary)]/40"
             >
-              ‹
+              <BackChevronGlyph />
             </PendingNavLink>
           ) : logoSrc ? (
             <Image

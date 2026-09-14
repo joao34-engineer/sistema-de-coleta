@@ -37,6 +37,12 @@ describe("PublicVerificationPage", () => {
     expect(screen.queryByText("5551999999999")).not.toBeInTheDocument();
   });
 
+  it("does not render an in-page back control", () => {
+    render(<PublicVerificationPage verification={verification} />);
+    expect(screen.queryByRole("button", { name: "Voltar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Início" })).not.toBeInTheDocument();
+  });
+
   it("keeps a canceled guide verifiable", () => {
     render(<PublicVerificationPage verification={{ ...verification, authentic: false, status: "canceled" }} />);
     expect(screen.getByRole("heading", { name: "Guia cancelada" })).toBeInTheDocument();

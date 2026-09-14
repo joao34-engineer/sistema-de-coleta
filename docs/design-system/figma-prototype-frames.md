@@ -26,9 +26,13 @@ Chrome compartilhado do app autenticado (`MobilePageHeader`, bottom nav, `Pendin
 | **M01** | [Início](https://www.figma.com/design/akpo5W8c3ViA1hvjeqg9YJ?node-id=229-1060) | `229:1060` | `/dashboard` | `src/_pages/dashboard/ui/dashboard-page.tsx` | Logo PNG da login, headline da rota, CTA Nova coleta (`PendingNavLink`), atividades. Sem Ver rascunhos. |
 | **M06** | [Lista de coletas](https://www.figma.com/design/akpo5W8c3ViA1hvjeqg9YJ?node-id=232-38) | `232:38` | `/coletas` | `src/_pages/collection-lifecycle/ui/collections-list-page.tsx` | Mesmo logo PNG, 8 chips, `pendingFilter` + prefetch da Fase 1.5. Sem filtrar cards locais. |
 
-### Lote 2026-09-13 — consulta pública (Q01–Q06)
+### Lote 2026-09-13 — consulta pública (Q01–Q06) — **feito**
 
-Rota `/verificar/[verificationToken]`. Server Components. Sem `"use client"`, sem `MobilePageHeader` / `PendingNavLink`. HTML público mostra **só código + status** (organização, emissão e versão ficam no DTO/API). Logo: `/logo/Logo_-_MJT-removebg-preview.png` (`next/image`, já usado em login).
+Rota `/verificar/[verificationToken]`. Coluna `max-w-md` centrada (igual `/configuracoes/empresa`). Página **RSC pura** (QR / WhatsApp / browser — o chrome do aparelho já tem Voltar).
+
+- **Header:** logo + “Consulta pública”. Sem chevron, sem `PendingNavLink` e sem `/dashboard`.
+- **Card:** ícone, título, código e status centrados. HTML público mostra **só código + status** (organização, emissão e versão ficam no DTO/API).
+- **Logo:** `/logo/Logo_-_MJT-removebg-preview.png` (`next/image`).
 
 | Id | Figma | Node | Estado no app | Código | O que entrou |
 | --- | --- | --- | --- | --- | --- |
@@ -39,7 +43,7 @@ Rota `/verificar/[verificationToken]`. Server Components. Sem `"use client"`, se
 | **Q05** | [Aguarde consultar](https://www.figma.com/design/akpo5W8c3ViA1hvjeqg9YJ?node-id=375-45) | `375:45` | rate limit | `public-verification-wait-page.tsx` | Mesmo chrome; segundos de retry no corpo; sem timer client. |
 | **Q06** | [Consulta indisponível](https://www.figma.com/design/akpo5W8c3ViA1hvjeqg9YJ?node-id=375-53) | `375:53` | limiter falhou fechado | idem | Sem vazar token. |
 
-Chrome compartilhado: `src/_pages/collection-documents/ui/public-verification-chrome.tsx`.
+Ficheiros: `public-verification-chrome.tsx`, `public-verification-page.tsx`, `public-verification-wait-page.tsx`.
 
 ---
 

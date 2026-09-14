@@ -38,8 +38,9 @@ export function PublicVerificationChrome({
       : "bg-[#fdf2f1] text-[var(--color-danger)]";
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[390px] flex-col bg-[var(--color-surface-bg)]">
-      <header className="flex min-h-[88px] items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3">
+    <div className="min-h-screen w-full bg-[var(--color-surface-bg)]">
+      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+      <header className="flex min-h-[88px] items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3">
         <Image
           src={LOGO_SRC}
           alt="MJT Tornearia"
@@ -54,7 +55,7 @@ export function PublicVerificationChrome({
         </div>
       </header>
 
-      <section className="mx-6 mt-9 rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 pb-10 pt-10">
+      <section className="mx-4 mt-9 rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 pb-10 pt-10 text-center">
         <div className={`mx-auto mb-8 flex size-24 items-center justify-center rounded-full text-[40px] font-semibold ${iconClassName}`}>
           {icon}
         </div>
@@ -80,8 +81,9 @@ export function PublicVerificationChrome({
       </section>
 
       {footnote ? (
-        <p className="mx-6 mt-8 pb-10 text-[13px] leading-5 text-[var(--color-text-muted)]">{footnote}</p>
+        <p className="mx-4 mt-8 pb-10 text-center text-[13px] leading-5 text-[var(--color-text-muted)]">{footnote}</p>
       ) : null}
-    </main>
+      </main>
+    </div>
   );
 }

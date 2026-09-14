@@ -1,4 +1,5 @@
 export type { CaptureActor, CaptureStep } from "./model/capture-actor";
+export type { WizardDraftProps } from "./model/wizard-draft-props";
 export { pendingResumeHref } from "./model/capture-step-href";
 export { discardLocalDraft } from "./model/discard-local-draft";
 export { isBrowserOnline } from "./model/offline-capture";

@@ -110,6 +110,7 @@ describe("public verification HTML page", () => {
     const html = renderToString(element);
 
     expect(html).toContain("Guia verificada");
+    expect(html).not.toContain('aria-label="Voltar"');
     expect(html).not.toContain("MJT Oficina");
     expect(html).not.toContain("Algo deu errado");
     expect(html).not.toContain(verificationToken);

@@ -131,3 +131,116 @@ describe("CollectionCapturePage hydrate abort", () => {
     expect(JSON.stringify(rows)).not.toContain("00000000000");
   });
 });
+
+describe("CollectionCapturePage hydrate from route props", () => {
+  const itemId = "55555555-5555-4555-8555-555555555555";
+  const initialDraft = {
+    draft: remoteDraft,
+    items: [
+      {
+        id: itemId,
+        description: "Servo motor",
+        quantity: 1,
+        condition: "Usado",
+        notes: null,
+        createdAt: "2026-08-27T12:00:00.000Z",
+        updatedAt: "2026-08-27T12:00:00.000Z",
+      },
+    ],
+    hasSignature: false,
+    customer: {
+      mode: "existing" as const,
+      customerId,
+      displayName: "Oficina Norte",
+      taxId: "52998224725",
+      phone: "11998765432",
+      street: null,
+    },
+  };
+
+  beforeEach(() => {
+    setOfflinePortForTests(createMemoryOfflinePort(offlineDatabaseSchema));
+    fetchDraftWithItemsAction.mockReset();
+    getCustomerAction.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+    resetOfflinePortForTests();
+    resetOfflineSnapshotForTests();
+  });
+
+  it("paints items from initialDraft without calling fetch actions", async () => {
+    render(
+      <CollectionCapturePage
+        actor={actor}
+        resumeDraftId={collectionId}
+        initialStep="itens"
+        initialDraft={initialDraft}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Registre tudo o que foi entregue.")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Servo motor")).toBeInTheDocument();
+    expect(fetchDraftWithItemsAction).not.toHaveBeenCalled();
+    expect(getCustomerAction).not.toHaveBeenCalled();
+  });
+
+  it("keeps a local draft with pending mutations instead of overwriting from props", async () => {
+    const store = await ensureOfflineDraftStore();
+    await store.putDraft({
+      id: collectionId,
+      userId: actor.userId,
+      organizationId: actor.organizationId,
+      currentStep: "itens",
+      customer: initialDraft.customer,
+      collectionLocation: "Pátio local",
+      responsibleName: null,
+      responsibleTaxId: null,
+      collectedAt: null,
+      serverRowVersion: 1,
+      serverCustomerId: customerId,
+      hasServerSignature: false,
+      finalizeIdempotencyKey: "33333333-3333-4333-8333-333333333333",
+      syncStatus: "queued",
+      lastError: null,
+      createdAt: "2026-08-27T12:00:00.000Z",
+      updatedAt: "2026-08-27T12:00:00.000Z",
+    });
+    await store.putItem({
+      id: itemId,
+      collectionId,
+      userId: actor.userId,
+      description: "Pendente local",
+      quantity: 2,
+      condition: "Usado",
+      notes: null,
+      removed: false,
+      createdAt: "2026-08-27T12:00:00.000Z",
+      updatedAt: "2026-08-27T12:00:00.000Z",
+    });
+    await store.enqueue({
+      collectionId,
+      userId: actor.userId,
+      kind: "add_item",
+      payload: { itemId },
+    });
+
+    render(
+      <CollectionCapturePage
+        actor={actor}
+        resumeDraftId={collectionId}
+        initialStep="itens"
+        initialDraft={initialDraft}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Pendente local")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Servo motor")).not.toBeInTheDocument();
+    expect(fetchDraftWithItemsAction).not.toHaveBeenCalled();
+  });
+});
