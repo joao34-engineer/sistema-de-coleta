@@ -3,7 +3,6 @@
 import type { Route } from "next";
 import { Button } from "@/shared/ui/button";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 
 export function CaptureStepFallback() {
@@ -20,7 +19,6 @@ export function CaptureStepFallback() {
           </Button>
         }
       />
-      <MobileBottomNav />
     </main>
   );
 }

@@ -48,7 +48,7 @@ export function OperationalActions({ collectionId, status, itemFacts }: Props) {
           prefetch
           className="flex h-[52px] w-full items-center justify-center rounded-[12px] bg-[var(--color-primary)] text-[14px] font-semibold text-white shadow-xs transition-all hover:bg-[var(--color-primary-strong)] active:scale-[0.99] active:bg-[var(--color-primary-strong)]"
           contentClassName="flex h-full w-full items-center justify-center rounded-[12px]"
-          pendingClassName="opacity-80 ring-2 ring-white/50"
+          pendingClassName="opacity-80"
         >
           {primary.label}
         </PendingNavLink>

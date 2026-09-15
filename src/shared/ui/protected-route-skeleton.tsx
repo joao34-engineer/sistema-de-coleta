@@ -20,19 +20,6 @@ function SkeletonHeader({ withBack }: Readonly<{ withBack?: boolean }>) {
   );
 }
 
-function SkeletonBottomNav() {
-  return (
-    <div
-      aria-hidden
-      className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex h-[84px] w-full max-w-md items-center justify-around rounded-t-[18px] border-t border-[var(--color-border)] bg-[var(--color-surface)] px-2"
-    >
-      <div className="h-12 w-[76px] rounded-[12px] bg-[var(--color-surface-neutral)]" />
-      <div className="h-12 w-[76px] rounded-[12px] bg-[var(--color-surface-neutral)]" />
-      <div className="h-12 w-[76px] rounded-[12px] bg-[var(--color-surface-neutral)]" />
-    </div>
-  );
-}
-
 function ListBody() {
   return (
     <div className="flex flex-col gap-4 px-6 pt-4">
@@ -87,7 +74,6 @@ export function ProtectedRouteSkeleton({ variant }: Props) {
       {variant === "dashboard" ? <DashboardBody /> : null}
       {variant === "list" ? <ListBody /> : null}
       {variant === "hub" ? <HubBody /> : null}
-      <SkeletonBottomNav />
     </main>
   );
 }

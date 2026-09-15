@@ -1,11 +1,11 @@
 import "server-only";
 
 import { z } from "zod";
-import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
+import { asAdministratorAuthClient, resolveAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { assertPngSignatureHeader, validatePngSignature } from "@/shared/lib/file/png-signature";
 import { digestLifecycleRequest, digestSha256 } from "@/shared/lib/file/sha256-hex";
 import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
-import { createLifecycleSupabaseClient, createLifecycleUserStorageClient } from "./lifecycle-supabase";
+import { createLifecycleCommandSupabaseClient, createLifecycleUserStorageClient } from "./lifecycle-supabase";
 import { lifecycleCommandResultSchema, signatureCommandResultSchema, type SignatureInput } from "../model/contracts";
 
 export { validatePngSignature };
@@ -56,7 +56,7 @@ function supabaseErrorMessage(value: unknown): string | null {
   return typeof message === "string" ? message : null;
 }
 
-async function compensateSignatureUpload(supabase: Awaited<ReturnType<typeof createLifecycleSupabaseClient>>, intentId: string, storagePath: string): Promise<SignatureCompensationResult> {
+async function compensateSignatureUpload(supabase: Awaited<ReturnType<typeof createLifecycleCommandSupabaseClient>>, intentId: string, storagePath: string): Promise<SignatureCompensationResult> {
   let cancelError: unknown = null;
   try {
     const canceled = await supabase.rpc("cancel_collection_upload", { p_upload_intent_id: intentId });
@@ -76,9 +76,9 @@ async function compensateSignatureUpload(supabase: Awaited<ReturnType<typeof cre
 }
 
 export async function saveCollectionSignature(collectionId: string, input: SignatureInput, file: File, requestId?: string) {
-  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = await createLifecycleCommandSupabaseClient();
+  const administrator = await resolveAuthenticatedAdministrator(asAdministratorAuthClient(supabase));
   await assertPngSignatureHeader(file);
-  const supabase = await createLifecycleSupabaseClient();
   const fileSha256 = await digestSha256(file);
   let intentId: string | null = null;
   let storagePath: string | null = null;
@@ -138,9 +138,9 @@ export async function saveCollectionSignature(collectionId: string, input: Signa
 }
 
 async function executeLifecycleCommand(functionName: "finalize_collection" | "cancel_collection" | "reopen_collection", collectionId: string, expectedVersion: number, idempotencyKey: string, reason?: string) {
-  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = await createLifecycleCommandSupabaseClient();
+  const administrator = await resolveAuthenticatedAdministrator(asAdministratorAuthClient(supabase));
   try {
-    const supabase = await createLifecycleSupabaseClient();
     const requestHash = await digestLifecycleRequest(functionName, collectionId, expectedVersion, reason);
     const baseArgs = { p_collection_id: collectionId, p_expected_version: expectedVersion, p_idempotency_key: idempotencyKey, p_request_hash: requestHash };
     const { data, error } = functionName === "finalize_collection"

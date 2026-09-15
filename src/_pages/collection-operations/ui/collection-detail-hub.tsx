@@ -4,7 +4,6 @@ import type { Route } from "next";
 import { collectionStatusLabel } from "@/entities/collection";
 import type { CollectionHubView, CollectionEventSummary, ServiceOrder, BudgetItem } from "../model/view-models";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Card } from "@/shared/ui/card";
 import { CollectionStatusBadge } from "./collection-status-badge";
@@ -126,7 +125,6 @@ export function CollectionDetailHub({
         />
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

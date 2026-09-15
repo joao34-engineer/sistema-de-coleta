@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import { Button } from "./button";
 
 type Props = Readonly<{
@@ -13,14 +16,29 @@ export function ConfirmDialog({ title, body, cancelLabel, confirmLabel, onCancel
   const titleId = "confirm-dialog-title";
   const bodyId = "confirm-dialog-body";
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
+
   return (
-    <div className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(26,32,30,0.45)] p-4">
+    <div
+      className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(26,32,30,0.45)] p-4"
+      onClick={onCancel}
+    >
       <div
         aria-labelledby={titleId}
         aria-describedby={bodyId}
         aria-modal="true"
         className="flex w-full max-w-[342px] flex-col items-center rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center shadow-[var(--shadow-surface)]"
         role="dialog"
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex h-[92px] w-[92px] items-center justify-center rounded-full bg-[#fff8ec] text-[36px] font-semibold leading-8 text-[#a36b2c]">
           !

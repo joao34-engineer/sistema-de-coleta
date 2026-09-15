@@ -1,6 +1,5 @@
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { PdfPendingStatus } from "./pdf-pending-status";
 import { LazyPdfPreview } from "./lazy-pdf-preview";
 import {
@@ -76,7 +75,6 @@ export function DocumentViewerPage({
         ) : null}
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

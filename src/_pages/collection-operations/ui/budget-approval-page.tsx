@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
@@ -124,7 +123,6 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
         </div>
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

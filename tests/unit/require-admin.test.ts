@@ -14,6 +14,10 @@ const testState = vi.hoisted(() => ({
   membership: null as Readonly<{ organization_id: number; role_code: string; status: string }> | null,
   organization: null as Readonly<{ display_name: string }> | null,
   getClaimsThrows: false,
+  getClaimsError: null as { message: string } | null,
+  profileError: null as { code?: string; message?: string } | null,
+  membershipError: null as { code?: string; message?: string } | null,
+  organizationError: null as { code?: string; message?: string } | null,
   redirectThrown: false,
 }));
 
@@ -28,24 +32,29 @@ function buildQuery(table: string) {
     },
     maybeSingle: async () => {
       if (table === "profiles") {
-        if (filters["user_id"] === testState.userId) return { data: testState.profile };
-        return { data: null };
+        if (testState.profileError) return { data: null, error: testState.profileError };
+        if (filters["user_id"] === testState.userId) return { data: testState.profile, error: null };
+        return { data: null, error: null };
       }
       if (table === "organization_memberships") {
+        if (testState.membershipError) return { data: null, error: testState.membershipError };
         if (
           filters["user_id"] === testState.userId &&
           filters["status"] === "active" &&
           filters["role_code"] === "administrator"
         ) {
-          return { data: testState.membership };
+          return { data: testState.membership, error: null };
         }
-        return { data: null };
+        return { data: null, error: null };
       }
       if (table === "organizations") {
-        if (filters["id"] === String(testState.membership?.organization_id)) return { data: testState.organization };
-        return { data: null };
+        if (testState.organizationError) return { data: null, error: testState.organizationError };
+        if (filters["id"] === String(testState.membership?.organization_id)) {
+          return { data: testState.organization, error: null };
+        }
+        return { data: null, error: null };
       }
-      return { data: null };
+      return { data: null, error: null };
     },
   };
 
@@ -64,10 +73,14 @@ vi.mock("@/shared/auth/supabase-server", () => ({
     auth: {
       getClaims: async () => {
         if (testState.getClaimsThrows) throw new Error("jwt_invalid");
+        if (testState.getClaimsError) {
+          return { data: null, error: testState.getClaimsError };
+        }
         return {
           data: {
             claims: testState.userId && testState.email ? { sub: testState.userId, email: testState.email } : {},
           },
+          error: null,
         };
       },
     },
@@ -83,6 +96,10 @@ describe("requireAuthenticatedAdministrator", () => {
     testState.membership = null;
     testState.organization = null;
     testState.getClaimsThrows = false;
+    testState.getClaimsError = null;
+    testState.profileError = null;
+    testState.membershipError = null;
+    testState.organizationError = null;
     testState.redirectThrown = false;
   });
 
@@ -92,6 +109,18 @@ describe("requireAuthenticatedAdministrator", () => {
 
   it("maps a thrown getClaims failure to authentication required, not a generic render error", async () => {
     testState.getClaimsThrows = true;
+    await expect(requireAuthenticatedAdministrator()).rejects.toBeInstanceOf(AuthenticationRequiredError);
+  });
+
+  it("maps a soft getClaims error to authentication required", async () => {
+    testState.getClaimsError = { message: "Invalid JWT" };
+    await expect(requireAuthenticatedAdministrator()).rejects.toBeInstanceOf(AuthenticationRequiredError);
+  });
+
+  it("maps JWT query failures to authentication required instead of access denied", async () => {
+    testState.userId = "00000000-0000-0000-0000-000000000099";
+    testState.email = "user@example.com";
+    testState.profileError = { code: "PGRST301", message: "JWT expired" };
     await expect(requireAuthenticatedAdministrator()).rejects.toBeInstanceOf(AuthenticationRequiredError);
   });
 
@@ -163,6 +192,10 @@ describe("requireAuthenticatedAdministratorForPage", () => {
     testState.membership = null;
     testState.organization = null;
     testState.getClaimsThrows = false;
+    testState.getClaimsError = null;
+    testState.profileError = null;
+    testState.membershipError = null;
+    testState.organizationError = null;
     testState.redirectThrown = false;
   });
 

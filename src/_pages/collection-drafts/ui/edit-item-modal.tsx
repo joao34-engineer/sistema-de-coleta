@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import type { DraftItemDTO } from "../model/draft";
@@ -64,13 +64,30 @@ export function EditItemModal({ item, isOpen, onClose, onSave }: EditItemModalPr
 
   const conditionLabel = (condition ?? "Usado").toLowerCase();
 
+  useEffect(() => {
+    if (!isOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || isSaving) return;
+      event.preventDefault();
+      onClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, isSaving, onClose]);
+
   return (
     <div
       aria-label="Modal de edição de item"
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center p-0 sm:p-4"
       role="dialog"
+      onClick={() => {
+        if (!isSaving) onClose();
+      }}
     >
-      <div className="w-full max-w-[390px] rounded-t-2xl bg-[var(--color-surface-bg)] p-6 pb-8 shadow-2xl sm:rounded-2xl">
+      <div
+        className="w-full max-w-[390px] rounded-t-2xl bg-[var(--color-surface-bg)] p-6 pb-8 shadow-2xl sm:rounded-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-[18px] font-semibold leading-8 text-[var(--color-text-primary)]">

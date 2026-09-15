@@ -46,14 +46,19 @@
 
 * { box-sizing: border-box; }
 
-body {
-  margin: 0;
-  background: var(--color-background);
-  color: var(--color-text);
-  font-family: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
+@layer base {
+  body {
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
 
-a { color: inherit; }
+  /* Em @layer base para não ganhar de utilities (`text-primary`, etc.) nos links. */
+  a {
+    color: inherit;
+  }
+}
 
 :focus-visible {
   outline: 3px solid rgb(76 145 111 / 35%);

@@ -15,7 +15,6 @@ import { listRowCustomerLine } from "../model/list-row-customer-line";
 import { loadMoreCollectionsAction } from "../api/actions";
 import { CollectionsListFilterChip } from "./collections-list-filter-chip";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 import { Button } from "@/shared/ui/button";
@@ -80,6 +79,7 @@ export function CollectionsListPage({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const [, startTransition] = useTransition();
+  const [isRetrying, startRetryTransition] = useTransition();
   const [pendingFilter, setPendingFilter] = useState<CollectionsListFilter | null>(null);
   const [syncedSearchTerm, setSyncedSearchTerm] = useState(searchTerm);
   const [syncedItems, setSyncedItems] = useState(initialItems);
@@ -132,10 +132,15 @@ export function CollectionsListPage({
           type="error"
           title="Não foi possível carregar as coletas"
           subtitle="Ocorreu um erro ao consultar o servidor. Seus dados não foram alterados."
-          actionText="Tentar novamente"
-          onAction={() => router.refresh()}
+          actionText={isRetrying ? "Tentando novamente…" : "Tentar novamente"}
+          actionLoading={isRetrying}
+          actionDisabled={isRetrying}
+          onAction={() => {
+            startRetryTransition(() => {
+              router.refresh();
+            });
+          }}
         />
-        <MobileBottomNav />
       </main>
     );
   }
@@ -214,7 +219,7 @@ export function CollectionsListPage({
                   }
                   className="flex min-h-[88px] flex-col justify-center rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-5 py-[18px]"
                   contentClassName="flex w-full flex-col"
-                  pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
+                  pendingClassName="opacity-70"
                 >
                   <h2 className="text-[14px] font-semibold leading-5 text-[var(--color-text-primary)]">
                     {item.officialCode ?? "sem número oficial"}
@@ -251,7 +256,6 @@ export function CollectionsListPage({
         )}
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

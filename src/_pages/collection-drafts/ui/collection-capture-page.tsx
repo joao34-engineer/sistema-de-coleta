@@ -23,7 +23,6 @@ import { getCustomerAction } from "@/app/actions/draft-flow.actions";
 import { toOfflineExistingCustomer, toOfflineDraftPreview, type WizardDraftProps } from "../model/wizard-draft-props";
 import { CaptureStepFallback } from "./capture-step-fallback";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { useOnlineStatus } from "@/shared/lib/pwa/use-online-status";
 
@@ -264,7 +263,6 @@ export function CollectionCapturePage({ actor, resumeDraftId, initialStep, initi
             void reload(id);
           }}
         />
-        <MobileBottomNav />
       </main>
     );
   }
@@ -417,7 +415,6 @@ function CaptureSteps({
             })();
           }}
         />
-        <MobileBottomNav />
       </main>
     );
   }
@@ -433,7 +430,6 @@ function CaptureSteps({
           actionText="Ver coletas"
           onAction={onOpenCollectionList}
         />
-        <MobileBottomNav />
       </main>
     );
   }

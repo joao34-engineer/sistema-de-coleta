@@ -7,7 +7,6 @@ import { invalidCpfOrCnpjMessage, isValidCpfOrCnpj } from "@/shared/lib/cpf";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { collectionExistsAction } from "../api/actions";
@@ -71,7 +70,6 @@ export function CaptureSignatureStep({
       <main className="mx-auto min-h-screen w-full max-w-[390px] bg-[var(--color-surface-bg)] pb-28">
         <MobilePageHeader title="Assinatura do signatário" subtitle="Emissão da guia" backHref={captureStepHref(draftId, "revisao") as Route} />
         <MobileStatePanel type="loading" title={offlineCopy.syncing} subtitle={offlineCopy.syncingBody} />
-        <MobileBottomNav />
       </main>
     );
   }
@@ -185,7 +183,6 @@ export function CaptureSignatureStep({
           Finalizar coleta
         </Button>
       </div>
-      <MobileBottomNav />
     </main>
   );
 }

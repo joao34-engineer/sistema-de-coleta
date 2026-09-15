@@ -4,6 +4,7 @@ import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Json } from "@/shared/api/database.types";
+import { AuthenticationRequiredError } from "@/shared/auth/require-admin";
 import { getPublicEnvironment } from "@/shared/config/environment";
 import type {
   ServiceProgressRpcItem,
@@ -50,7 +51,9 @@ type OperationsDatabase = {
   };
 };
 
-export const createOperationsSupabaseClient = cache(async () => {
+type CookieMutation = "best-effort" | "required";
+
+async function createOperationsClient(cookieMutation: CookieMutation) {
   const environment = getPublicEnvironment();
   const cookieStore = await cookies();
   return createServerClient<OperationsDatabase>(environment.supabaseUrl, environment.supabasePublishableKey, {
@@ -59,10 +62,27 @@ export const createOperationsSupabaseClient = cache(async () => {
       setAll: (values) => {
         try {
           values.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          // Safe fallback for non-mutation contexts.
+        } catch (error) {
+          if (cookieMutation === "required") throw error;
         }
       },
     },
   });
+}
+
+/** Read-only / RSC queries — cookie refresh is best-effort. */
+export const createOperationsSupabaseClient = cache(async () => createOperationsClient("best-effort"));
+
+/**
+ * Mutations (Server Actions / Route Handlers): hydrate auth before RPC/storage.
+ * `@supabase/ssr` uses `skipAutoInitialize`; without `getClaims`/`getSession`,
+ * RPCs can run as anon → Postgres EXECUTE 42501 misread as "sem permissão".
+ */
+export const createOperationsCommandSupabaseClient = cache(async () => {
+  const supabase = await createOperationsClient("required");
+  const { data, error } = await supabase.auth.getClaims();
+  if (error || typeof data?.claims?.sub !== "string") {
+    throw new AuthenticationRequiredError();
+  }
+  return supabase;
 });

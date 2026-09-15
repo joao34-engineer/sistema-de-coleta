@@ -5,6 +5,8 @@ import {
   requireAuthenticatedAdministratorForPage,
   type AuthenticatedAdministrator,
 } from "@/shared/auth/require-admin";
+import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
+import { ProtectedNavOutlet } from "@/shared/ui/protected-nav-outlet";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,8 @@ export default async function ProtectedLayout({ children }: Readonly<{ children:
   return (
     <>
       <OfflinePendingBanner actor={{ userId: administrator.userId, organizationId: administrator.organizationId }} />
-      {children}
+      <ProtectedNavOutlet>{children}</ProtectedNavOutlet>
+      <MobileBottomNav />
     </>
   );
 }

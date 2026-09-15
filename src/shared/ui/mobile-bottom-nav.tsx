@@ -1,8 +1,15 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
+import {
+  getStickyPendingPrefix,
+  resetNavPendingForTests,
+  setStickyPendingPrefix,
+  subscribeNavPending,
+} from "@/shared/ui/nav-pending";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
 
 type IconComponent = (props: { className?: string }) => ReactNode;
@@ -53,30 +60,76 @@ const navItems: ReadonlyArray<NavItem> = [
   { label: "Configurações", href: "/configuracoes" as Route, icon: SettingsIcon, matchPrefix: "/configuracoes" },
 ];
 
+function selectPendingPrefix(prefix: string) {
+  setStickyPendingPrefix(prefix);
+}
+
+function clearPendingPrefix() {
+  setStickyPendingPrefix(null);
+}
+
+/** Test-only: wipe sticky tab selection between cases. */
+export function resetMobileBottomNavStickyForTests() {
+  resetNavPendingForTests();
+}
+
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  // Start null so SSR/hydrate match; sticky restores after mount (survives soft-nav remounts).
+  const [pendingPrefix, setPendingPrefix] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingPrefix(getStickyPendingPrefix());
+    return subscribeNavPending(setPendingPrefix);
+  }, []);
+
+  useEffect(() => {
+    for (const item of navItems) {
+      router.prefetch(item.href);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (pendingPrefix !== null && (pathname ?? "").startsWith(pendingPrefix)) {
+      clearPendingPrefix();
+    }
+  }, [pathname, pendingPrefix]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto flex min-h-[84px] w-full max-w-md items-center justify-around rounded-t-[18px] border-t border-[var(--color-border)] bg-[var(--color-surface)] px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] shadow-lg">
       {navItems.map((item) => {
-        const isActive = (pathname ?? "").startsWith(item.matchPrefix);
+        const pathActive = (pathname ?? "").startsWith(item.matchPrefix);
+        const isActive = pendingPrefix !== null ? pendingPrefix === item.matchPrefix : pathActive;
         const Icon = item.icon;
 
         return (
           <PendingNavLink
             key={item.label}
             href={item.href}
-            className={`flex h-[48px] min-w-[76px] flex-col items-center justify-center rounded-[12px] px-2 py-1 text-center transition-all ${
-              isActive
-                ? "bg-[var(--color-surface-green)] text-[var(--color-primary-strong)] font-semibold"
-                : "text-[var(--color-muted)] hover:text-[var(--color-text)] font-normal"
-            }`}
-            contentClassName="flex h-full w-full flex-col items-center justify-center rounded-[12px]"
-            pendingClassName="bg-[var(--color-surface-neutral)] opacity-80 ring-2 ring-[var(--color-primary)]/40"
+            prefetch={true}
+            onPointerDown={() => {
+              selectPendingPrefix(item.matchPrefix);
+              router.prefetch(item.href);
+            }}
+            onClick={() => selectPendingPrefix(item.matchPrefix)}
+            className="flex h-[56px] min-w-[88px] flex-col items-center justify-center rounded-[12px] px-2 text-center focus-visible:outline-none"
+            contentClassName="flex w-full flex-col items-center justify-center rounded-[12px]"
+            pendingClassName=""
             {...(isActive ? { "aria-current": "page" as const } : {})}
           >
-            <Icon className="h-6 w-6" />
-            <span className="mt-1 text-[11px] tracking-tight">{item.label}</span>
+            {/* Pill no span interno: Next <Link> nem sempre reaplica `style` no <a> durante soft nav. */}
+            <span
+              className="flex flex-col items-center justify-center gap-0.5 rounded-[12px] px-3 py-2"
+              style={{
+                backgroundColor: isActive ? "var(--color-surface-green)" : "transparent",
+                color: isActive ? "var(--color-primary-strong)" : "var(--color-muted)",
+                fontWeight: isActive ? 600 : 400,
+              }}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="text-[11px] tracking-tight">{item.label}</span>
+            </span>
           </PendingNavLink>
         );
       })}

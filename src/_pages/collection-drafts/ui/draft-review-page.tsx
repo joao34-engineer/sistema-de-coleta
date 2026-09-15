@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { hasRequiredCollectionLocation } from "../model/has-required-collection-location";
@@ -121,7 +120,6 @@ export function DraftReviewPage({
           Emitir guia e coletar assinatura
         </Button>
       </div>
-      <MobileBottomNav />
     </main>
   );
 }

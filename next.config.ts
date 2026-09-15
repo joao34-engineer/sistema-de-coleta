@@ -39,7 +39,13 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/_next/static/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+        // Em dev, immutable quebra HMR/Turbopack (browser fica com bundle velho da nav).
+        headers: [
+          {
+            key: "Cache-Control",
+            value: isProduction ? "public, max-age=31536000, immutable" : "no-store",
+          },
+        ],
       },
       {
         source: "/icons/:path*",

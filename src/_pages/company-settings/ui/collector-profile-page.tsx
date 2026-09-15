@@ -1,7 +1,6 @@
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { Card } from "@/shared/ui/card";
 import { SignOutForm } from "@/shared/ui/sign-out-form";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
@@ -88,7 +87,6 @@ export function CollectorProfilePage({ administrator }: Props) {
         </Card>
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

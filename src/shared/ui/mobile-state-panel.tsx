@@ -12,6 +12,7 @@ export interface MobileStatePanelProps {
   actionText?: string;
   onAction?: () => void;
   actionDisabled?: boolean;
+  actionLoading?: boolean;
   actionHref?: Route;
   secondaryActionText?: string;
   onSecondaryAction?: () => void;
@@ -46,6 +47,7 @@ export function MobileStatePanel({
   actionText,
   onAction,
   actionDisabled,
+  actionLoading,
   actionHref,
   secondaryActionText,
   onSecondaryAction,
@@ -91,7 +93,13 @@ export function MobileStatePanel({
         {showClickAction || showHrefAction || actionSlot ? (
           <div className="mt-8 flex w-full max-w-[258px] flex-col gap-2">
             {showClickAction ? (
-              <Button type="button" variant="primary" onClick={onAction} disabled={actionDisabled}>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={onAction}
+                disabled={actionDisabled}
+                isLoading={actionLoading === true}
+              >
                 {actionText}
               </Button>
             ) : null}

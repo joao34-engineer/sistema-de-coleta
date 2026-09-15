@@ -1,7 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
-import { requireAuthenticatedAdministrator } from "@/shared/auth/require-admin";
+import { asAdministratorAuthClient, resolveAuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import { assertPngSignatureHeader, validatePngSignature } from "@/shared/lib/file/png-signature";
 import { digestLifecycleRequest, digestSha256 } from "@/shared/lib/file/sha256-hex";
 import { attachActorId, logTransactionFailure } from "@/shared/lib/server-logger";
@@ -22,7 +22,7 @@ import {
   cancelReopenResultSchema,
 } from "../model/contracts";
 import { toServiceProgressRpcItems, toTechnicalBudgetRpcItems, toWorkshopCheckInRpcItems } from "../model/workshop-rpc-items";
-import { createOperationsSupabaseClient, type OperationsFunctions } from "./operations-supabase";
+import { createOperationsCommandSupabaseClient, type OperationsFunctions } from "./operations-supabase";
 
 export { validatePngSignature };
 
@@ -57,9 +57,9 @@ async function executePhase3Command<TName extends Phase3CommandName, TSchema ext
   idempotencyKey: string,
   options?: Phase3CommandOptions,
 ): Promise<z.infer<TSchema>> {
-  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = await createOperationsCommandSupabaseClient();
+  const administrator = await resolveAuthenticatedAdministrator(asAdministratorAuthClient(supabase));
   try {
-    const supabase = await createOperationsSupabaseClient();
     const requestHash = await digestLifecycleRequest(
       functionName,
       rpcArgs.p_collection_id,
@@ -86,9 +86,9 @@ export async function workshopCheckIn(
   file: File,
   requestId?: string
 ) {
-  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = await createOperationsCommandSupabaseClient();
+  const administrator = await resolveAuthenticatedAdministrator(asAdministratorAuthClient(supabase));
   await assertPngSignatureHeader(file);
-  const supabase = await createOperationsSupabaseClient();
   const fileSha256 = await digestSha256(file);
   let intentId: string | null = null;
   let storagePath: string | null = null;
@@ -234,9 +234,9 @@ export async function deliverToCustomer(
   file: File,
   requestId?: string
 ) {
-  const administrator = await requireAuthenticatedAdministrator();
+  const supabase = await createOperationsCommandSupabaseClient();
+  const administrator = await resolveAuthenticatedAdministrator(asAdministratorAuthClient(supabase));
   await assertPngSignatureHeader(file);
-  const supabase = await createOperationsSupabaseClient();
   const fileSha256 = await digestSha256(file);
   let intentId: string | null = null;
   let storagePath: string | null = null;

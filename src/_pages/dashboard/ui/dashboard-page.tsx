@@ -1,12 +1,12 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { AuthenticatedAdministrator } from "@/shared/auth/require-admin";
 import type { DashboardActivityItem } from "../model/contracts";
 import { dashboardActivityStatusLabel, latestActivities } from "../model/contracts";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { buttonClassName } from "@/shared/ui/button";
 import { PendingNavLink } from "@/shared/ui/pending-nav-link";
@@ -38,6 +38,7 @@ export function DashboardPage({
   todayLabel,
 }: Props) {
   const router = useRouter();
+  const [isRetrying, startRetryTransition] = useTransition();
   const firstName = operatorGivenName(administrator.fullName);
   const upcomingActivities = latestActivities(activities, 2);
 
@@ -65,8 +66,14 @@ export function DashboardPage({
               type="error"
               title="Não foi possível carregar as coletas"
               subtitle="Ocorreu um erro ao consultar o servidor. Seus dados não foram alterados."
-              actionText="Tentar novamente"
-              onAction={() => router.refresh()}
+              actionText={isRetrying ? "Tentando novamente…" : "Tentar novamente"}
+              actionLoading={isRetrying}
+              actionDisabled={isRetrying}
+              onAction={() => {
+                startRetryTransition(() => {
+                  router.refresh();
+                });
+              }}
             />
           </div>
         ) : (
@@ -89,7 +96,7 @@ export function DashboardPage({
               href={"/coletas/nova" as Route}
               className={`${buttonClassName({ variant: "primary", size: "md" })} mt-6 justify-start`}
               contentClassName="flex w-full items-center justify-start"
-              pendingClassName="opacity-80 ring-2 ring-white/40"
+              pendingClassName="opacity-80"
             >
               Nova coleta
             </PendingNavLink>
@@ -110,7 +117,7 @@ export function DashboardPage({
                     href={(item.status === "draft" ? `/coletas/${item.id}/itens` : `/coletas/${item.id}`) as Route}
                     className="flex min-h-[96px] flex-col justify-center rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] px-5 py-4 shadow-[0px_1px_3px_0px_rgba(40,49,43,0.05)]"
                     contentClassName="flex w-full flex-col items-start"
-                    pendingClassName="opacity-70 ring-2 ring-[var(--color-primary)]/30"
+                    pendingClassName="opacity-70"
                   >
                     <span className="inline-flex h-7 items-center rounded-full bg-[var(--color-surface-green)] px-2.5 text-[12px] font-semibold text-[var(--color-primary-strong)]">
                       {dashboardActivityStatusLabel(item.status)}
@@ -129,7 +136,6 @@ export function DashboardPage({
         )}
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

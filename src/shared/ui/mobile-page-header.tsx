@@ -37,7 +37,7 @@ export function MobilePageHeader({
               aria-label="Voltar"
               className="flex h-9 w-9 items-center justify-center rounded-full text-[22px] font-semibold text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-neutral)] active:scale-95"
               contentClassName="grid h-full w-full place-items-center rounded-full leading-none"
-              pendingClassName="bg-[var(--color-surface-neutral)] opacity-80 ring-2 ring-[var(--color-primary)]/40"
+              pendingClassName="opacity-80"
             >
               <BackChevronGlyph />
             </PendingNavLink>

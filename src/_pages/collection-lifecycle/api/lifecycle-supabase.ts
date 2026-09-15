@@ -1,9 +1,11 @@
 import "server-only";
 
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Json } from "@/shared/api/database.types";
+import { AuthenticationRequiredError } from "@/shared/auth/require-admin";
 import { getPublicEnvironment } from "@/shared/config/environment";
 
 type LifecycleFunctions = {
@@ -21,16 +23,40 @@ type LifecycleFunctions = {
 
 type LifecycleDatabase = { public: { Tables: Record<never, never>; Views: Record<never, never>; Functions: LifecycleFunctions; Enums: Record<never, never>; CompositeTypes: Record<never, never> } };
 
-export async function createLifecycleSupabaseClient() {
+type CookieMutation = "best-effort" | "required";
+
+async function createLifecycleClient(cookieMutation: CookieMutation) {
   const environment = getPublicEnvironment();
   const cookieStore = await cookies();
   return createServerClient<LifecycleDatabase>(environment.supabaseUrl, environment.supabasePublishableKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
-      setAll: (values) => { try { values.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); } catch { /* Route handlers can always set cookies; safe fallback for non-mutation contexts. */ } },
+      setAll: (values) => {
+        try {
+          values.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch (error) {
+          if (cookieMutation === "required") throw error;
+        }
+      },
     },
   });
 }
+
+/** Read-only / RSC queries — cookie refresh is best-effort. */
+export const createLifecycleSupabaseClient = cache(async () => createLifecycleClient("best-effort"));
+
+/**
+ * Mutations: hydrate auth before RPC/storage.
+ * `@supabase/ssr` uses `skipAutoInitialize`; without `getClaims`, RPCs can run as anon.
+ */
+export const createLifecycleCommandSupabaseClient = cache(async () => {
+  const supabase = await createLifecycleClient("required");
+  const { data, error } = await supabase.auth.getClaims();
+  if (error || typeof data?.claims?.sub !== "string") {
+    throw new AuthenticationRequiredError();
+  }
+  return supabase;
+});
 
 export function createLifecycleUserStorageClient(accessToken: string) {
   const environment = getPublicEnvironment();

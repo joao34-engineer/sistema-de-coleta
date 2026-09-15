@@ -276,6 +276,7 @@ function sqlMapped(code: string): CommandErrorMapping | null {
   if (code === "40001") return mappingFor("stale_version");
   if (code === "23505") return mappingFor("conflict");
   if (code === "42501") return mappingFor("administrator_access_denied");
+  if (code === "PGRST301" || code === "PGRST303") return mappingFor("authentication_required");
   return null;
 }
 

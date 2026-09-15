@@ -58,6 +58,10 @@ describe("classifyCommandError", () => {
       code: "administrator_access_denied",
       status: 403,
     });
+    expect(classifyCommandError({ code: "PGRST301", message: "JWT expired" })).toMatchObject({
+      code: "authentication_required",
+      status: 401,
+    });
     const leaked = classifyCommandError(new Error("column users.tax_id does not exist"));
     expect(leaked.code).toBe("unexpected_error");
     expect(leaked.actionMessage).not.toContain("tax_id");

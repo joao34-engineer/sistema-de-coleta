@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { Route } from "next";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -260,7 +259,6 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
         </Button>
       </form>
 
-      <MobileBottomNav />
     </main>
   );
 }

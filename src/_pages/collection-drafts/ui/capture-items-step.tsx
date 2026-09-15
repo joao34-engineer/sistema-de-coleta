@@ -5,7 +5,6 @@ import type { Route } from "next";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import type { CaptureActor, CaptureStep, SyncUxState } from "../model/capture-actor";
 import type { DraftItemDTO } from "../model/draft";
 import { addLocalItem, isBrowserOnline, removeLocalItem, updateLocalItem } from "../model/offline-capture";
@@ -147,7 +146,6 @@ export function CaptureItemsStep({
           onSave={persistItem}
         />
       ) : null}
-      <MobileBottomNav />
     </main>
   );
 }

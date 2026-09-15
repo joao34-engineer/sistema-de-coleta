@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Route } from "next";
 import type { DocumentListDTO } from "../api/delivery/contracts";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { MobileStatePanel } from "@/shared/ui/mobile-state-panel";
 import { DocumentDeliveryActions } from "./document-delivery-actions";
 import { PdfPendingStatus } from "./pdf-pending-status";
@@ -93,7 +92,6 @@ export function CollectionDocumentsPage({ collectionId, documents, officialCode 
         )}
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }

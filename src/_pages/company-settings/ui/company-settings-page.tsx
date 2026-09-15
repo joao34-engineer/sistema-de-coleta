@@ -1,7 +1,6 @@
 import type { Route } from "next";
 import type { CompanySettingsDTO } from "@/shared/api/company-settings";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
-import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { leafChrome } from "../model/settings-chrome";
 import { CompanySettingsForm } from "./company-settings-form";
 
@@ -23,7 +22,6 @@ export function CompanySettingsPage({ settings, backHref }: Props) {
         <CompanySettingsForm settings={settings} />
       </div>
 
-      <MobileBottomNav />
     </main>
   );
 }
