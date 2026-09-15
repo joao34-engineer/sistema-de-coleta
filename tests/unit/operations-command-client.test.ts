@@ -5,8 +5,13 @@ vi.mock("react", async (importOriginal) => {
   return { ...actual, cache: <T extends (...args: never[]) => unknown>(fn: T) => fn };
 });
 
+type ClaimsResult = {
+  data: { claims: { sub?: string } | null } | null;
+  error: { message?: string } | null;
+};
+
 const testState = vi.hoisted(() => ({
-  getClaims: vi.fn(async () => ({
+  getClaims: vi.fn(async (): Promise<ClaimsResult> => ({
     data: { claims: { sub: "00000000-0000-0000-0000-000000000001" } },
     error: null,
   })),
@@ -38,7 +43,6 @@ vi.mock("@supabase/ssr", () => ({
     auth: { getClaims: testState.getClaims },
     rpc: vi.fn(),
     from: vi.fn(),
-    // Expose setAll for cookie-mutation probing in tests.
     __setAll: options.cookies.setAll,
   }),
 }));
