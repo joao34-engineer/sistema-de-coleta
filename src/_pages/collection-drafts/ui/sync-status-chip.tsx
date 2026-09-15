@@ -17,7 +17,7 @@ type Props = Readonly<{
 export function SyncStatusChip({ state, lastError }: Props) {
   const tone =
     state === "failed"
-      ? "bg-[#fdf2f1] text-[#ba5b52]"
+      ? "bg-[#fdf2f1] text-[var(--color-danger)]"
       : state === "syncing"
         ? "bg-[#fff8ec] text-[#a36b2c]"
         : "bg-[var(--color-surface-green)] text-[var(--color-primary-dark)]";

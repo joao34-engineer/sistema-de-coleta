@@ -32,7 +32,6 @@ type Props = Readonly<{
   syncState: SyncUxState;
   lastError: string | null;
   onPersistLocation: (location: string) => Promise<void>;
-  onBackToItems: () => void;
   onContinue: () => void | Promise<void>;
 }>;
 
@@ -45,7 +44,6 @@ export function DraftReviewPage({
   syncState,
   lastError,
   onPersistLocation,
-  onBackToItems,
   onContinue,
 }: Props) {
   const [locationDraft, setLocationDraft] = useState<string | null>(null);
@@ -105,9 +103,6 @@ export function DraftReviewPage({
             {...(locationReady ? {} : { error: MISSING_COLLECTION_LOCATION_MSG })}
           />
         </div>
-        <Button type="button" variant="secondary" onClick={onBackToItems} className="h-[52px] rounded-[12px] text-[14px] font-semibold">
-          Voltar aos itens
-        </Button>
         <Button
           type="button"
           variant="primary"

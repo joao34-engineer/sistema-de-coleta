@@ -3,7 +3,10 @@ import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
 import { MobileBottomNav } from "@/shared/ui/mobile-bottom-nav";
 import { PdfPendingStatus } from "./pdf-pending-status";
 import { LazyPdfPreview } from "./lazy-pdf-preview";
-import { CollectionDocumentLetterhead } from "./collection-document-letterhead";
+import {
+  CollectionDocumentLetterhead,
+  type LetterheadItem,
+} from "./collection-document-letterhead";
 import { DocumentViewerActions } from "./document-viewer-actions";
 import type { DocumentJobStatus } from "../api/delivery/contracts";
 
@@ -14,6 +17,10 @@ type Props = Readonly<{
   officialCode: string | null;
   version: number | null;
   pdfJobStatus?: DocumentJobStatus;
+  customerName?: string | null;
+  locationDescription?: string | null;
+  items?: ReadonlyArray<LetterheadItem>;
+  signerName?: string | null;
 }>;
 
 export function DocumentViewerPage({
@@ -23,6 +30,10 @@ export function DocumentViewerPage({
   officialCode,
   version,
   pdfJobStatus,
+  customerName = null,
+  locationDescription = null,
+  items = [],
+  signerName = null,
 }: Props) {
   const pdfDownloadUrl = `/api/documents/${documentId}/download?artifact=pdf`;
 
@@ -35,7 +46,14 @@ export function DocumentViewerPage({
       />
 
       <div className="flex flex-col items-center gap-4 px-6 pt-6">
-        <CollectionDocumentLetterhead officialCode={officialCode} version={version} />
+        <CollectionDocumentLetterhead
+          officialCode={officialCode}
+          version={version}
+          customerName={customerName}
+          locationDescription={locationDescription}
+          items={items}
+          signerName={signerName}
+        />
 
         {hasPdf && version !== null ? (
           <DocumentViewerActions

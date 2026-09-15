@@ -69,7 +69,7 @@ export function DocumentShareUnavailablePage() {
       <MobileStatePanel
         type="error"
         title="Link indisponível"
-        subtitle="O link é inválido, expirou ou foi revogado."
+        subtitle="O link é inválido."
         actionText="Fechar"
         actionHref="/"
       />

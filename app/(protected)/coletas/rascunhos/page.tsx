@@ -25,6 +25,7 @@ export default async function CollectionDraftsRoute({ searchParams }: Props) {
       nextCursor={result.nextCursor}
       totalCount={result.totalCount}
       showStatusFilters={false}
+      showSearch={false}
       status="draft"
       title="Rascunhos"
       subtitle="Salvos neste aparelho"

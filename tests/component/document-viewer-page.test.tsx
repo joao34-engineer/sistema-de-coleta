@@ -29,6 +29,10 @@ describe("DocumentViewerPage", () => {
         hasPdf
         officialCode="MJT-2026-000021"
         version={2}
+        customerName="Clínica Horizonte"
+        locationDescription="Oficina central"
+        items={[{ description: "Eixo", quantity: 1 }]}
+        signerName="Ana Souza"
       />,
     );
 
@@ -36,6 +40,11 @@ describe("DocumentViewerPage", () => {
     expect(screen.getByText("Visualização")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "GUIA DE COLETA" })).toBeInTheDocument();
     expect(screen.getByText("MJT-2026-000021")).toBeInTheDocument();
+    expect(screen.getByText("Clínica Horizonte")).toBeInTheDocument();
+    expect(screen.getByText("Local: Oficina central")).toBeInTheDocument();
+    expect(screen.getByText("1× Eixo")).toBeInTheDocument();
+    expect(screen.getByText("Ana Souza")).toBeInTheDocument();
+    expect(screen.getByText("Signatário:")).toBeInTheDocument();
     expect(screen.queryByTitle("Visualizador de PDF da Coleta MJT")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pré-visualizar" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Baixar PDF" })).toHaveAttribute(

@@ -58,7 +58,8 @@ describe("DocumentShareUnavailablePage", () => {
     render(<DocumentShareUnavailablePage />);
 
     expect(screen.getByRole("heading", { name: "Link indisponível" })).toBeInTheDocument();
-    expect(screen.getByText(/inválido, expirou ou foi revogado/i)).toBeInTheDocument();
+    expect(screen.getByText("O link é inválido.")).toBeInTheDocument();
+    expect(screen.queryByText(/expirou ou foi revogado/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Fechar" })).toHaveAttribute("href", "/");
     expect(screen.queryByText(/@/)).not.toBeInTheDocument();
   });

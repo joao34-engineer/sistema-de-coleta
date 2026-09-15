@@ -78,7 +78,7 @@ export function CaptureItemsStep({
       </div>
       <div className="flex flex-col gap-6 px-6 pt-6">
         <h2 className="text-[24px] font-semibold tracking-tight text-[var(--color-text-primary)]">Registre tudo o que foi entregue.</h2>
-        {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">{displayError}</div> : null}
+        {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">{displayError}</div> : null}
         <div className="flex flex-col gap-3">
           {items.map((item, index) => {
             const condition = itemConditionPresentation(item.condition);
@@ -87,7 +87,7 @@ export function CaptureItemsStep({
                 key={item.id}
                 className="relative w-full max-w-[342px] rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-5 shadow-xs"
               >
-                <span className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#eef7f1] text-[12px] font-semibold text-[var(--color-primary-strong)]">
+                <span className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-[12px] bg-[var(--color-surface-green)] text-[12px] font-semibold text-[var(--color-primary-strong)]">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <Badge status={condition.status}>{condition.label}</Badge>
@@ -115,7 +115,7 @@ export function CaptureItemsStep({
                         onReload();
                       })();
                     }}
-                    className="h-7 rounded-[8px] px-2 text-[11px] font-semibold text-[#ba5b52]"
+                    className="h-7 rounded-[8px] px-2 text-[11px] font-semibold text-[var(--color-danger)]"
                   >
                     Remover
                   </button>
@@ -128,7 +128,7 @@ export function CaptureItemsStep({
           type="button"
           variant="secondary"
           onClick={() => setIsAddingNew(true)}
-          className="h-[60px] max-w-[342px] rounded-[12px] border-0 bg-[#eef7f1] text-[14px] font-semibold text-[var(--color-primary-strong)] shadow-none"
+          className="h-[60px] max-w-[342px] rounded-[12px] border-0 bg-[var(--color-surface-green)] text-[14px] font-semibold text-[var(--color-primary-strong)] shadow-none"
         >
           + Adicionar item
         </Button>

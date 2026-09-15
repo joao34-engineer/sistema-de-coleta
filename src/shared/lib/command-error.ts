@@ -11,7 +11,7 @@ const GENERIC_ACTION_FAILURE =
   "Não foi possível concluir a operação. Verifique a conexão e tente novamente.";
 const BUSINESS_RULE_MESSAGE = "A coleta não atende aos requisitos desta operação.";
 const UNEXPECTED_HTTP = "Não foi possível concluir a operação.";
-const PERMISSION_DENIED = "Você não tem permissão para esta operação.";
+const PERMISSION_DENIED = "Você não tem permissão para esta ação.";
 const STALE_HTTP = "A coleta foi atualizada por outra operação.";
 const VALIDATION_ACTION = "Revise os dados informados e tente novamente.";
 const PNG_SIGNATURE_MESSAGE = "A assinatura enviada não é um PNG válido.";

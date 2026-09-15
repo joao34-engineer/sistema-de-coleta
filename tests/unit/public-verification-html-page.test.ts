@@ -76,7 +76,7 @@ describe("public verification HTML page", () => {
     const element = await PublicVerificationHtmlPage({ params: Promise.resolve({ verificationToken }) });
     const html = renderToString(element);
 
-    expect(html).toContain("Aguarde antes de consultar novamente.");
+    expect(html).toContain("Aguarde antes de consultar");
     expect(html).not.toContain("Algo deu errado");
     expect(html).not.toContain(verificationToken);
     testState.rateMode = "ok";
@@ -87,7 +87,7 @@ describe("public verification HTML page", () => {
     const element = await PublicVerificationHtmlPage({ params: Promise.resolve({ verificationToken }) });
     const html = renderToString(element);
 
-    expect(html).toContain("Consulta temporariamente indisponível.");
+    expect(html).toContain("Consulta indisponível");
     expect(html).not.toContain("Algo deu errado");
     expect(html).not.toContain(verificationToken);
     testState.rateMode = "ok";
@@ -99,8 +99,8 @@ describe("public verification HTML page", () => {
     const html = renderToString(element);
 
     expect(html).toContain("Guia não encontrada");
-    expect(html).not.toContain("Aguarde antes de consultar novamente.");
-    expect(html).not.toContain("Consulta temporariamente indisponível.");
+    expect(html).not.toContain("Aguarde antes de consultar");
+    expect(html).not.toContain("Consulta indisponível");
     testState.rateMode = "ok";
   });
 

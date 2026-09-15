@@ -71,6 +71,7 @@ export const collectionListItemSchema = z.object({
   collectedAt: z.iso.datetime({ offset: true }).nullable(),
   createdAt: z.iso.datetime({ offset: true }),
   rowVersion: z.number().int().positive(),
+  itemCount: z.number().int().nonnegative(),
 });
 
 export const collectionListResultSchema = z.object({

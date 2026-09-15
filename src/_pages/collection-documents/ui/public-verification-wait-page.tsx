@@ -13,7 +13,7 @@ export function PublicVerificationWaitPage({ variant, retryAfterSeconds }: Props
       headerSubtitle={rateLimited ? "Aguarde consultar" : "Consulta indisponível"}
       icon="!"
       iconTone="error"
-      title={rateLimited ? "Aguarde antes de consultar novamente." : "Consulta temporariamente indisponível."}
+      title={rateLimited ? "Aguarde antes de consultar" : "Consulta indisponível"}
       description={
         rateLimited
           ? "Muitas consultas foram feitas neste endereço. Espere um momento antes de tentar de novo."

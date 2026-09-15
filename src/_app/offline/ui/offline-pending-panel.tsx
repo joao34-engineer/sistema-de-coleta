@@ -78,13 +78,13 @@ export function OfflinePendingPanel({
         {notice !== null && first !== undefined ? (
           <p className="mt-2 text-[12px] font-medium text-[var(--color-text)]">{notice}</p>
         ) : null}
-        {bannerError ? <p className="mt-2 text-[12px] font-medium text-[#ba5b52]">{bannerError}</p> : null}
+        {bannerError ? <p className="mt-2 text-[12px] font-medium text-[var(--color-danger)]">{bannerError}</p> : null}
         <div aria-atomic="true" aria-live="polite">
           {retryResult ? (
             <p
               id="offline-pending-retry-result"
               className={`mt-2 text-[12px] font-medium ${
-                retryResult === offlineCopy.syncComplete ? "text-[var(--color-text)]" : "text-[#ba5b52]"
+                retryResult === offlineCopy.syncComplete ? "text-[var(--color-text)]" : "text-[var(--color-danger)]"
               }`}
             >
               {retryResult}
@@ -115,7 +115,7 @@ export function OfflinePendingPanel({
                       </Link>
                     ) : null}
                   </div>
-                  {errorText ? <p className="text-[12px] font-medium text-[#ba5b52]">{errorText}</p> : null}
+                  {errorText ? <p className="text-[12px] font-medium text-[var(--color-danger)]">{errorText}</p> : null}
                   <Button
                     type="button"
                     variant="secondary"

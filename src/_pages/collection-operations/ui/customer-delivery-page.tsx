@@ -144,7 +144,9 @@ export function CustomerDeliveryPage({
               ? `${item.description} já entregue`
               : continuesInRepair
                 ? `${item.description} Continua em reparo`
-                : item.description;
+                : deliverable
+                  ? `${item.description} Pronta para retirada`
+                  : item.description;
             return (
               <label
                 key={item.id}
@@ -158,6 +160,11 @@ export function CustomerDeliveryPage({
                   {item.description}
                 </span>
                 <span className="flex shrink-0 items-center gap-3">
+                  {deliverable ? (
+                    <span className="rounded-full bg-[var(--color-surface-green)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary-strong)]">
+                      Pronto
+                    </span>
+                  ) : null}
                   <span className="text-[12px] font-semibold text-[var(--color-text-muted)]">{item.quantity}x</span>
                   {alreadyDelivered ? (
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -166,6 +173,10 @@ export function CustomerDeliveryPage({
                   ) : continuesInRepair ? (
                     <span className="text-[11px] font-semibold tracking-wide text-[var(--color-text-muted)]">
                       Continua em reparo
+                    </span>
+                  ) : deliverable ? (
+                    <span className="text-[11px] font-semibold tracking-wide text-[var(--color-text-muted)]">
+                      Pronta para retirada
                     </span>
                   ) : null}
                   <input

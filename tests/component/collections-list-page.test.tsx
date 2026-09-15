@@ -64,6 +64,7 @@ const collectedItem: CollectionListItemDTO = {
   collectedAt: "2026-09-07T12:00:00.000Z",
   createdAt: "2026-09-07T12:00:00.000Z",
   rowVersion: 1,
+  itemCount: 2,
 };
 
 describe("CollectionsListPage filter chips", () => {
@@ -90,7 +91,7 @@ describe("CollectionsListPage filter chips", () => {
       "src",
       "/logo/Logo_-_MJT-removebg-preview.png",
     );
-    expect(screen.getByText("Maria Silva")).toBeInTheDocument();
+    expect(screen.getByText("Maria Silva · 2 itens")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Buscar por número ou cliente")).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveClass("max-w-md");
   });
@@ -130,6 +131,7 @@ describe("CollectionsListPage filter chips", () => {
       <CollectionsListPage
         initialItems={[]}
         showStatusFilters={false}
+        showSearch={false}
         status="draft"
         title="Rascunhos"
         subtitle="Salvos neste aparelho"
@@ -143,5 +145,6 @@ describe("CollectionsListPage filter chips", () => {
     expect(screen.getByText("Nenhum rascunho encontrado")).toBeInTheDocument();
     expect(screen.queryByText("Todos")).toBeNull();
     expect(screen.queryByRole("heading", { name: "Coletas" })).toBeNull();
+    expect(screen.queryByPlaceholderText("Buscar por número ou cliente")).toBeNull();
   });
 });

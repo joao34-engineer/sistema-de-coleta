@@ -14,3 +14,18 @@ export const leafChrome: SettingsChrome = {
   title: "Empresa",
   subtitle: "Dados institucionais",
 };
+
+export const hubLegalFact = {
+  label: "Dados jurídicos",
+  value: "Razão social, CNPJ e rodapé dos recibos",
+} as const;
+
+export const hubProfileFact = {
+  label: "Perfil institucional",
+  value: "Editar no fluxo /configuracoes/empresa",
+} as const;
+
+export const hubSignOutFact = {
+  label: "Sair",
+  value: "Encerra a sessão deste aparelho",
+} as const;

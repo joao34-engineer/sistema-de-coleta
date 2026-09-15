@@ -53,8 +53,8 @@ describe("CustomerDeliveryPage (5.5)", () => {
 
   it("starts with no item pre-checked, including pending ones", () => {
     renderDeliveryPage([]);
-    const pending = screen.getByRole("checkbox", { name: "Motor WEG 15HP" });
-    const other = screen.getByRole("checkbox", { name: "Bomba d'água" });
+    const pending = screen.getByRole("checkbox", { name: "Motor WEG 15HP Pronta para retirada" });
+    const other = screen.getByRole("checkbox", { name: "Bomba d'água Pronta para retirada" });
     expect(pending).not.toBeChecked();
     expect(other).not.toBeChecked();
     expect(pending).toBeEnabled();
@@ -65,10 +65,12 @@ describe("CustomerDeliveryPage (5.5)", () => {
     renderDeliveryPage();
     expect(screen.getByText("já entregue")).toBeInTheDocument();
     expect(screen.getByText("Bomba d'água")).toBeInTheDocument();
+    expect(screen.getByText("Pronto")).toBeInTheDocument();
+    expect(screen.getByText("Pronta para retirada")).toBeInTheDocument();
     const delivered = screen.getByRole("checkbox", { name: "Bomba d'água já entregue" });
     expect(delivered).toBeDisabled();
     expect(delivered).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Motor WEG 15HP" })).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: "Motor WEG 15HP Pronta para retirada" })).toBeEnabled();
   });
 
   it("keeps the empty-selection guard and does not call the action", async () => {
@@ -80,7 +82,7 @@ describe("CustomerDeliveryPage (5.5)", () => {
 
   it("lets the operator select only pending items", () => {
     renderDeliveryPage();
-    const pending = screen.getByRole("checkbox", { name: "Motor WEG 15HP" });
+    const pending = screen.getByRole("checkbox", { name: "Motor WEG 15HP Pronta para retirada" });
     fireEvent.click(pending);
     expect(pending).toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "Bomba d'água já entregue" }));
@@ -98,7 +100,7 @@ describe("CustomerDeliveryPage (5.5)", () => {
     expect(inRepair).not.toBeChecked();
     fireEvent.click(inRepair);
     expect(inRepair).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Motor WEG 15HP" })).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: "Motor WEG 15HP Pronta para retirada" })).toBeEnabled();
   });
 
   it("shows the Figma O04 counter against the full roster", () => {
@@ -106,7 +108,7 @@ describe("CustomerDeliveryPage (5.5)", () => {
       { id: pendingItemId, description: "Motor WEG 15HP", quantity: 1, serviceOrderStatus: "pronto" },
       { id: inRepairItemId, description: "Gerador 20kVA", quantity: 1, serviceOrderStatus: "em_reparo" },
     ]);
-    fireEvent.click(screen.getByRole("checkbox", { name: "Motor WEG 15HP" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Motor WEG 15HP Pronta para retirada" }));
     expect(screen.getByText("1 de 2 itens serão entregues")).toBeInTheDocument();
   });
 
@@ -116,7 +118,7 @@ describe("CustomerDeliveryPage (5.5)", () => {
       { id: secondReadyItemId, description: "Compressor 10bar", quantity: 1, serviceOrderStatus: "pronto" },
       { id: inRepairItemId, description: "Gerador 20kVA", quantity: 1, serviceOrderStatus: "em_reparo" },
     ]);
-    fireEvent.click(screen.getByRole("checkbox", { name: "Motor WEG 15HP" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Motor WEG 15HP Pronta para retirada" }));
     expect(screen.getByText("1 de 3 itens serão entregues")).toBeInTheDocument();
   });
 });

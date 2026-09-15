@@ -47,7 +47,7 @@ export function DashboardPage({
         logoSrc="/logo/Logo_-_MJT-removebg-preview.png"
         title={`Olá, ${firstName}`}
         subtitle="Operação de hoje"
-        badge={<SignOutForm />}
+        badge={<SignOutForm size="md" />}
       />
 
       <div className="flex flex-col px-6 pt-4">

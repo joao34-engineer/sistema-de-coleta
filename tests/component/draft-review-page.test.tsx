@@ -28,7 +28,6 @@ describe("DraftReviewPage", () => {
         syncState="online"
         lastError={null}
         onPersistLocation={vi.fn(async () => undefined)}
-        onBackToItems={vi.fn()}
         onContinue={vi.fn()}
       />,
     );
@@ -37,6 +36,7 @@ describe("DraftReviewPage", () => {
     expect(screen.getByText("Oficina Norte")).toBeInTheDocument();
     expect(screen.getByText("Motor usado")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Emitir guia e coletar assinatura" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Voltar aos itens" })).not.toBeInTheDocument();
   });
 
   it("persists location on blur and continues after emit", async () => {
@@ -53,7 +53,6 @@ describe("DraftReviewPage", () => {
         syncState="online"
         lastError={null}
         onPersistLocation={onPersistLocation}
-        onBackToItems={vi.fn()}
         onContinue={onContinue}
       />,
     );

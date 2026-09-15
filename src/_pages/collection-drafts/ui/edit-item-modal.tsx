@@ -93,7 +93,7 @@ export function EditItemModal({ item, isOpen, onClose, onSave }: EditItemModalPr
         </h2>
 
         {error ? (
-          <div className="mb-4 rounded-[12px] bg-[#fdf2f1] p-3 text-[12px] font-medium text-[#ba5b52]">{error}</div>
+          <div className="mb-4 rounded-[12px] bg-[#fdf2f1] p-3 text-[12px] font-medium text-[var(--color-danger)]">{error}</div>
         ) : null}
 
         <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(e)}>

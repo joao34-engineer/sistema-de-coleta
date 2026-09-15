@@ -33,6 +33,7 @@ describe("collection cursor", () => {
           collectedAt: "2026-09-06T12:13:05.756+00:00",
           createdAt: sampleCursor.createdAt,
           rowVersion: 6,
+          itemCount: 2,
         },
       ],
       nextCursor: encodeCollectionCursor(sampleCursor),

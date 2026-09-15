@@ -465,7 +465,6 @@ function CaptureSteps({
         syncState={status}
         lastError={draft.lastError}
         onPersistLocation={persistLocation}
-        onBackToItems={() => void onStep("itens")}
         onContinue={() => onStep("assinatura")}
       />
     );

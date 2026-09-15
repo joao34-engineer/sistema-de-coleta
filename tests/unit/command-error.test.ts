@@ -15,6 +15,7 @@ describe("classifyCommandError", () => {
     const denied = classifyCommandError({ name: "AdministratorAccessDeniedError" });
     expect(denied.code).toBe("administrator_access_denied");
     expect(denied.status).toBe(403);
+    expect(denied.actionMessage).toBe("Você não tem permissão para esta ação.");
   });
 
   it("keeps distinct HTTP and Action copy for stale_version", () => {

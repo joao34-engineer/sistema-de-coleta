@@ -77,7 +77,8 @@ describe("PublicVerificationWaitPage", () => {
 
   it("shows the rate-limit wait copy without leaking verification data", () => {
     render(<PublicVerificationWaitPage variant="rate_limited" retryAfterSeconds={42} />);
-    expect(screen.getByRole("heading", { name: "Aguarde antes de consultar novamente." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Aguarde antes de consultar" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Aguardar" })).not.toBeInTheDocument();
     expect(screen.getByText(/42 segundos/)).toBeInTheDocument();
     expect(screen.queryByText("MJT-2026-000123")).not.toBeInTheDocument();
     expect(screen.queryByText(verificationToken)).not.toBeInTheDocument();
@@ -85,7 +86,7 @@ describe("PublicVerificationWaitPage", () => {
 
   it("shows the unavailable copy without leaking verification data", () => {
     render(<PublicVerificationWaitPage variant="unavailable" />);
-    expect(screen.getByRole("heading", { name: "Consulta temporariamente indisponível." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Consulta indisponível" })).toBeInTheDocument();
     expect(screen.queryByText("MJT-2026-000123")).not.toBeInTheDocument();
     expect(screen.queryByText(verificationToken)).not.toBeInTheDocument();
   });

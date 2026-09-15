@@ -67,7 +67,7 @@ export function BudgetApprovalPage({ collectionId, officialCode, budgetTotal, ro
         </Card>
 
         {errorMsg && (
-          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">
+          <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">
             {errorMsg}
           </div>
         )}

@@ -16,6 +16,7 @@ const lifecycleKeyAliases: Readonly<Record<string, string>> = {
   collectedat: "collectedAt",
   createdat: "createdAt",
   rowversion: "rowVersion",
+  itemcount: "itemCount",
   nextcursor: "nextCursor",
   totalcount: "totalCount",
   collectionlocation: "collectionLocation",

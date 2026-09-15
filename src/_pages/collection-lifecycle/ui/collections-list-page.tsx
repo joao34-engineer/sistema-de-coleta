@@ -11,6 +11,7 @@ import {
   type CollectionsListFilter,
 } from "../model/status-filters";
 import { listRowStatusClassName, listRowStatusLabel, listRowStatusTone } from "../model/list-row-status";
+import { listRowCustomerLine } from "../model/list-row-customer-line";
 import { loadMoreCollectionsAction } from "../api/actions";
 import { CollectionsListFilterChip } from "./collections-list-filter-chip";
 import { MobilePageHeader } from "@/shared/ui/mobile-page-header";
@@ -41,6 +42,7 @@ type Props = Readonly<{
   subtitle?: string;
   emptyTitle?: string;
   emptySubtitle?: string;
+  showSearch?: boolean;
 }>;
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -68,6 +70,7 @@ export function CollectionsListPage({
   subtitle = DEFAULT_SUBTITLE,
   emptyTitle = DEFAULT_EMPTY_TITLE,
   emptySubtitle = DEFAULT_EMPTY_SUBTITLE,
+  showSearch = true,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -99,6 +102,7 @@ export function CollectionsListPage({
   const displayedFilter = pendingFilter ?? selectedFilter;
 
   useEffect(() => {
+    if (!showSearch) return;
     const handle = window.setTimeout(() => {
       if (draftQ.trim() === searchTerm.trim()) return;
       startTransition(() => {
@@ -106,14 +110,15 @@ export function CollectionsListPage({
       });
     }, SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(handle);
-  }, [draftQ, pathname, router, searchTerm, selectedFilter]);
+  }, [draftQ, pathname, router, searchTerm, selectedFilter, showSearch]);
 
   useEffect(() => {
+    if (!showStatusFilters) return;
     for (const chip of LIST_FILTER_CHIPS) {
       if (chip.id === selectedFilter) continue;
       router.prefetch(buildCollectionsListHref(pathname, { q: searchTerm, filter: chip.id }));
     }
-  }, [pathname, router, searchTerm, selectedFilter]);
+  }, [pathname, router, searchTerm, selectedFilter, showStatusFilters]);
 
   if (loadFailed) {
     return (
@@ -163,11 +168,13 @@ export function CollectionsListPage({
       />
 
       <div className="flex flex-col gap-4 px-6 pt-4">
-        <Input
-          placeholder="Buscar por número ou cliente"
-          value={draftQ}
-          onChange={(event) => setDraftQ(event.target.value)}
-        />
+        {showSearch ? (
+          <Input
+            placeholder="Buscar por número ou cliente"
+            value={draftQ}
+            onChange={(event) => setDraftQ(event.target.value)}
+          />
+        ) : null}
 
         {showStatusFilters ? (
           <div className="flex flex-wrap content-start gap-2">
@@ -214,7 +221,7 @@ export function CollectionsListPage({
                   </h2>
                   <div className="mt-1 flex items-center justify-between gap-3">
                     <p className="min-w-0 truncate text-[12px] font-normal leading-4 text-[var(--color-text-muted)]">
-                      {item.customerName ?? "Cliente não informado"}
+                      {listRowCustomerLine(item.customerName, item.itemCount)}
                     </p>
                     <p className={`shrink-0 text-[12px] font-semibold leading-4 ${listRowStatusClassName[tone]}`}>
                       {listRowStatusLabel(item.status)}

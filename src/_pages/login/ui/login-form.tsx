@@ -67,7 +67,7 @@ export function LoginForm() {
       </div>
 
       {state.message ? (
-        <div role="alert" className="rounded-[12px] bg-[#fdf2f1] border border-[#fca5a5] p-3.5 text-[12px] text-[#ba5b52] font-medium">
+        <div role="alert" className="rounded-[12px] bg-[#fdf2f1] border border-[#fca5a5] p-3.5 text-[12px] text-[var(--color-danger)] font-medium">
           {state.message}
         </div>
       ) : null}

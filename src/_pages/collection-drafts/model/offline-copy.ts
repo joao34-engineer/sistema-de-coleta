@@ -60,8 +60,8 @@ const queueErrorMessages: Readonly<Record<string, string>> = {
   signature_contract_invalid: "Não foi possível confirmar a assinatura.",
   signature_upload_failed: "Não foi possível enviar a assinatura. Tente de novo.",
   validation_error: "Revise os dados informados e tente novamente.",
-  administrator_access_denied: "Você não tem permissão para esta operação.",
-  forbidden: "Você não tem permissão para esta operação.",
+  administrator_access_denied: "Você não tem permissão para esta ação.",
+  forbidden: "Você não tem permissão para esta ação.",
   operation_failed: offlineCopy.failed,
   finalize_failed: offlineCopy.onlineFinalizeFailed,
   sync_interrupted: "A sincronização foi interrompida. Tente de novo.",
@@ -126,7 +126,7 @@ export function titleForOperatorError(message: string, fallback: string): string
   if (message === offlineCopy.authExpired) {
     return offlineCopy.sessionTitle;
   }
-  if (message === "Você não tem permissão para esta operação.") {
+  if (message === "Você não tem permissão para esta ação.") {
     return offlineCopy.permissionTitle;
   }
   if (VALIDATION_MESSAGES.has(message) || message === offlineCopy.cadastralIncomplete) {

@@ -43,6 +43,11 @@ describe("CollectorProfilePage", () => {
     expect(screen.getByText("Configurações da conta")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Operador autenticado" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Editar perfil institucional" })).toBeInTheDocument();
+    expect(screen.getByText("Dados jurídicos")).toBeInTheDocument();
+    expect(screen.getByText("Razão social, CNPJ e rodapé dos recibos")).toBeInTheDocument();
+    expect(screen.getByText("Perfil institucional")).toBeInTheDocument();
+    expect(screen.getByText("Editar no fluxo /configuracoes/empresa")).toBeInTheDocument();
+    expect(screen.getByText("Encerra a sessão deste aparelho")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Empresa" })).not.toBeInTheDocument();
   });
 });

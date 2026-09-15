@@ -87,7 +87,7 @@ export function CaptureSignatureStep({
         <p className="text-[13px] font-medium leading-5 text-[var(--color-primary-strong)]">
           Coleta · {itemCount} {itemWord}
         </p>
-        {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[#ba5b52]">{displayError}</div> : null}
+        {displayError ? <div className="rounded-[12px] border border-[#fca5a5] bg-[#fdf2f1] p-3.5 text-[12px] font-semibold text-[var(--color-danger)]">{displayError}</div> : null}
         <div className="flex w-full max-w-[342px] flex-col gap-2 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-card-bg)] p-5 shadow-xs">
           <h3 className="text-[14px] font-semibold leading-5 text-[var(--color-text-primary)]">Assine no espaço abaixo</h3>
           <SignaturePad disabled={isFinalizing} onClear={() => setSignatureDataUrl(null)} onSave={(url) => setSignatureDataUrl(url)} />

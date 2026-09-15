@@ -225,23 +225,27 @@ export function NewCollectionPage({ actor, onCreated }: Props) {
           <Input label="Nome ou razão social *" placeholder="Digite o nome" value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
           <Input label="CPF/CNPJ *" placeholder="Digite apenas números" value={taxId} onChange={(event) => setTaxId(event.target.value)} required />
           <Input label="Telefone *" placeholder="(00) 00000-0000" value={phone} onChange={(event) => setPhone(event.target.value)} required />
-          <Input label="Endereço cadastral" placeholder="Opcional" value={street} onChange={(event) => setStreet(event.target.value)} />
-          <Input label="Cidade (se houver endereço)" placeholder="Opcional" value={city} onChange={(event) => setCity(event.target.value)} />
-          <label className="flex w-full flex-col gap-1.5">
-            <span className="text-[12px] font-semibold text-[var(--color-muted)]">UF (se houver endereço)</span>
-            <select
-              value={stateCode}
-              onChange={(event) => setStateCode(event.target.value)}
-              className="min-h-[48px] w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[14px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-            >
-              <option value="">Não informar</option>
-              {BRAZILIAN_STATE_CODES.map((uf) => (
-                <option key={uf} value={uf}>
-                  {uf}
-                </option>
-              ))}
-            </select>
-          </label>
+          {tab === "new" ? (
+            <>
+              <Input label="Endereço cadastral" placeholder="Opcional" value={street} onChange={(event) => setStreet(event.target.value)} />
+              <Input label="Cidade (se houver endereço)" placeholder="Opcional" value={city} onChange={(event) => setCity(event.target.value)} />
+              <label className="flex w-full flex-col gap-1.5">
+                <span className="text-[12px] font-semibold text-[var(--color-muted)]">UF (se houver endereço)</span>
+                <select
+                  value={stateCode}
+                  onChange={(event) => setStateCode(event.target.value)}
+                  className="min-h-[48px] w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[14px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  <option value="">Não informar</option>
+                  {BRAZILIAN_STATE_CODES.map((uf) => (
+                    <option key={uf} value={uf}>
+                      {uf}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
           <Input
             label="Local da coleta *"
             placeholder="Onde os itens serão coletados"

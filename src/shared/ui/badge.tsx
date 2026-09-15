@@ -33,8 +33,8 @@ export const Badge: React.FC<BadgeProps> = ({ className = "", status = "neutral"
     in_budget: "bg-[#fff8ec] text-[#a36b2c] border-[#a36b2c]/40",
     awaiting_approval: "bg-[#fff8ec] text-[#a36b2c] border-[#a36b2c]/40",
     partial_delivery: "bg-[#fff8ec] text-[#a36b2c] border-[#a36b2c]/40",
-    canceled: "bg-[#fdf2f1] text-[#ba5b52] border-[#ba5b52]/40",
-    rejected: "bg-[#fdf2f1] text-[#ba5b52] border-[#ba5b52]/40",
+    canceled: "bg-[#fdf2f1] text-[var(--color-danger)] border-[var(--color-danger)]/40",
+    rejected: "bg-[#fdf2f1] text-[var(--color-danger)] border-[var(--color-danger)]/40",
     neutral: "bg-[var(--color-surface-neutral)] text-[var(--color-muted)] border-[var(--color-border)]",
   };
 
